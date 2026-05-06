@@ -19,6 +19,7 @@ interface TransactionState {
 interface TransactionActions {
   fetchTransactions: (params?: { from?: string; to?: string; status?: string }) => Promise<void>
   addTransaction: (transaction: Transaction) => void
+  deleteTransaction: (id: string) => Promise<{ success: boolean; error?: string }>
   getTransactionsByDate: (date: string) => Transaction[]
   getTodayTransactions: () => Transaction[]
   getTodayRevenue: () => number
@@ -54,6 +55,23 @@ export const useTransactionStore = create<TransactionState & TransactionActions>
       set((state) => ({
         transactions: [transaction, ...state.transactions],
       }))
+    },
+
+    deleteTransaction: async (id: string) => {
+      try {
+        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+        if (!res.ok) {
+          const data = await res.json()
+          return { success: false, error: data.error || 'Gagal menghapus transaksi' }
+        }
+        // Remove from local state
+        set((state) => ({
+          transactions: state.transactions.filter((t) => t.id !== id),
+        }))
+        return { success: true }
+      } catch {
+        return { success: false, error: 'Gagal menghapus transaksi' }
+      }
     },
 
     getTransactionsByDate: (date: string) => {

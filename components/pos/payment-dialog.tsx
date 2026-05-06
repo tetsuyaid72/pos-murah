@@ -121,7 +121,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
           items: txItems,
           subtotal,
           discountAmount,
-          discountType,
+          discountType: discountType.toUpperCase(),
           taxAmount: 0,
           totalAmount: total,
           paymentMethod: paymentMethod.toUpperCase(),

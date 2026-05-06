@@ -133,9 +133,17 @@ export function handleTenantError(error: unknown): NextResponse {
     )
   }
 
-  console.error('Unexpected error:', error)
+  const errorMessage = error instanceof Error ? error.message : String(error)
+  const errorStack = error instanceof Error ? error.stack : undefined
+  console.error('Unexpected error:', errorMessage, errorStack)
+
+  // In development, return the actual error message for debugging
+  const isDev = process.env.NODE_ENV !== 'production'
   return NextResponse.json(
-    { error: 'Terjadi kesalahan server' },
+    {
+      error: isDev ? errorMessage : 'Terjadi kesalahan server',
+      ...(isDev && { stack: errorStack }),
+    },
     { status: 500 }
   )
 }

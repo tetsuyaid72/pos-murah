@@ -143,6 +143,7 @@ export const transactions = pgTable('transactions', {
   status: text('status', { enum: ['COMPLETED', 'PENDING', 'VOIDED'] }).notNull().default('COMPLETED'),
   notes: text('notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  deletedAt: timestamp('deleted_at'),
 }, (table) => [
   index('transactions_store_id_idx').on(table.storeId),
   index('transactions_store_created_idx').on(table.storeId, table.createdAt),

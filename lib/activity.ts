@@ -36,6 +36,7 @@ export type ActivityAction =
   | 'category.delete'
   // Transactions
   | 'transaction.create'
+  | 'transaction.delete'
   | 'transaction.void'
   // Customers
   | 'customer.create'

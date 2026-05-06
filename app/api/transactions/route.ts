@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, gte, lte, desc } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { transactions, transactionItems, products } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Number(searchParams.get('limit') || 50), 100)
     const offset = Number(searchParams.get('offset') || 0)
 
-    const conditions = [eq(transactions.storeId, storeId)]
+    const conditions = [eq(transactions.storeId, storeId), isNull(transactions.deletedAt)]
 
     if (status) {
       conditions.push(eq(transactions.status, status as 'COMPLETED' | 'PENDING' | 'VOIDED'))
