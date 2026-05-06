@@ -1,0 +1,74 @@
+/**
+ * POST /api/payments — Submit a payment (user clicks "Saya Sudah Bayar")
+ * GET  /api/payments — Get current user's payment status
+ */
+
+import { NextResponse } from 'next/server'
+import { eq, and, desc } from 'drizzle-orm'
+import { getSession } from '@/lib/auth'
+import { db } from '@/lib/db'
+import { payments } from '@/lib/db/schema'
+
+export async function POST(request: Request) {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Tidak terautentikasi' }, { status: 401 })
+    }
+
+    if (!session.storeId) {
+      return NextResponse.json({ error: 'Store tidak ditemukan' }, { status: 400 })
+    }
+
+    // Check if there's already a pending payment
+    const existing = await db.query.payments.findFirst({
+      where: and(
+        eq(payments.userId, session.userId),
+        eq(payments.status, 'PENDING')
+      ),
+    })
+
+    if (existing) {
+      return NextResponse.json({ error: 'Sudah ada pembayaran yang menunggu verifikasi' }, { status: 409 })
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const method = body.method === 'QRIS' ? 'QRIS' : 'BANK_TRANSFER'
+    const proofUrl = body.proofUrl || null
+
+    // Create payment record
+    const [payment] = await db.insert(payments).values({
+      userId: session.userId,
+      storeId: session.storeId,
+      amount: 49900,
+      method,
+      proofUrl,
+      status: 'PENDING',
+    }).returning()
+
+    return NextResponse.json({ payment }, { status: 201 })
+  } catch (error) {
+    console.error('Payment submit error:', error)
+    return NextResponse.json({ error: 'Gagal menyimpan pembayaran' }, { status: 500 })
+  }
+}
+
+export async function GET() {
+  try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Tidak terautentikasi' }, { status: 401 })
+    }
+
+    // Get latest payment for this user
+    const payment = await db.query.payments.findFirst({
+      where: eq(payments.userId, session.userId),
+      orderBy: [desc(payments.createdAt)],
+    })
+
+    return NextResponse.json({ payment: payment || null })
+  } catch (error) {
+    console.error('Payment fetch error:', error)
+    return NextResponse.json({ error: 'Gagal mengambil data pembayaran' }, { status: 500 })
+  }
+}

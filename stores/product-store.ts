@@ -44,7 +44,14 @@ export const useProductStore = create<ProductState & ProductActions>()((set, get
     set({ isLoading: true, error: null })
     try {
       const res = await fetch('/api/products?active=false')
-      if (!res.ok) throw new Error('Gagal memuat produk')
+      if (!res.ok) {
+        // 401/403 means no store context — return empty instead of error
+        if (res.status === 401 || res.status === 403) {
+          set({ products: [], isLoading: false })
+          return
+        }
+        throw new Error('Gagal memuat produk')
+      }
       const data = await res.json()
       set({ products: data.products, isLoading: false })
     } catch (err) {
@@ -55,7 +62,14 @@ export const useProductStore = create<ProductState & ProductActions>()((set, get
   fetchCategories: async () => {
     try {
       const res = await fetch('/api/categories')
-      if (!res.ok) throw new Error('Gagal memuat kategori')
+      if (!res.ok) {
+        // 401/403 means no store context — return empty instead of error
+        if (res.status === 401 || res.status === 403) {
+          set({ categories: [] })
+          return
+        }
+        throw new Error('Gagal memuat kategori')
+      }
       const data = await res.json()
       set({ categories: data.categories })
     } catch (err) {

@@ -33,45 +33,42 @@ export async function POST() {
       )
     }
 
-    // Delete all store data in a transaction (order matters due to FK constraints)
-    db.transaction((tx) => {
+    // Delete all store data in an async transaction (order matters due to FK constraints)
+    await db.transaction(async (tx) => {
       // 1. Delete transaction items (FK → transactions)
-      // Get all transaction IDs for this store first
-      const storeTxns = tx
+      const storeTxns = await tx
         .select({ id: transactions.id })
         .from(transactions)
         .where(eq(transactions.storeId, storeId))
-        .all()
 
       for (const txn of storeTxns) {
-        tx.delete(transactionItems)
+        await tx.delete(transactionItems)
           .where(eq(transactionItems.transactionId, txn.id))
-          .run()
       }
 
       // 2. Delete debt records
-      tx.delete(debtRecords).where(eq(debtRecords.storeId, storeId)).run()
+      await tx.delete(debtRecords).where(eq(debtRecords.storeId, storeId))
 
       // 3. Delete transactions
-      tx.delete(transactions).where(eq(transactions.storeId, storeId)).run()
+      await tx.delete(transactions).where(eq(transactions.storeId, storeId))
 
       // 4. Delete customers
-      tx.delete(customers).where(eq(customers.storeId, storeId)).run()
+      await tx.delete(customers).where(eq(customers.storeId, storeId))
 
       // 5. Delete products (FK → categories via categoryId, but set null on delete)
-      tx.delete(products).where(eq(products.storeId, storeId)).run()
+      await tx.delete(products).where(eq(products.storeId, storeId))
 
       // 6. Delete categories
-      tx.delete(categories).where(eq(categories.storeId, storeId)).run()
+      await tx.delete(categories).where(eq(categories.storeId, storeId))
 
       // 7. Log the reset action
-      tx.insert(activityLogs).values({
+      await tx.insert(activityLogs).values({
         storeId,
         userId: session.userId,
         action: 'store.reset_demo',
         entity: 'store',
         entityId: storeId,
-      }).run()
+      })
     })
 
     return NextResponse.json({

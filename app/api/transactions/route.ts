@@ -10,6 +10,7 @@ import { transactions, transactionItems, products } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
 import { logActivityAsync } from '@/lib/activity'
 import { generateId } from '@/lib/utils'
+import { checkTransactionLimit } from '@/lib/plan-guard'
 
 export async function GET(request: NextRequest) {
   try {
@@ -54,6 +55,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { session, storeId } = await requireTenant()
+
+    // Check plan limit before creating transaction
+    const planCheck = await checkTransactionLimit(storeId)
+    if (!planCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: planCheck.message,
+          code: 'PLAN_LIMIT_REACHED',
+          limit: planCheck.limit,
+          current: planCheck.current,
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
 
     const {
@@ -86,11 +102,10 @@ export async function POST(request: NextRequest) {
 
     const transactionId = generateId()
 
-    // Create transaction + items + update stock in a single transaction
-    // Note: better-sqlite3 is synchronous — transaction callback must be sync
-    db.transaction((tx) => {
+    // Create transaction + items + update stock in an async transaction (PostgreSQL)
+    await db.transaction(async (tx) => {
       // 1. Insert transaction
-      tx.insert(transactions).values({
+      await tx.insert(transactions).values({
         id: transactionId,
         storeId,
         invoiceNumber,
@@ -105,7 +120,7 @@ export async function POST(request: NextRequest) {
         customerId: customerId || null,
         status: 'COMPLETED',
         notes: notes || null,
-      }).run()
+      })
 
       // 2. Insert transaction items
       const itemValues = items.map((item: {
@@ -127,23 +142,21 @@ export async function POST(request: NextRequest) {
         subtotal: item.subtotal,
       }))
 
-      tx.insert(transactionItems).values(itemValues).run()
+      await tx.insert(transactionItems).values(itemValues)
 
       // 3. Decrease stock for each product
       for (const item of items) {
         if (item.productId) {
-          const [product] = tx
+          const [product] = await tx
             .select({ stock: products.stock, storeId: products.storeId })
             .from(products)
             .where(and(eq(products.id, item.productId), eq(products.storeId, storeId)))
-            .all()
 
           if (product) {
-            tx
+            await tx
               .update(products)
               .set({ stock: product.stock - item.quantity })
               .where(and(eq(products.id, item.productId), eq(products.storeId, storeId)))
-              .run()
           }
         }
       }

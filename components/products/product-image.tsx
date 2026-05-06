@@ -9,7 +9,7 @@ import { useProductStore } from '@/stores/product-store'
 
 interface ProductImageProps {
   product: Product
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'card'
   className?: string
 }
 
@@ -17,6 +17,7 @@ const SIZE_MAP = {
   sm: { container: 'h-10 w-10', icon: 'h-5 w-5', image: 40 },
   md: { container: 'h-16 w-16', icon: 'h-7 w-7', image: 64 },
   lg: { container: 'h-[120px] w-[120px]', icon: 'h-12 w-12', image: 120 },
+  card: { container: 'aspect-square w-full', icon: 'h-10 w-10', image: 200 },
 }
 
 export function ProductImage({ product, size = 'md', className }: ProductImageProps) {
@@ -60,7 +61,7 @@ export function ProductImage({ product, size = 'md', className }: ProductImagePr
 
 interface CategoryFallbackProps {
   category: Category | null
-  size: 'sm' | 'md' | 'lg'
+  size: 'sm' | 'md' | 'lg' | 'card'
   className?: string
 }
 

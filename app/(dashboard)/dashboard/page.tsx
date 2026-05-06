@@ -7,6 +7,7 @@ import { KpiGrid, type DashboardKpi } from '@/components/dashboard/kpi-grid'
 import { SalesTrendChart, type TrendDataPoint } from '@/components/dashboard/sales-trend-chart'
 import { TopProducts, type TopProductData } from '@/components/dashboard/top-products'
 import { LowStockAlert } from '@/components/dashboard/low-stock-alert'
+import { UpgradePopup } from '@/components/dashboard/upgrade-popup'
 
 interface DashboardData {
   kpi: DashboardKpi
@@ -41,7 +42,14 @@ export default function DashboardPage() {
     setIsLoading(true)
     try {
       const res = await fetch(`/api/dashboard?range=${range}`)
-      if (!res.ok) throw new Error('Gagal memuat dashboard')
+      if (!res.ok) {
+        // 401/403 means user has no store — show empty state instead of error
+        if (res.status === 401 || res.status === 403) {
+          setData({ kpi: DEFAULT_KPI, trend: [], topProducts: [] })
+          return
+        }
+        throw new Error('Gagal memuat dashboard')
+      }
       const json = await res.json()
 
       console.log('[Dashboard] API response:', {
@@ -123,6 +131,9 @@ export default function DashboardPage() {
           <LowStockAlert products={products} />
         </div>
       </div>
+
+      {/* Upgrade Popup for free plan users */}
+      <UpgradePopup />
     </div>
   )
 }

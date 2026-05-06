@@ -4,7 +4,7 @@
  * Inserts default categories and sample products for a newly registered store.
  * All data is scoped to the given storeId (multi-tenant safe).
  *
- * Must be called inside a better-sqlite3 sync transaction.
+ * Must be called inside a Drizzle PostgreSQL async transaction.
  */
 
 import { categories, products } from './schema'
@@ -43,58 +43,60 @@ interface DemoProduct {
   minStock: number
   unit: string
   categoryIndex: number // index into DEMO_CATEGORIES
+  imageUrl: string | null
 }
 
 const DEMO_PRODUCTS: DemoProduct[] = [
   // Minuman (index 0)
-  { name: 'Aqua 600ml',          barcode: '8886008101053', sku: 'MNM-001', costPrice: 2500,  sellingPrice: 4000,  stock: 48, minStock: 12, unit: 'botol', categoryIndex: 0 },
-  { name: 'Teh Botol Sosro',     barcode: '8886008101060', sku: 'MNM-002', costPrice: 3000,  sellingPrice: 5000,  stock: 24, minStock: 6,  unit: 'botol', categoryIndex: 0 },
-  { name: 'Kopi Kapal Api Sachet', barcode: '8886008101077', sku: 'MNM-003', costPrice: 1000,  sellingPrice: 2000,  stock: 100, minStock: 20, unit: 'sachet', categoryIndex: 0 },
-  { name: 'Sprite 390ml',        barcode: '8886008101084', sku: 'MNM-004', costPrice: 3500,  sellingPrice: 5500,  stock: 24, minStock: 6,  unit: 'botol', categoryIndex: 0 },
+  { name: 'Aqua 600ml',            barcode: '8886008101053', sku: 'MNM-001', costPrice: 2500,  sellingPrice: 4000,  stock: 48,  minStock: 12, unit: 'botol',  categoryIndex: 0, imageUrl: '/uploads/products/aqua-600ml.webp' },
+  { name: 'Teh Botol Sosro',       barcode: '8886008101060', sku: 'MNM-002', costPrice: 3000,  sellingPrice: 5000,  stock: 24,  minStock: 6,  unit: 'botol',  categoryIndex: 0, imageUrl: '/uploads/products/teh-botol-sosro-450ml.jpg' },
+  { name: 'Kopi Kapal Api Sachet', barcode: '8886008101077', sku: 'MNM-003', costPrice: 1000,  sellingPrice: 2000,  stock: 100, minStock: 20, unit: 'sachet', categoryIndex: 0, imageUrl: '/uploads/products/kapal api special 165g.png' },
+  { name: 'Sprite 390ml',          barcode: '8886008101084', sku: 'MNM-004', costPrice: 3500,  sellingPrice: 5500,  stock: 24,  minStock: 6,  unit: 'botol',  categoryIndex: 0, imageUrl: '/uploads/products/sprite 390ml.jpg' },
+  { name: 'Pocari Sweat 500ml',    barcode: '8996001600030', sku: 'MNM-005', costPrice: 5500,  sellingPrice: 7500,  stock: 40,  minStock: 10, unit: 'botol',  categoryIndex: 0, imageUrl: '/uploads/products/pocari sweat 50ml.webp' },
 
   // Makanan (index 1)
-  { name: 'Indomie Goreng',      barcode: '8886008101091', sku: 'MKN-001', costPrice: 2800,  sellingPrice: 3500,  stock: 60, minStock: 12, unit: 'pcs', categoryIndex: 1 },
-  { name: 'Indomie Kuah Soto',   barcode: '8886008101107', sku: 'MKN-002', costPrice: 2800,  sellingPrice: 3500,  stock: 36, minStock: 12, unit: 'pcs', categoryIndex: 1 },
-  { name: 'Nasi Bungkus',        barcode: '',              sku: 'MKN-003', costPrice: 5000,  sellingPrice: 8000,  stock: 20, minStock: 5,  unit: 'pcs', categoryIndex: 1 },
+  { name: 'Indomie Goreng',      barcode: '8886008101091', sku: 'MKN-001', costPrice: 2800,  sellingPrice: 3500,  stock: 60, minStock: 12, unit: 'pcs', categoryIndex: 1, imageUrl: '/uploads/products/indomie-goreng.png' },
+  { name: 'Indomie Kuah Soto',   barcode: '8886008101107', sku: 'MKN-002', costPrice: 2800,  sellingPrice: 3500,  stock: 36, minStock: 12, unit: 'pcs', categoryIndex: 1, imageUrl: '/uploads/products/indomie soto.avif' },
 
   // Sembako (index 2)
-  { name: 'Beras 5kg',           barcode: '8886008101114', sku: 'SMB-001', costPrice: 55000, sellingPrice: 65000, stock: 10, minStock: 3,  unit: 'karung', categoryIndex: 2 },
-  { name: 'Minyak Goreng 1L',    barcode: '8886008101121', sku: 'SMB-002', costPrice: 14000, sellingPrice: 18000, stock: 15, minStock: 5,  unit: 'botol', categoryIndex: 2 },
-  { name: 'Gula Pasir 1kg',      barcode: '8886008101138', sku: 'SMB-003', costPrice: 12000, sellingPrice: 15000, stock: 20, minStock: 5,  unit: 'kg',    categoryIndex: 2 },
-  { name: 'Telur 1kg',           barcode: '',              sku: 'SMB-004', costPrice: 25000, sellingPrice: 28000, stock: 10, minStock: 3,  unit: 'kg',    categoryIndex: 2 },
+  { name: 'Beras 5kg',           barcode: '8886008101114', sku: 'SMB-001', costPrice: 55000, sellingPrice: 65000, stock: 10, minStock: 3,  unit: 'karung', categoryIndex: 2, imageUrl: '/uploads/products/beras-premium-5kg.jpg' },
+  { name: 'Minyak Goreng 1L',    barcode: '8886008101121', sku: 'SMB-002', costPrice: 14000, sellingPrice: 18000, stock: 15, minStock: 5,  unit: 'botol',  categoryIndex: 2, imageUrl: '/uploads/products/minyak-goreng-bimoli-1l.jpg' },
+  { name: 'Gula Pasir 1kg',      barcode: '8886008101138', sku: 'SMB-003', costPrice: 12000, sellingPrice: 15000, stock: 20, minStock: 5,  unit: 'kg',     categoryIndex: 2, imageUrl: '/uploads/products/gula-pasir-1kg.png' },
+  { name: 'Telur 1kg',           barcode: '',              sku: 'SMB-004', costPrice: 25000, sellingPrice: 28000, stock: 10, minStock: 3,  unit: 'kg',     categoryIndex: 2, imageUrl: '/uploads/products/telur ayam 1kg.png' },
 
   // Snack (index 3)
-  { name: 'Chitato 68g',         barcode: '8886008101145', sku: 'SNK-001', costPrice: 7000,  sellingPrice: 10000, stock: 24, minStock: 6,  unit: 'pcs', categoryIndex: 3 },
-  { name: 'Oreo 133g',           barcode: '8886008101152', sku: 'SNK-002', costPrice: 6000,  sellingPrice: 9000,  stock: 18, minStock: 6,  unit: 'pcs', categoryIndex: 3 },
+  { name: 'Chitato 68g',         barcode: '8886008101145', sku: 'SNK-001', costPrice: 7000,  sellingPrice: 10000, stock: 24, minStock: 6,  unit: 'pcs', categoryIndex: 3, imageUrl: '/uploads/products/chitato-sapi-panggang.png' },
+  { name: 'Oreo 133g',           barcode: '8886008101152', sku: 'SNK-002', costPrice: 6000,  sellingPrice: 9000,  stock: 18, minStock: 6,  unit: 'pcs', categoryIndex: 3, imageUrl: '/uploads/products/oreo original 133g.jpg' },
 ]
 
 // =============================================================================
-// Seed function — call inside a sync transaction (better-sqlite3)
+// Seed function — call inside an async Drizzle PostgreSQL transaction
 // =============================================================================
 
 /**
  * Insert demo categories and products for a new store.
- * `tx` must be a Drizzle transaction object from better-sqlite3 (sync).
+ * `tx` must be a Drizzle transaction object (async PostgreSQL).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function seedDemoData(tx: any, storeId: string) {
+export async function seedDemoData(tx: any, storeId: string) {
   // 1. Insert categories and collect their IDs
-  const categoryIds: string[] = DEMO_CATEGORIES.map((cat) => {
+  const categoryIds: string[] = []
+  for (const cat of DEMO_CATEGORIES) {
     const id = generateId()
-    tx.insert(categories).values({
+    await tx.insert(categories).values({
       id,
       storeId,
       name: cat.name,
       color: cat.color,
       icon: cat.icon,
       sortOrder: cat.sortOrder,
-    }).run()
-    return id
-  })
+    })
+    categoryIds.push(id)
+  }
 
   // 2. Insert products linked to their categories
   for (const product of DEMO_PRODUCTS) {
-    tx.insert(products).values({
+    await tx.insert(products).values({
       id: generateId(),
       storeId,
       name: product.name,
@@ -106,6 +108,7 @@ export function seedDemoData(tx: any, storeId: string) {
       stock: product.stock,
       minStock: product.minStock,
       unit: product.unit,
-    }).run()
+      imageUrl: product.imageUrl,
+    })
   }
 }

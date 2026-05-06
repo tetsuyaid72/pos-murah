@@ -5,10 +5,9 @@
  * All KPIs, trend data, and top products are computed here via SQL.
  * No limit — aggregates ALL transactions within the date range.
  *
- * IMPORTANT: The `createdAt` column is stored as Unix epoch SECONDS (integer)
- * because the schema uses `integer('created_at', { mode: 'timestamp' })`.
- * Drizzle converts Date objects to seconds when using gte/lte operators.
- * Raw SQL must use `unixepoch` without dividing by 1000.
+ * PostgreSQL: The `createdAt` column is a proper `timestamp` type.
+ * Drizzle handles Date comparisons natively with gte/lte.
+ * For date grouping, we use PostgreSQL's `DATE()` cast.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -164,13 +163,12 @@ export async function GET(request: NextRequest) {
     // =========================================================================
     // 5. Sales Trend: GROUP BY DATE(createdAt)
     //
-    //    createdAt is stored as Unix seconds in SQLite.
-    //    SQLite date function: date(unix_seconds, 'unixepoch', 'localtime')
-    //    DO NOT divide by 1000 — it's already in seconds.
+    //    PostgreSQL: createdAt is a proper timestamp column.
+    //    Use DATE() cast to group by calendar date.
     // =========================================================================
     const trendRevenue = await db
       .select({
-        date: sql<string>`date(${transactions.createdAt}, 'unixepoch', 'localtime')`.as('trend_date'),
+        date: sql<string>`DATE(${transactions.createdAt})`.as('trend_date'),
         revenue: sql<number>`coalesce(sum(${transactions.totalAmount}), 0)`,
         count: count(),
       })
@@ -183,12 +181,12 @@ export async function GET(request: NextRequest) {
           lte(transactions.createdAt, to),
         )
       )
-      .groupBy(sql`trend_date`)
-      .orderBy(sql`trend_date`)
+      .groupBy(sql`DATE(${transactions.createdAt})`)
+      .orderBy(sql`DATE(${transactions.createdAt})`)
 
     const trendProfit = await db
       .select({
-        date: sql<string>`date(${transactions.createdAt}, 'unixepoch', 'localtime')`.as('trend_date'),
+        date: sql<string>`DATE(${transactions.createdAt})`.as('trend_date'),
         profit: sql<number>`coalesce(sum(
           (${transactionItems.unitPrice} - ${transactionItems.costPrice}) * ${transactionItems.quantity} - ${transactionItems.discountAmount}
         ), 0)`,
@@ -203,8 +201,8 @@ export async function GET(request: NextRequest) {
           lte(transactions.createdAt, to),
         )
       )
-      .groupBy(sql`trend_date`)
-      .orderBy(sql`trend_date`)
+      .groupBy(sql`DATE(${transactions.createdAt})`)
+      .orderBy(sql`DATE(${transactions.createdAt})`)
 
     // Build lookup maps from raw query results
     const revenueByDate = new Map<string, { revenue: number; count: number }>()

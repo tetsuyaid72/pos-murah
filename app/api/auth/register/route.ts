@@ -60,45 +60,47 @@ export async function POST(request: NextRequest) {
     const storeId = generateId()
     const membershipId = generateId()
 
-    // Create user + store + membership in a transaction
-    // Note: better-sqlite3 is synchronous — transaction callback must be sync
-    db.transaction((tx) => {
-      tx.insert(users).values({
+    // Create user + store + membership in an async transaction (PostgreSQL)
+    await db.transaction(async (tx) => {
+      await tx.insert(users).values({
         id: userId,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         passwordHash,
         role: 'OWNER',
         lastLoginAt: new Date(),
-      }).run()
-      tx.insert(stores).values({
+      })
+
+      await tx.insert(stores).values({
         id: storeId,
         name: storeName.trim(),
         ownerId: userId,
-      }).run()
-      tx.insert(memberships).values({
+      })
+
+      await tx.insert(memberships).values({
         id: membershipId,
         storeId,
         plan: 'FREE',
         isTrial: true,
         trialStartAt,
         trialEndAt,
-      }).run()
-      tx.insert(activityLogs).values({
+      })
+
+      await tx.insert(activityLogs).values({
         storeId,
         userId,
         action: 'user.register',
         entity: 'user',
         entityId: userId,
-        metadata: JSON.stringify({
+        metadata: {
           storeName: storeName.trim(),
           plan: 'FREE',
           trialEndAt: trialEndAt.toISOString(),
-        }),
-      }).run()
+        },
+      })
 
       // Seed demo categories + products so the store isn't empty
-      seedDemoData(tx, storeId)
+      await seedDemoData(tx, storeId)
     })
 
     // Set session cookie

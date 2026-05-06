@@ -2,10 +2,19 @@
  * Drizzle ORM Schema — Warung Madura POS
  *
  * Multi-tenant architecture: semua data terisolasi per Store (storeId).
- * SQLite/Turso dialect — no native enums, no native JSON columns.
+ * PostgreSQL dialect (Supabase).
  */
 
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  index,
+  uniqueIndex,
+  jsonb,
+} from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { generateId } from '@/lib/utils'
 
@@ -13,63 +22,63 @@ import { generateId } from '@/lib/utils'
 // CORE: Users, Stores, Memberships
 // =============================================================================
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   passwordHash: text('password_hash').notNull(),
   avatarUrl: text('avatar_url'),
   role: text('role', { enum: ['OWNER', 'CASHIER', 'SUPER_ADMIN'] }).notNull().default('OWNER'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  isActive: boolean('is_active').notNull().default(true),
+  lastLoginAt: timestamp('last_login_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 })
 
-export const stores = sqliteTable('stores', {
+export const stores = pgTable('stores', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   name: text('name').notNull(),
   address: text('address'),
   phone: text('phone'),
   logoUrl: text('logo_url'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  isActive: boolean('is_active').notNull().default(true),
   ownerId: text('owner_id').notNull().unique().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 })
 
-export const memberships = sqliteTable('memberships', {
+export const memberships = pgTable('memberships', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().unique().references(() => stores.id, { onDelete: 'cascade' }),
   plan: text('plan', { enum: ['FREE', 'STARTER', 'PRO', 'ENTERPRISE'] }).notNull().default('FREE'),
-  isTrial: integer('is_trial', { mode: 'boolean' }).notNull().default(true),
-  trialStartAt: integer('trial_start_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  trialEndAt: integer('trial_end_at', { mode: 'timestamp' }).notNull(),
-  features: text('features').notNull().default('{}'), // JSON string
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  isTrial: boolean('is_trial').notNull().default(true),
+  trialStartAt: timestamp('trial_start_at').notNull().defaultNow(),
+  trialEndAt: timestamp('trial_end_at').notNull(),
+  features: jsonb('features').notNull().default({}),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 })
 
 // =============================================================================
 // FEATURE FLAGS
 // =============================================================================
 
-export const featureFlags = sqliteTable('feature_flags', {
+export const featureFlags = pgTable('feature_flags', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   key: text('key').notNull().unique(),
   name: text('name').notNull(),
   description: text('description'),
-  planDefaults: text('plan_defaults').notNull().default('{}'), // JSON string
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  planDefaults: jsonb('plan_defaults').notNull().default({}),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 })
 
 // =============================================================================
 // BUSINESS DATA (all scoped to store_id)
 // =============================================================================
 
-export const categories = sqliteTable('categories', {
+export const categories = pgTable('categories', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -77,13 +86,13 @@ export const categories = sqliteTable('categories', {
   color: text('color').notNull().default('#6366f1'),
   icon: text('icon'),
   sortOrder: integer('sort_order').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 }, (table) => [
   index('categories_store_id_idx').on(table.storeId),
 ])
 
-export const products = sqliteTable('products', {
+export const products = pgTable('products', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -96,29 +105,29 @@ export const products = sqliteTable('products', {
   minStock: integer('min_stock').notNull().default(0),
   unit: text('unit').notNull().default('pcs'),
   imageUrl: text('image_url'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 }, (table) => [
   index('products_store_id_idx').on(table.storeId),
   index('products_store_barcode_idx').on(table.storeId, table.barcode),
   index('products_store_category_idx').on(table.storeId, table.categoryId),
 ])
 
-export const customers = sqliteTable('customers', {
+export const customers = pgTable('customers', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   phone: text('phone'),
   address: text('address'),
   totalDebt: integer('total_debt').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 }, (table) => [
   index('customers_store_id_idx').on(table.storeId),
 ])
 
-export const transactions = sqliteTable('transactions', {
+export const transactions = pgTable('transactions', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   invoiceNumber: text('invoice_number').notNull(),
@@ -133,14 +142,14 @@ export const transactions = sqliteTable('transactions', {
   customerId: text('customer_id').references(() => customers.id, { onDelete: 'set null' }),
   status: text('status', { enum: ['COMPLETED', 'PENDING', 'VOIDED'] }).notNull().default('COMPLETED'),
   notes: text('notes'),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => [
   index('transactions_store_id_idx').on(table.storeId),
   index('transactions_store_created_idx').on(table.storeId, table.createdAt),
   index('transactions_store_invoice_idx').on(table.storeId, table.invoiceNumber),
 ])
 
-export const transactionItems = sqliteTable('transaction_items', {
+export const transactionItems = pgTable('transaction_items', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   transactionId: text('transaction_id').notNull().references(() => transactions.id, { onDelete: 'cascade' }),
   productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
@@ -154,7 +163,7 @@ export const transactionItems = sqliteTable('transaction_items', {
   index('transaction_items_transaction_id_idx').on(table.transactionId),
 ])
 
-export const debtRecords = sqliteTable('debt_records', {
+export const debtRecords = pgTable('debt_records', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull(),
   customerId: text('customer_id').notNull().references(() => customers.id, { onDelete: 'cascade' }),
@@ -162,27 +171,53 @@ export const debtRecords = sqliteTable('debt_records', {
   amount: integer('amount').notNull(),
   paidAmount: integer('paid_amount').notNull().default(0),
   status: text('status', { enum: ['UNPAID', 'PARTIAL', 'PAID'] }).notNull().default('UNPAID'),
-  dueDate: integer('due_date', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()).$onUpdateFn(() => new Date()),
+  dueDate: timestamp('due_date'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
 }, (table) => [
   index('debt_records_store_id_idx').on(table.storeId),
   index('debt_records_customer_id_idx').on(table.customerId),
 ])
 
 // =============================================================================
+// PAYMENTS (Manual upgrade requests)
+// =============================================================================
+
+export const payments = pgTable('payments', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
+  amount: integer('amount').notNull().default(49900),
+  status: text('status', { enum: ['PENDING', 'APPROVED', 'REJECTED'] }).notNull().default('PENDING'),
+  method: text('method', { enum: ['BANK_TRANSFER', 'QRIS'] }).notNull().default('BANK_TRANSFER'),
+  proofUrl: text('proof_url'),
+  notes: text('notes'),
+  approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => [
+  index('payments_user_id_idx').on(table.userId),
+  index('payments_status_idx').on(table.status),
+])
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  user: one(users, { fields: [payments.userId], references: [users.id] }),
+  store: one(stores, { fields: [payments.storeId], references: [stores.id] }),
+}))
+
+// =============================================================================
 // ACTIVITY LOG
 // =============================================================================
 
-export const activityLogs = sqliteTable('activity_logs', {
+export const activityLogs = pgTable('activity_logs', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').references(() => stores.id, { onDelete: 'cascade' }),
   userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
   action: text('action').notNull(),
   entity: text('entity'),
   entityId: text('entity_id'),
-  metadata: text('metadata'), // JSON string
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => [
   index('activity_logs_store_id_idx').on(table.storeId),
   index('activity_logs_user_id_idx').on(table.userId),

@@ -18,6 +18,12 @@ const PUBLIC_PATHS = [
   '/api/auth/logout',
 ]
 
+/** Path prefixes that are fully public (demo mode) */
+const PUBLIC_PREFIXES = [
+  '/demo',
+  '/api/demo',
+]
+
 /** Auth pages — redirect to dashboard if already logged in */
 const AUTH_PAGES = ['/login', '/register']
 
@@ -41,6 +47,11 @@ export async function proxy(request: NextRequest) {
 
   // Allow public paths
   if (PUBLIC_PATHS.some((path) => pathname === path)) {
+    return NextResponse.next()
+  }
+
+  // Allow demo routes (no auth required)
+  if (PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
     return NextResponse.next()
   }
 

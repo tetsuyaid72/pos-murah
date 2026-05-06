@@ -9,6 +9,7 @@ import { db } from '@/lib/db'
 import { products } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
 import { logActivityAsync } from '@/lib/activity'
+import { checkProductLimit } from '@/lib/plan-guard'
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,6 +47,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { session, storeId } = await requireTenant()
+
+    // Check plan limit before creating product
+    const planCheck = await checkProductLimit(storeId)
+    if (!planCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: planCheck.message,
+          code: 'PLAN_LIMIT_REACHED',
+          limit: planCheck.limit,
+          current: planCheck.current,
+        },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
 
     const { name, barcode, sku, categoryId, costPrice, sellingPrice, stock, minStock, unit, imageUrl } = body

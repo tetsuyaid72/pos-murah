@@ -2,14 +2,41 @@
  * Feature Flag System
  *
  * Controls which features are available based on the store's plan.
- * During Phase 1 (free trial), all features are enabled.
+ * During active trial (30 days), all features are enabled.
+ * After trial expires, features are determined by plan.
  *
  * Usage:
- *   import { canAccess, FEATURES } from '@/lib/features'
+ *   import { canAccess, FEATURES, PLAN_LIMITS } from '@/lib/features'
  *   if (canAccess(membership, 'export_excel')) { ... }
  */
 
 export type PlanType = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'
+
+/**
+ * Numeric plan limits (for countable resources).
+ */
+export const PLAN_LIMITS = {
+  max_products: {
+    FREE: 20,
+    STARTER: 100,
+    PRO: 999999,
+    ENTERPRISE: 999999,
+  },
+  max_transactions_monthly: {
+    FREE: 50,
+    STARTER: 500,
+    PRO: 999999,
+    ENTERPRISE: 999999,
+  },
+  max_cashiers: {
+    FREE: 1,
+    STARTER: 3,
+    PRO: 999999,
+    ENTERPRISE: 999999,
+  },
+} as const satisfies Record<string, Record<PlanType, number>>
+
+export type LimitKey = keyof typeof PLAN_LIMITS
 
 /**
  * Feature definitions with default access per plan.
@@ -18,25 +45,39 @@ export type PlanType = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE'
 export const FEATURE_DEFAULTS: Record<string, Record<PlanType, boolean | number>> = {
   // Product management
   max_products: {
-    FREE: 999999,      // Unlimited during trial
+    FREE: 20,
     STARTER: 100,
+    PRO: 999999,
+    ENTERPRISE: 999999,
+  },
+  // Monthly transaction limit
+  max_transactions_monthly: {
+    FREE: 50,
+    STARTER: 500,
+    PRO: 999999,
+    ENTERPRISE: 999999,
+  },
+  // Max cashiers
+  max_cashiers: {
+    FREE: 1,
+    STARTER: 3,
     PRO: 999999,
     ENTERPRISE: 999999,
   },
   // Transaction features
   export_excel: {
-    FREE: true,        // All enabled during trial
+    FREE: false,
     STARTER: true,
     PRO: true,
     ENTERPRISE: true,
   },
   export_pdf: {
-    FREE: true,
+    FREE: false,
     STARTER: false,
     PRO: true,
     ENTERPRISE: true,
   },
-  // Multi-outlet (future)
+  // Multi-outlet
   multi_outlet: {
     FREE: false,
     STARTER: false,
@@ -52,7 +93,7 @@ export const FEATURE_DEFAULTS: Record<string, Record<PlanType, boolean | number>
   },
   // Reports
   advanced_reports: {
-    FREE: true,
+    FREE: false,
     STARTER: false,
     PRO: true,
     ENTERPRISE: true,
@@ -79,7 +120,7 @@ export type FeatureKey = keyof typeof FEATURE_DEFAULTS
 /**
  * Membership info needed for feature checks.
  */
-interface MembershipInfo {
+export interface MembershipInfo {
   plan: PlanType
   isTrial: boolean
   trialEndAt: Date | string
@@ -101,7 +142,7 @@ export function canAccess(
     const trialEnd = new Date(membership.trialEndAt)
     if (trialEnd > new Date()) {
       // Trial is still active — all features enabled
-      const defaultValue = FEATURE_DEFAULTS[feature]?.FREE
+      const defaultValue = FEATURE_DEFAULTS[feature]?.PRO
       // For numeric limits, return unlimited during trial
       if (typeof defaultValue === 'number') return 999999
       return true
@@ -121,12 +162,40 @@ export function canAccess(
 }
 
 /**
+ * Get the numeric limit for a countable resource.
+ * Returns the limit number (999999 = unlimited).
+ */
+export function getLimit(
+  membership: MembershipInfo,
+  limitKey: LimitKey
+): number {
+  // During active trial, unlimited
+  if (membership.isTrial) {
+    const trialEnd = new Date(membership.trialEndAt)
+    if (trialEnd > new Date()) {
+      return 999999
+    }
+  }
+
+  return PLAN_LIMITS[limitKey][membership.plan]
+}
+
+/**
  * Check if a trial has expired.
  */
 export function isTrialExpired(membership: MembershipInfo): boolean {
   if (!membership.isTrial) return false
   const trialEnd = new Date(membership.trialEndAt)
   return trialEnd <= new Date()
+}
+
+/**
+ * Check if trial is currently active (not expired).
+ */
+export function isTrialActive(membership: MembershipInfo): boolean {
+  if (!membership.isTrial) return false
+  const trialEnd = new Date(membership.trialEndAt)
+  return trialEnd > new Date()
 }
 
 /**

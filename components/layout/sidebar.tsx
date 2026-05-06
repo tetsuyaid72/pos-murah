@@ -18,11 +18,13 @@ import {
   Sun,
   BarChart3,
   LogOut,
+  ShieldCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
+
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/user-avatar'
 
@@ -100,9 +102,20 @@ function SidebarContent({
 }) {
   const { theme, setTheme } = useUIStore()
   const { storeName, storeLogo, userName, userEmail, userAvatar } = useSettingsStore()
-  const { logout, membership } = useAuthStore()
+  const { logout, membership, user } = useAuthStore()
 
+  // Server membership is always the source of truth for plan status
   const plan = membership?.plan || 'FREE'
+
+  // Calculate trial info for display
+  const trialDaysRemaining = (() => {
+    if (!membership?.isTrial || !membership?.trialEndAt) return 0
+    const trialEnd = new Date(membership.trialEndAt)
+    const now = new Date()
+    const diff = trialEnd.getTime() - now.getTime()
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
+  })()
+  const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
 
   const toggleTheme = () => {
     if (theme === 'light') setTheme('dark')
@@ -115,17 +128,19 @@ function SidebarContent({
       {/* Logo / Brand */}
       <div className={cn('flex items-center gap-3 px-5 py-6', collapsed && 'justify-center px-3')}>
         {/* Store logo or default icon */}
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20">
+        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20">
           {storeLogo ? (
             <Image
               src={storeLogo}
               alt={storeName}
-              width={40}
-              height={40}
-              className="h-full w-full object-contain p-1"
+              fill
+              className="object-cover"
+              sizes="40px"
             />
           ) : (
-            <Store className="h-5 w-5" />
+            <div className="flex h-full w-full items-center justify-center">
+              <Store className="h-5 w-5" />
+            </div>
           )}
         </div>
         {!collapsed && (
@@ -133,7 +148,7 @@ function SidebarContent({
             <span className="truncate text-sm font-bold tracking-tight text-foreground">
               {storeName || 'Toko Saya'}
             </span>
-            <PlanBadge plan={plan} />
+            <PlanBadge plan={plan} isTrialActive={isTrialActive} trialDaysRemaining={trialDaysRemaining} />
           </div>
         )}
       </div>
@@ -176,22 +191,59 @@ function SidebarContent({
             </Link>
           )
         })}
+
+        {/* Admin section — only for SUPER_ADMIN */}
+        {user?.role === 'SUPER_ADMIN' && (
+          <>
+            <p className={cn(
+              'mt-4 mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
+              collapsed && 'sr-only'
+            )}>
+              Admin
+            </p>
+            <Link
+              href="/admin/payments"
+              onClick={onNavigate}
+              className={cn(
+                'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                (pathname === '/admin/payments' || pathname.startsWith('/admin/payments/'))
+                  ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
+                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
+                collapsed && 'justify-center px-2'
+              )}
+              title={collapsed ? 'Pembayaran' : undefined}
+            >
+              {(pathname === '/admin/payments' || pathname.startsWith('/admin/payments/')) && (
+                <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
+              )}
+              <ShieldCheck className={cn(
+                'h-[18px] w-[18px] shrink-0 transition-colors',
+                (pathname === '/admin/payments' || pathname.startsWith('/admin/payments/'))
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-muted-foreground group-hover:text-foreground'
+              )} />
+              {!collapsed && <span>Pembayaran</span>}
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Upgrade Card — only show for FREE plan */}
       {!collapsed && plan === 'FREE' && (
-        <div className="mx-3 mb-3 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white shadow-lg shadow-emerald-500/20">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-xs font-bold uppercase tracking-wide">Upgrade</span>
+        <Link href="/upgrade" onClick={onNavigate}>
+          <div className="mx-3 mb-3 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white shadow-lg shadow-emerald-500/20 transition-transform hover:scale-[1.02]">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4" />
+              <span className="text-xs font-bold uppercase tracking-wide">Upgrade Pro</span>
+            </div>
+            <p className="text-[11px] leading-relaxed opacity-90 mb-3">
+              Unlimited transaksi, produk, kasir, dan fitur lengkap lainnya.
+            </p>
+            <div className="w-full rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm text-center">
+              Upgrade Sekarang
+            </div>
           </div>
-          <p className="text-[11px] leading-relaxed opacity-90 mb-3">
-            Dapatkan fitur premium: multi-outlet, laporan AI, dan lainnya.
-          </p>
-          <button className="w-full rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm transition-colors hover:bg-white/30">
-            Lihat Paket
-          </button>
-        </div>
+        </Link>
       )}
 
       {/* Bottom section */}
@@ -296,7 +348,7 @@ const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass
   },
 }
 
-function PlanBadge({ plan }: { plan: string }) {
+function PlanBadge({ plan, isTrialActive, trialDaysRemaining }: { plan: string; isTrialActive?: boolean; trialDaysRemaining?: number }) {
   const config = PLAN_CONFIG[plan] || PLAN_CONFIG.FREE
   const Icon = config.icon
 
@@ -304,7 +356,9 @@ function PlanBadge({ plan }: { plan: string }) {
     <div className="flex items-center gap-1.5">
       <Icon className={cn('h-3 w-3 shrink-0', config.iconClass)} />
       <span className={cn('text-[11px] font-medium', config.textClass)}>
-        {config.label}
+        {isTrialActive
+          ? `Trial: ${trialDaysRemaining} hari`
+          : config.label}
       </span>
     </div>
   )

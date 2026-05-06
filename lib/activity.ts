@@ -69,7 +69,7 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
       action: params.action,
       entity: params.entity ?? null,
       entityId: params.entityId ?? null,
-      metadata: params.metadata ? JSON.stringify(params.metadata) : null,
+      metadata: params.metadata ?? null,
     })
   } catch (error) {
     // Don't throw — activity logging should never break the main flow

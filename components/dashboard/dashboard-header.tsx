@@ -11,6 +11,7 @@ export type DashboardPeriod = 'today' | '7days' | '30days'
 interface DashboardHeaderProps {
   period: DashboardPeriod
   onPeriodChange: (period: DashboardPeriod) => void
+  posHref?: string
 }
 
 function getGreeting(): string {
@@ -27,7 +28,7 @@ const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
   { value: '30days', label: '30 Hari' },
 ]
 
-export function DashboardHeader({ period, onPeriodChange }: DashboardHeaderProps) {
+export function DashboardHeader({ period, onPeriodChange, posHref = '/pos' }: DashboardHeaderProps) {
   const { user } = useAuthStore()
 
   return (
@@ -63,7 +64,7 @@ export function DashboardHeader({ period, onPeriodChange }: DashboardHeaderProps
         </div>
 
         {/* Open POS */}
-        <Link href="/pos">
+        <Link href={posHref}>
           <Button variant="premium">
             <ShoppingCart className="mr-2 h-4 w-4" />
             Buka Kasir

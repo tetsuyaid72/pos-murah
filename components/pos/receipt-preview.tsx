@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react'
 import {
   Printer,
-  Download,
   X,
   Settings2,
   Bluetooth,
@@ -72,18 +71,92 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
     userName,
   ])
 
+  const handleBrowserPrint = useCallback(() => {
+    const printArea = document.getElementById('receipt-print-area')
+    if (!printArea) return
+
+    const printWindow = window.open('', '_blank', 'width=400,height=600')
+    if (!printWindow) {
+      setPrintError('Popup diblokir oleh browser. Izinkan popup untuk mencetak.')
+      return
+    }
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Struk</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #000;
+            background: #fff;
+            padding: 10px;
+            width: 80mm;
+          }
+          .flex {
+            display: flex;
+          }
+          .justify-between {
+            justify-content: space-between;
+          }
+          .text-center {
+            text-align: center;
+          }
+          @media print {
+            body {
+              padding: 0;
+              width: 80mm;
+            }
+            @page {
+              size: 80mm auto;
+              margin: 0;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        ${printArea.innerHTML}
+      </body>
+      </html>
+    `
+
+    printWindow.document.open()
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
+
+    // Wait for content to render then print
+    printWindow.onload = () => {
+      printWindow.focus()
+      printWindow.print()
+      printWindow.close()
+    }
+
+    // Fallback: if onload doesn't fire (some browsers)
+    setTimeout(() => {
+      if (!printWindow.closed) {
+        printWindow.focus()
+        printWindow.print()
+        printWindow.close()
+      }
+    }, 500)
+  }, [])
+
   const handlePrint = useCallback(() => {
     if (isConnected) {
       handleThermalPrint()
     } else {
-      // Fallback to browser print
-      window.print()
+      handleBrowserPrint()
     }
-  }, [isConnected, handleThermalPrint])
-
-  const handlePDF = () => {
-    window.print()
-  }
+  }, [isConnected, handleThermalPrint, handleBrowserPrint])
 
   const totalDiscount =
     transaction.discountType === 'percentage'
@@ -95,17 +168,16 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
       <div className="fixed inset-0 z-[60] flex items-center justify-center">
         {/* Backdrop */}
         <div
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm print:hidden"
           onClick={onClose}
         />
 
         {/* Dialog */}
-        <div className="relative z-10 w-full max-w-sm mx-4 max-h-[90vh] flex flex-col rounded-2xl border bg-card shadow-2xl">
-          {/* Action buttons — hidden in print */}
+        <div className="relative z-10 w-full max-w-[380px] mx-4 max-h-[90vh] flex flex-col rounded-2xl border bg-card shadow-2xl print:shadow-none print:border-none print:rounded-none print:max-w-none print:max-h-none print:m-0">
+          {/* Action bar — hidden in print */}
           <div className="flex items-center justify-between border-b px-4 py-3 print:hidden">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Preview Struk</h3>
-              {/* Printer status indicator */}
+              <h3 className="text-sm font-semibold">Struk Pembayaran</h3>
               {isBluetoothSupported() && (
                 <div
                   className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
@@ -124,23 +196,6 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
               )}
             </div>
             <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                variant={isConnected ? 'default' : 'outline'}
-                onClick={handlePrint}
-                disabled={isPrinting}
-              >
-                {isPrinting ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Printer className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                {isPrinting ? 'Cetak...' : 'Cetak'}
-              </Button>
-              <Button size="sm" variant="outline" onClick={handlePDF}>
-                <Download className="mr-1.5 h-3.5 w-3.5" />
-                PDF
-              </Button>
               <button
                 onClick={() => setShowPrinterSetup(true)}
                 className="rounded-full p-1.5 hover:bg-accent cursor-pointer"
@@ -150,7 +205,8 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
               </button>
               <button
                 onClick={onClose}
-                className="rounded-full p-1 hover:bg-accent cursor-pointer"
+                className="rounded-full p-1.5 hover:bg-accent cursor-pointer"
+                title="Tutup"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -164,32 +220,55 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
             </div>
           )}
 
-          {/* Receipt content — this is what gets printed */}
-          <div className="overflow-y-auto p-4">
+          {/* Receipt content — thermal receipt style */}
+          <div className="overflow-y-auto flex-1 p-5 bg-gray-50 dark:bg-neutral-900/50 print:bg-white print:p-0">
             <div
               id="receipt-print-area"
-              className="receipt-content mx-auto max-w-[280px] font-mono text-xs leading-relaxed"
+              className="receipt-content mx-auto w-[300px] bg-white text-black shadow-md print:shadow-none print:w-full"
+              style={{
+                fontFamily: "'Courier New', Courier, monospace",
+                fontSize: '12px',
+                lineHeight: '1.5',
+                padding: '24px 20px',
+              }}
             >
-              {/* Store header */}
+              {/* === HEADER === */}
               <div className="text-center">
-                <p className="text-sm font-bold uppercase">
-                  {storeName || 'Warung Madura'}
+                <p
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    letterSpacing: '0.5px',
+                    marginBottom: '2px',
+                  }}
+                >
+                  {storeName || 'TOKO SAYA'}
                 </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {storeAddress}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {storePhone}
-                </p>
+                {storeAddress && (
+                  <p style={{ fontSize: '10px', color: '#555', margin: '0' }}>
+                    {storeAddress}
+                  </p>
+                )}
+                {storePhone && (
+                  <p style={{ fontSize: '10px', color: '#555', margin: '0' }}>
+                    {storePhone}
+                  </p>
+                )}
               </div>
 
-              <div className="my-2 border-t border-dashed border-foreground/30" />
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #000',
+                  margin: '10px 0',
+                }}
+              />
 
-              {/* Transaction info */}
-              <div className="space-y-0.5">
+              {/* === INFO TRANSAKSI === */}
+              <div style={{ fontSize: '11px' }}>
                 <div className="flex justify-between">
-                  <span>Invoice</span>
-                  <span className="font-medium">
+                  <span>No. Invoice</span>
+                  <span style={{ fontWeight: 600 }}>
                     {transaction.invoiceNumber}
                   </span>
                 </div>
@@ -203,22 +282,45 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
                 </div>
               </div>
 
-              <div className="my-2 border-t border-dashed border-foreground/30" />
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #000',
+                  margin: '10px 0',
+                }}
+              />
 
-              {/* Items */}
-              <div className="space-y-1.5">
-                {transaction.items.map((item) => (
-                  <div key={item.id}>
-                    <p className="font-medium">{item.productName}</p>
-                    <div className="flex justify-between text-muted-foreground">
+              {/* === ITEM LIST === */}
+              <div>
+                {transaction.items.map((item, index) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      marginBottom:
+                        index < transaction.items.length - 1 ? '8px' : '0',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontWeight: 600,
+                        margin: '0 0 1px 0',
+                        fontSize: '11px',
+                      }}
+                    >
+                      {item.productName}
+                    </p>
+                    <div className="flex justify-between" style={{ fontSize: '11px' }}>
                       <span>
                         {item.quantity} x {formatRupiah(item.unitPrice)}
                       </span>
                       <span>{formatRupiah(item.subtotal)}</span>
                     </div>
                     {item.discountAmount > 0 && (
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Diskon item</span>
+                      <div
+                        className="flex justify-between"
+                        style={{ fontSize: '10px', color: '#666' }}
+                      >
+                        <span>&nbsp;&nbsp;Diskon item</span>
                         <span>-{formatRupiah(item.discountAmount)}</span>
                       </div>
                     )}
@@ -226,10 +328,16 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
                 ))}
               </div>
 
-              <div className="my-2 border-t border-dashed border-foreground/30" />
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #000',
+                  margin: '10px 0',
+                }}
+              />
 
-              {/* Totals */}
-              <div className="space-y-0.5">
+              {/* === SUMMARY === */}
+              <div style={{ fontSize: '11px' }}>
                 <div className="flex justify-between">
                   <span>Subtotal</span>
                   <span>{formatRupiah(transaction.subtotal)}</span>
@@ -242,15 +350,29 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
                 )}
               </div>
 
-              <div className="my-2 border-t border-dashed border-foreground/30" />
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #000',
+                  margin: '10px 0',
+                }}
+              />
 
-              {/* Grand total */}
-              <div className="flex justify-between text-sm font-bold">
+              {/* === TOTAL === */}
+              <div
+                className="flex justify-between"
+                style={{
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  marginBottom: '4px',
+                }}
+              >
                 <span>TOTAL</span>
                 <span>{formatRupiah(transaction.totalAmount)}</span>
               </div>
 
-              <div className="mt-1 space-y-0.5">
+              {/* === PAYMENT === */}
+              <div style={{ fontSize: '11px', marginTop: '6px' }}>
                 <div className="flex justify-between">
                   <span>
                     Bayar (
@@ -267,22 +389,49 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
                   transaction.changeAmount > 0 && (
                     <div className="flex justify-between">
                       <span>Kembalian</span>
-                      <span>
-                        {formatRupiah(transaction.changeAmount)}
-                      </span>
+                      <span>{formatRupiah(transaction.changeAmount)}</span>
                     </div>
                   )}
               </div>
 
-              <div className="my-2 border-t border-dashed border-foreground/30" />
+              {/* Dashed divider */}
+              <div
+                style={{
+                  borderTop: '1px dashed #000',
+                  margin: '12px 0 10px 0',
+                }}
+              />
 
-              {/* Footer */}
-              <div className="text-center text-[10px] text-muted-foreground">
-                <p>
+              {/* === FOOTER === */}
+              <div className="text-center" style={{ fontSize: '10px', color: '#555' }}>
+                <p style={{ margin: '0 0 2px 0' }}>
                   {receiptFooter || 'Terima kasih telah berbelanja!'}
+                </p>
+                <p style={{ margin: '0', fontSize: '9px' }}>
+                  Barang yang sudah dibeli tidak dapat dikembalikan
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Bottom action buttons — hidden in print */}
+          <div className="flex items-center gap-3 border-t px-4 py-3 print:hidden">
+            <Button
+              className="flex-1"
+              variant={isConnected ? 'default' : 'outline'}
+              onClick={handlePrint}
+              disabled={isPrinting}
+            >
+              {isPrinting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="mr-2 h-4 w-4" />
+              )}
+              {isPrinting ? 'Mencetak...' : 'Cetak Struk'}
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              Tutup
+            </Button>
           </div>
         </div>
       </div>

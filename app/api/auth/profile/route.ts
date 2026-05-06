@@ -35,11 +35,10 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update user in database
-    db.update(users)
+    // Update user in database (async for PostgreSQL)
+    await db.update(users)
       .set(updates)
       .where(eq(users.id, session.userId))
-      .run()
 
     // Fetch updated user
     const updatedUser = await db.query.users.findFirst({

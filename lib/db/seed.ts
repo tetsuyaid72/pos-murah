@@ -1,5 +1,5 @@
 /**
- * Database Seed Script
+ * Database Seed Script — PostgreSQL (Supabase)
  *
  * Creates:
  * 1. Super Admin user (for developer dashboard)
@@ -9,20 +9,19 @@
  */
 
 import 'dotenv/config'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 import { users, featureFlags } from './schema'
 import { generateId } from '../utils'
 
-const url = process.env.TURSO_DATABASE_URL!
-const filePath = url.startsWith('file:') ? url.replace('file:', '') : url
-const sqlite = new Database(filePath)
-sqlite.pragma('journal_mode = WAL')
-sqlite.pragma('foreign_keys = ON')
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL!,
+  ssl: { rejectUnauthorized: false },
+})
 
-const db = drizzle(sqlite)
+const db = drizzle(pool)
 
 async function main() {
   console.log('Seeding database...')
@@ -121,7 +120,7 @@ async function main() {
         key: flag.key,
         name: flag.name,
         description: flag.description,
-        planDefaults: JSON.stringify(flag.planDefaults),
+        planDefaults: flag.planDefaults,
       })
     } else {
       await db
@@ -129,7 +128,7 @@ async function main() {
         .set({
           name: flag.name,
           description: flag.description,
-          planDefaults: JSON.stringify(flag.planDefaults),
+          planDefaults: flag.planDefaults,
         })
         .where(eq(featureFlags.key, flag.key))
     }
@@ -144,6 +143,6 @@ main()
     console.error('Seed error:', e)
     process.exit(1)
   })
-  .finally(() => {
-    sqlite.close()
+  .finally(async () => {
+    await pool.end()
   })

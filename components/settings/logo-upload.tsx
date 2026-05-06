@@ -118,7 +118,7 @@ export function LogoUpload({ value, onChange, className }: LogoUploadProps) {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            'relative flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 transition-all duration-200',
+            'relative aspect-square h-24 w-24 cursor-pointer overflow-hidden rounded-full border-2 transition-all duration-200',
             isDragging
               ? 'border-primary bg-primary/5'
               : value
@@ -131,19 +131,19 @@ export function LogoUpload({ value, onChange, className }: LogoUploadProps) {
             <Image
               src={value}
               alt="Logo toko"
-              width={96}
-              height={96}
-              className="h-full w-full object-contain p-2"
+              fill
+              className="object-cover transition-opacity duration-300"
+              sizes="96px"
             />
           ) : (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1">
               <Store className="h-8 w-8 text-muted-foreground/50" />
               <span className="text-[9px] font-medium text-muted-foreground/50">LOGO</span>
             </div>
           )}
 
           {/* Hover overlay */}
-          <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             {isUploading ? (
               <Loader2 className="h-6 w-6 animate-spin text-white" />
             ) : (

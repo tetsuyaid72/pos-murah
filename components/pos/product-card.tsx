@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
       whileTap={!isOutOfStock ? { scale: 0.97 } : undefined}
     >
       {/* Product image */}
-      <ProductImage product={product} size="md" className="mb-3 rounded-xl" />
+      <ProductImage product={product} size="card" className="mb-3 rounded-xl" />
 
       {/* Product name */}
       <h3 className="mb-1.5 line-clamp-2 text-sm font-semibold leading-tight text-foreground">

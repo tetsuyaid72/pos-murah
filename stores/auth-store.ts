@@ -95,6 +95,8 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
     // Clear persisted settings so next user doesn't see stale data
     if (typeof window !== 'undefined') {
       localStorage.removeItem('pos-settings')
+      localStorage.removeItem('pos-subscription')
+      localStorage.removeItem('pos-upgrade-popup-dismissed')
     }
     set({
       user: null,
