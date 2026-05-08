@@ -202,27 +202,27 @@ function SidebarContent({
               Admin
             </p>
             <Link
-              href="/admin/payments"
+              href="/admin"
               onClick={onNavigate}
               className={cn(
                 'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                (pathname === '/admin/payments' || pathname.startsWith('/admin/payments/'))
+                pathname.startsWith('/admin')
                   ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
                   : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
                 collapsed && 'justify-center px-2'
               )}
-              title={collapsed ? 'Pembayaran' : undefined}
+              title={collapsed ? 'Admin Panel' : undefined}
             >
-              {(pathname === '/admin/payments' || pathname.startsWith('/admin/payments/')) && (
+              {pathname.startsWith('/admin') && (
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
               )}
               <ShieldCheck className={cn(
                 'h-[18px] w-[18px] shrink-0 transition-colors',
-                (pathname === '/admin/payments' || pathname.startsWith('/admin/payments/'))
+                pathname.startsWith('/admin')
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-muted-foreground group-hover:text-foreground'
               )} />
-              {!collapsed && <span>Pembayaran</span>}
+              {!collapsed && <span>Admin Panel</span>}
             </Link>
           </>
         )}

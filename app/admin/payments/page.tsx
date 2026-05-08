@@ -1,17 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import {
-  ArrowLeft,
   CheckCircle2,
   XCircle,
   Clock,
   Search,
   Filter,
   Loader2,
-  ShieldCheck,
   AlertTriangle,
   ImageIcon,
   X,
@@ -132,32 +129,7 @@ export default function AdminPaymentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-500/10">
-                <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground sm:text-2xl">Manajemen Pembayaran</h1>
-                <p className="text-sm text-muted-foreground">Approve atau reject pembayaran upgrade Pro</p>
-              </div>
-            </div>
-            <Link href="/admin">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
         {/* Filters & Search */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
@@ -369,7 +341,6 @@ export default function AdminPaymentsPage() {
             </>
           )}
         </div>
-      </div>
 
       {/* Toast */}
       {toast && (

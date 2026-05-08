@@ -50,8 +50,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Guard: redirect unpaid users to /upgrade
   // If trial is expired (isTrial=true, trialEndAt <= now) and payment is not approved,
   // the user hasn't paid yet and must choose a plan.
+  // SUPER_ADMIN is exempt from this check.
   useEffect(() => {
     if (isLoading || !isAuthenticated || !membership) return
+
+    // SUPER_ADMIN never gets redirected to /upgrade
+    if (user?.role === 'SUPER_ADMIN') return
 
     const isTrialExpired =
       membership.isTrial &&
@@ -65,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace('/upgrade')
       }
     }
-  }, [isLoading, isAuthenticated, membership, paymentStatus, pathname, router])
+  }, [isLoading, isAuthenticated, user, membership, paymentStatus, pathname, router])
 
   return <>{children}</>
 }

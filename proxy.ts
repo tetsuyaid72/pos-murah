@@ -34,7 +34,7 @@ const PUBLIC_PREFIXES = [
 const AUTH_PAGES = ['/login', '/register']
 
 /** Routes that require SUPER_ADMIN role */
-const ADMIN_PATHS = ['/api/admin']
+const ADMIN_PATHS = ['/admin', '/api/admin']
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -97,7 +97,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Check admin routes
+  // Check admin routes — require SUPER_ADMIN role
   if (ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
     if (session.role !== 'SUPER_ADMIN') {
       if (pathname.startsWith('/api/')) {
@@ -106,7 +106,8 @@ export async function proxy(request: NextRequest) {
           { status: 403 }
         )
       }
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      // Redirect non-admin to home, not /dashboard (avoids /upgrade chain)
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
