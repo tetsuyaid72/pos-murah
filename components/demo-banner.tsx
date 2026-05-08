@@ -27,7 +27,7 @@ export function DemoBanner() {
               href="/register"
               className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-0.5 text-xs font-semibold backdrop-blur-sm transition-colors hover:bg-white/30"
             >
-              Daftar Gratis
+              Daftar & Berlangganan
               <ArrowRight className="h-3 w-3" />
             </Link>
             <button

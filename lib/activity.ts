@@ -47,6 +47,9 @@ export type ActivityAction =
   | 'debt.payment'
   // Store
   | 'store.update'
+  // Backup
+  | 'backup.export'
+  | 'backup.import'
   // Admin
   | 'admin.view_stats'
 

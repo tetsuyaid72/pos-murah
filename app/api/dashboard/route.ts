@@ -11,10 +11,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, gte, lte, desc, count, sum, sql } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, count, sum, sql, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { transactions, transactionItems, products } from '@/lib/db/schema'
+import { transactions, transactionItems, products, memberships } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
+import { PLAN_LIMITS, type PlanType } from '@/lib/features'
 
 type DashboardRange = 'today' | '7days' | '30days'
 
@@ -59,7 +60,25 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const range = (searchParams.get('range') || '7days') as DashboardRange
 
+    // Get membership to enforce report_history_days limit
+    const [membership] = await db
+      .select({ plan: memberships.plan, isTrial: memberships.isTrial, trialEndAt: memberships.trialEndAt })
+      .from(memberships)
+      .where(eq(memberships.storeId, storeId))
+      .limit(1)
+
+    const plan = (membership?.plan || 'BASIC') as PlanType
+    const isTrialActive = membership?.isTrial && new Date(membership.trialEndAt) > new Date()
+    const maxHistoryDays = isTrialActive ? 999999 : PLAN_LIMITS.report_history_days[plan]
+
     const { from, to, prevFrom, prevTo, days } = getDateRange(range)
+
+    // Enforce report_history_days: cap the 'from' date to not exceed plan limit
+    const earliestAllowed = new Date()
+    earliestAllowed.setDate(earliestAllowed.getDate() - maxHistoryDays)
+    if (from < earliestAllowed) {
+      from.setTime(earliestAllowed.getTime())
+    }
 
     // =========================================================================
     // DEBUG: Log date range
@@ -86,6 +105,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, from),
           lte(transactions.createdAt, to),
         )
@@ -107,6 +127,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, from),
           lte(transactions.createdAt, to),
         )
@@ -125,6 +146,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, prevFrom),
           lte(transactions.createdAt, prevTo),
         )
@@ -142,6 +164,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, prevFrom),
           lte(transactions.createdAt, prevTo),
         )
@@ -177,6 +200,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, from),
           lte(transactions.createdAt, to),
         )
@@ -197,6 +221,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, from),
           lte(transactions.createdAt, to),
         )
@@ -247,6 +272,7 @@ export async function GET(request: NextRequest) {
         and(
           eq(transactions.storeId, storeId),
           eq(transactions.status, 'COMPLETED'),
+          isNull(transactions.deletedAt),
           gte(transactions.createdAt, from),
           lte(transactions.createdAt, to),
         )
@@ -318,7 +344,6 @@ export async function GET(request: NextRequest) {
 
     // =========================================================================
     // Response
-    // =========================================================================
     return NextResponse.json({
       kpi: {
         revenue: totalRevenue,
@@ -334,6 +359,10 @@ export async function GET(request: NextRequest) {
       },
       trend: salesTrend,
       topProducts,
+      planInfo: {
+        plan,
+        maxHistoryDays,
+      },
     })
   } catch (error) {
     return handleTenantError(error)

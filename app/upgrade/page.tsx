@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -20,12 +20,15 @@ import {
   Upload,
   ImageIcon,
   X,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
+import { PLANS, PRICING, formatPrice, getYearlySavingsPercent } from '@/lib/pricing'
+import type { BillingPeriod } from '@/lib/pricing'
 
 const BANK_INFO = {
   bank: 'BCA',
@@ -34,20 +37,20 @@ const BANK_INFO = {
 }
 
 const WHATSAPP_NUMBER = '6289691268646'
-const PRICE = 'Rp 49.900'
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
-const PRO_FEATURES = [
-  'Unlimited transaksi',
-  'Unlimited produk',
-  'Unlimited kasir',
-  'Laporan lengkap & export',
-  'Multi-toko',
-  'Priority support',
-]
+type SelectedPlan = 'basic' | 'pro' | 'business'
 
 export default function UpgradePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Determine initial plan from URL query param
+  const planParam = searchParams.get('plan')
+  const initialPlan: SelectedPlan = planParam === 'business' ? 'business' : planParam === 'basic' ? 'basic' : 'pro'
+
+  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>(initialPlan)
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
   const [copied, setCopied] = useState(false)
   const [activeTab, setActiveTab] = useState<'bank' | 'qris'>('bank')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -61,6 +64,14 @@ export default function UpgradePage() {
 
   const { isAuthenticated, isLoading: authLoading, fetchAuth } = useAuthStore()
   const { userName, userEmail } = useSettingsStore()
+
+  // Derived pricing
+  const pricingKey = selectedPlan === 'business' ? 'BUSINESS' : selectedPlan === 'pro' ? 'PRO' : 'BASIC'
+  const currentPricing = PRICING[pricingKey]
+  const currentPrice = billingPeriod === 'monthly' ? currentPricing.monthly : currentPricing.yearly
+  const formattedPrice = formatPrice(currentPrice)
+  const planInfo = PLANS[pricingKey]
+  const savings = billingPeriod === 'yearly' ? getYearlySavingsPercent(pricingKey) : 0
 
   // Fetch auth state on mount (to know if user is logged in)
   useEffect(() => {
@@ -89,9 +100,8 @@ export default function UpgradePage() {
         const res = await fetch('/api/auth/me')
         if (!res.ok) return
         const data = await res.json()
-        if (data.membership?.plan === 'PRO') {
-          // Admin has approved — sync and show success
-          useSubscriptionStore.getState().syncFromServer('PRO')
+        if (data.membership?.plan === 'BASIC' || data.membership?.plan === 'PRO' || data.membership?.plan === 'BUSINESS') {
+          useSubscriptionStore.getState().syncFromServer(data.membership.plan)
           setShowSuccess(true)
         }
       } catch {
@@ -99,7 +109,6 @@ export default function UpgradePage() {
       }
     }
 
-    // Check every 30 seconds while payment is pending
     const timeout = setTimeout(checkServerApproval, 2000)
     const interval = setInterval(checkServerApproval, 30_000)
 
@@ -115,13 +124,11 @@ export default function UpgradePage() {
 
     if (!file) return
 
-    // Validate type
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setUploadError('Format file tidak didukung. Gunakan JPG, PNG, atau WebP.')
       return
     }
 
-    // Validate size (2MB)
     if (file.size > 2 * 1024 * 1024) {
       setUploadError('Ukuran file terlalu besar. Maksimal 2MB.')
       return
@@ -170,18 +177,19 @@ export default function UpgradePage() {
 
   const buildWhatsAppUrl = (imageUrl: string | null) => {
     const now = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })
-    // If imageUrl is already absolute (from Supabase), use as-is; otherwise prepend BASE_URL
     const fullImageUrl = imageUrl
       ? (imageUrl.startsWith('http') ? imageUrl : `${BASE_URL}${imageUrl}`)
       : '(tidak ada)'
 
-    console.log('Proof URL:', imageUrl)
-    console.log('Full Image URL for WhatsApp:', fullImageUrl)
+    const planLabel = selectedPlan === 'business' ? 'Business' : selectedPlan === 'pro' ? 'Pro' : 'Basic'
+    const periodLabel = billingPeriod === 'yearly' ? 'Tahunan' : 'Bulanan'
 
-    const message = `Halo admin, saya sudah melakukan pembayaran PRO POS.
+    const message = `Halo admin, saya sudah melakukan pembayaran ${planLabel} (${periodLabel}) POS.
 
 Nama: ${userName || 'User'}
 Email: ${userEmail || '-'}
+Paket: ${planLabel} (${periodLabel})
+Nominal: ${formattedPrice}
 Tanggal: ${now}
 
 Bukti pembayaran:
@@ -202,9 +210,7 @@ Mohon konfirmasi ya. Terima kasih!`
     setUploadError(null)
 
     try {
-      // 1. Upload proof image
       const uploadedUrl = await uploadProof()
-      console.log('Upload result - proofUrl:', uploadedUrl)
 
       if (!uploadedUrl) {
         setUploadError('Upload bukti pembayaran gagal. Silakan coba lagi.')
@@ -212,7 +218,6 @@ Mohon konfirmasi ya. Terima kasih!`
         return
       }
 
-      // 2. Submit to real API
       try {
         const res = await fetch('/api/payments', {
           method: 'POST',
@@ -220,6 +225,9 @@ Mohon konfirmasi ya. Terima kasih!`
           body: JSON.stringify({
             method: activeTab === 'qris' ? 'QRIS' : 'BANK_TRANSFER',
             proofUrl: uploadedUrl,
+            plan: selectedPlan.toUpperCase(),
+            billingPeriod,
+            amount: currentPrice,
           }),
         })
 
@@ -228,18 +236,13 @@ Mohon konfirmasi ya. Terima kasih!`
           if (res.status !== 409 && res.status !== 401) {
             console.warn('Payment API error:', data.error)
           }
-        } else {
-          const data = await res.json()
-          console.log('Payment saved with proofUrl:', data.payment?.proofUrl)
         }
       } catch {
         // API not available, continue with local state
       }
 
-      // 3. Update local subscription store
       submitPayment()
 
-      // 4. Redirect to WhatsApp
       const waUrl = buildWhatsAppUrl(uploadedUrl)
       window.open(waUrl, '_blank')
     } catch {
@@ -267,9 +270,9 @@ Mohon konfirmasi ya. Terima kasih!`
   }
 
   // =========================================================================
-  // STATE: Already PRO
+  // STATE: Already PRO or STARTER (paid)
   // =========================================================================
-  if (plan === 'pro' && paymentStatus === 'approved') {
+  if (plan && paymentStatus === 'approved') {
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-50/50 via-background to-background dark:from-emerald-950/20">
         <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
@@ -284,7 +287,6 @@ Mohon konfirmasi ya. Terima kasih!`
 
         <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24">
           <div className="text-center">
-            {/* Success animation */}
             <div className={cn(
               'mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/10 transition-all duration-700',
               showSuccess ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
@@ -293,16 +295,15 @@ Mohon konfirmasi ya. Terima kasih!`
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Paket <span className="gradient-text">Pro</span> Aktif
+              Paket <span className="gradient-text">{plan === 'business' ? 'Business' : plan === 'pro' ? 'Pro' : 'Basic'}</span> Aktif
             </h1>
             <p className="mt-3 text-muted-foreground">
-              Semua fitur Pro telah diaktifkan untuk akun Anda.
+              Semua fitur {plan === 'business' ? 'Business' : plan === 'pro' ? 'Pro' : 'Basic'} telah diaktifkan untuk akun Anda.
             </p>
 
-            {/* Features unlocked */}
             <div className="mx-auto mt-8 max-w-sm rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-800 dark:bg-emerald-950/30">
               <div className="grid grid-cols-2 gap-3">
-                {PRO_FEATURES.map((feature) => (
+                {(plan === 'business' ? PLANS.BUSINESS : plan === 'pro' ? PLANS.PRO : PLANS.BASIC).features.slice(0, 6).map((feature) => (
                   <div key={feature} className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                     <span className="text-sm text-foreground">{feature}</span>
@@ -310,6 +311,22 @@ Mohon konfirmasi ya. Terima kasih!`
                 ))}
               </div>
             </div>
+
+            {/* Upsell to next tier */}
+            {plan === 'basic' && (
+              <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm text-muted-foreground">
+                  Butuh fitur lebih? <Link href="/upgrade?plan=pro" className="font-medium text-primary hover:underline">Upgrade ke Pro</Link> untuk multi-kasir + promo otomatis.
+                </p>
+              </div>
+            )}
+            {plan === 'pro' && (
+              <div className="mt-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm text-muted-foreground">
+                  Butuh multi-toko? <Link href="/upgrade?plan=business" className="font-medium text-primary hover:underline">Upgrade ke Business</Link> untuk unlimited semua.
+                </p>
+              </div>
+            )}
 
             <div className="mt-8">
               <Link href="/dashboard">
@@ -353,7 +370,6 @@ Mohon konfirmasi ya. Terima kasih!`
               Pembayaran Anda sedang diproses. Aktivasi maksimal 1x24 jam.
             </p>
 
-            {/* Status card */}
             <div className="mx-auto mt-8 max-w-sm rounded-2xl border border-amber-200 bg-amber-50/50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
               <div className="flex items-center justify-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
@@ -362,11 +378,10 @@ Mohon konfirmasi ya. Terima kasih!`
                 </span>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
-                Anda akan mendapat notifikasi setelah akun Pro diaktifkan.
+                Anda akan mendapat notifikasi setelah akun diaktifkan.
               </p>
             </div>
 
-            {/* WhatsApp follow-up */}
             <div className="mt-8 space-y-3">
               <a href={buildWhatsAppUrl(null)} target="_blank" rel="noopener noreferrer" className="block">
                 <Button variant="outline" size="lg" className="w-full max-w-sm mx-auto">
@@ -407,37 +422,118 @@ Mohon konfirmasi ya. Terima kasih!`
             <Zap className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Upgrade ke <span className="gradient-text">Pro</span>
+            Upgrade ke <span className="gradient-text">{selectedPlan === 'business' ? 'Business' : selectedPlan === 'pro' ? 'Pro' : 'Basic'}</span>
           </h1>
           <p className="mt-2 text-muted-foreground">
             Aktifkan fitur lengkap untuk bisnis Anda
           </p>
         </div>
 
+        {/* Plan selector */}
+        <div className="mt-8">
+          <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
+            <button
+              onClick={() => setSelectedPlan('basic')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                selectedPlan === 'basic'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Sparkles className="h-4 w-4" />
+              Basic
+            </button>
+            <button
+              onClick={() => setSelectedPlan('pro')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                selectedPlan === 'pro'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <Zap className="h-4 w-4" />
+              Pro
+            </button>
+            <button
+              onClick={() => setSelectedPlan('business')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                selectedPlan === 'business'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Business
+            </button>
+          </div>
+        </div>
+
+        {/* Billing period toggle */}
+        <div className="mt-4 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setBillingPeriod('monthly')}
+            className={cn(
+              'rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
+              billingPeriod === 'monthly'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Bulanan
+          </button>
+          <button
+            onClick={() => setBillingPeriod('yearly')}
+            className={cn(
+              'relative rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
+              billingPeriod === 'yearly'
+                ? 'bg-foreground text-background'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Tahunan
+            {savings > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 inline-flex items-center rounded-full bg-emerald-500 px-1 py-0.5 text-[9px] font-bold text-white">
+                -{savings}%
+              </span>
+            )}
+          </button>
+        </div>
+
         {/* Plan info card */}
-        <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-800 dark:bg-emerald-950/30">
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-800 dark:bg-emerald-950/30">
           <div className="flex items-center justify-between">
             <div>
               <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Paket Pro
+                Paket {planInfo.name}
               </span>
               <div className="mt-1 flex items-baseline gap-1">
-                <span className="text-3xl font-bold text-foreground">{PRICE}</span>
-                <span className="text-sm text-muted-foreground">/ bulan</span>
+                <span className="text-3xl font-bold text-foreground">{formattedPrice}</span>
+                <span className="text-sm text-muted-foreground">
+                  / {billingPeriod === 'monthly' ? 'bulan' : 'tahun'}
+                </span>
               </div>
+              {billingPeriod === 'yearly' && (
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  = {formatPrice(Math.round(currentPrice / 12))}/bulan (hemat {savings}%)
+                </p>
+              )}
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white">
               <Check className="h-5 w-5" />
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {PRO_FEATURES.map((feature) => (
+            {planInfo.features.slice(0, 6).map((feature) => (
               <div key={feature} className="flex items-center gap-2">
                 <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                 <span className="text-xs text-foreground">{feature}</span>
               </div>
             ))}
           </div>
+
         </div>
 
         {/* Payment method tabs */}
@@ -517,6 +613,13 @@ Mohon konfirmasi ya. Terima kasih!`
                   <p className="text-xs text-muted-foreground">Atas Nama</p>
                   <p className="text-sm font-semibold text-foreground">{BANK_INFO.accountName}</p>
                 </div>
+
+                <div className="rounded-xl bg-emerald-50 px-4 py-3 dark:bg-emerald-950/30">
+                  <p className="text-xs text-muted-foreground">Nominal Transfer</p>
+                  <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                    {formattedPrice}
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -535,7 +638,7 @@ Mohon konfirmasi ya. Terima kasih!`
                   />
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Scan QRIS di atas untuk membayar
+                  Scan QRIS di atas untuk membayar <strong className="text-foreground">{formattedPrice}</strong>
                 </p>
               </div>
             </div>
@@ -599,7 +702,7 @@ Mohon konfirmasi ya. Terima kasih!`
                 1
               </span>
               <span className="text-sm text-muted-foreground">
-                Transfer sesuai nominal: <strong className="text-foreground">{PRICE}</strong>
+                Pilih paket (<strong className="text-foreground">Basic</strong>, <strong className="text-foreground">Pro</strong>, atau <strong className="text-foreground">Business</strong>) dan periode pembayaran
               </span>
             </li>
             <li className="flex items-start gap-3">
@@ -607,12 +710,20 @@ Mohon konfirmasi ya. Terima kasih!`
                 2
               </span>
               <span className="text-sm text-muted-foreground">
-                Upload bukti pembayaran di atas
+                Transfer sesuai nominal: <strong className="text-foreground">{formattedPrice}</strong>
               </span>
             </li>
             <li className="flex items-start gap-3">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                 3
+              </span>
+              <span className="text-sm text-muted-foreground">
+                Upload bukti pembayaran di atas
+              </span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                4
               </span>
               <span className="text-sm text-muted-foreground">
                 Klik <strong className="text-foreground">&quot;Kirim Bukti Pembayaran&quot;</strong> — otomatis terhubung ke WhatsApp admin
@@ -651,7 +762,7 @@ Mohon konfirmasi ya. Terima kasih!`
           </a>
 
           <p className="text-center text-xs text-muted-foreground">
-            Admin akan mengaktifkan akun Pro Anda dalam 1x24 jam setelah pembayaran dikonfirmasi.
+            Admin akan mengaktifkan akun Anda dalam 1x24 jam setelah pembayaran dikonfirmasi.
           </p>
         </div>
       </div>
@@ -662,7 +773,7 @@ Mohon konfirmasi ya. Terima kasih!`
           <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-3 shadow-lg dark:border-emerald-800 dark:bg-emerald-950">
             <PartyPopper className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-              Pembayaran berhasil! Paket Pro telah aktif
+              Pembayaran berhasil! Paket telah aktif
             </span>
           </div>
         </div>

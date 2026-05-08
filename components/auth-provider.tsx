@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useSubscriptionStore } from '@/stores/subscription-store'
@@ -13,9 +14,11 @@ import { useSubscriptionStore } from '@/stores/subscription-store'
  * Place this inside the dashboard layout so it runs on every dashboard page load.
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { fetchAuth, user, store, membership, isAuthenticated } = useAuthStore()
+  const router = useRouter()
+  const pathname = usePathname()
+  const { fetchAuth, user, store, membership, isAuthenticated, isLoading } = useAuthStore()
   const { setUserName, setUserEmail, setUserAvatar, setStoreName } = useSettingsStore()
-  const { syncFromServer } = useSubscriptionStore()
+  const { syncFromServer, paymentStatus } = useSubscriptionStore()
 
   // Fetch auth state on mount
   useEffect(() => {
@@ -40,9 +43,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sync server membership → subscription store (server is source of truth)
   useEffect(() => {
     if (isAuthenticated && membership) {
-      syncFromServer(membership.plan)
+      syncFromServer(membership.plan, membership.isTrial, membership.trialEndAt)
     }
   }, [isAuthenticated, membership, syncFromServer])
+
+  // Guard: redirect unpaid users to /upgrade
+  // If trial is expired (isTrial=true, trialEndAt <= now) and payment is not approved,
+  // the user hasn't paid yet and must choose a plan.
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || !membership) return
+
+    const isTrialExpired =
+      membership.isTrial &&
+      membership.trialEndAt &&
+      new Date(membership.trialEndAt) <= new Date()
+
+    // Only redirect if trial is expired and user hasn't paid
+    if (isTrialExpired && paymentStatus !== 'approved' && paymentStatus !== 'pending') {
+      // Avoid redirect loop — don't redirect if already on /upgrade
+      if (pathname !== '/upgrade') {
+        router.replace('/upgrade')
+      }
+    }
+  }, [isLoading, isAuthenticated, membership, paymentStatus, pathname, router])
 
   return <>{children}</>
 }

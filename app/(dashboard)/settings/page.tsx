@@ -24,6 +24,12 @@ import {
   Palette,
   Info,
   Shield,
+  HardDrive,
+  Download,
+  Upload,
+  FileJson,
+  FileSpreadsheet,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -37,6 +43,7 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { AvatarUpload } from '@/components/settings/avatar-upload'
 import { LogoUpload } from '@/components/settings/logo-upload'
+import { PlanLimitModal, usePlanLimitModal } from '@/components/plan-limit-modal'
 import { cn } from '@/lib/utils'
 import {
   getPrinter,
@@ -49,12 +56,13 @@ import type { PaperSize } from '@/lib/printer/escpos'
 // Tab definitions
 // =============================================================================
 
-type SettingsTab = 'general' | 'printer' | 'appearance' | 'danger'
+type SettingsTab = 'general' | 'printer' | 'appearance' | 'backup' | 'danger'
 
 const TABS: { id: SettingsTab; label: string; icon: typeof User }[] = [
   { id: 'general',    label: 'Umum',       icon: User },
   { id: 'printer',    label: 'Printer',    icon: Printer },
   { id: 'appearance', label: 'Tampilan',   icon: Palette },
+  { id: 'backup',     label: 'Backup',     icon: HardDrive },
   { id: 'danger',     label: 'Lainnya',    icon: Shield },
 ]
 
@@ -77,7 +85,7 @@ export default function SettingsPage() {
     printerDeviceName, setPrinterDevice,
     autoPrint, setAutoPrint,
   } = useSettingsStore()
-  const { logout } = useAuthStore()
+  const { logout, membership } = useAuthStore()
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('general')
   const [saved, setSaved] = useState(false)
@@ -92,6 +100,39 @@ export default function SettingsPage() {
   const [isPrintingTest, setIsPrintingTest] = useState(false)
   const [printerError, setPrinterError] = useState<string | null>(null)
   const [connectedName, setConnectedName] = useState<string | null>(null)
+
+  // Plan limit modal
+  const { openLimitModal, limitModalProps } = usePlanLimitModal()
+
+  // Check if user has Pro access — trial does NOT grant backup access
+  const hasBackupAccess = (() => {
+    if (!membership) return false
+    const plan = membership.plan?.toUpperCase()
+    return plan === 'PRO' || plan === 'ENTERPRISE'
+  })()
+
+  // Backup state
+  const [exportingJson, setExportingJson] = useState(false)
+  const [exportingCsv, setExportingCsv] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importPreview, setImportPreview] = useState<{
+    categories: number
+    products: number
+    customers: number
+    transactions: number
+    debtRecords: number
+    exportedAt: string
+    storeName: string
+  } | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{
+    success: boolean
+    message: string
+    imported?: Record<string, number>
+  } | null>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [showImportConfirm, setShowImportConfirm] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
 
   const bluetoothPrinter = getPrinter()
   const isPrinterConnected = bluetoothPrinter.isConnected
@@ -162,6 +203,163 @@ export default function SettingsPage() {
       setIsPrintingTest(false)
     }
   }, [bluetoothPrinter, printerPaperSize, storeName])
+
+  // Backup handlers
+  const handleExportJson = useCallback(async () => {
+    if (!hasBackupAccess) {
+      openLimitModal('feature', { featureName: 'Backup & Restore' })
+      return
+    }
+    setExportingJson(true)
+    try {
+      const res = await fetch('/api/backup/export')
+      if (!res.ok) throw new Error('Gagal mengunduh backup')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'backup.json'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Gagal mengunduh backup')
+    } finally {
+      setExportingJson(false)
+    }
+  }, [hasBackupAccess, openLimitModal])
+
+  const handleExportCsv = useCallback(async () => {
+    if (!hasBackupAccess) {
+      openLimitModal('feature', { featureName: 'Backup & Restore' })
+      return
+    }
+    setExportingCsv(true)
+    try {
+      const res = await fetch('/api/backup/export-csv')
+      if (!res.ok) throw new Error('Gagal mengunduh CSV')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'backup.zip'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Gagal mengunduh CSV')
+    } finally {
+      setExportingCsv(false)
+    }
+  }, [hasBackupAccess, openLimitModal])
+
+  const handleFileSelect = useCallback(async (file: File) => {
+    if (!hasBackupAccess) {
+      openLimitModal('feature', { featureName: 'Backup & Restore' })
+      return
+    }
+    setImportError(null)
+    setImportResult(null)
+    setImportPreview(null)
+
+    if (!file.name.endsWith('.json')) {
+      setImportError('Hanya file .json yang didukung untuk import.')
+      return
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      setImportError('Ukuran file terlalu besar. Maksimal 50MB.')
+      return
+    }
+
+    try {
+      const text = await file.text()
+      const data = JSON.parse(text)
+
+      if (data.appName !== 'warung-madura-pos') {
+        setImportError('File ini bukan backup Warung Madura POS yang valid.')
+        return
+      }
+
+      setImportFile(file)
+      setImportPreview({
+        categories: data.categories?.length ?? 0,
+        products: data.products?.length ?? 0,
+        customers: data.customers?.length ?? 0,
+        transactions: data.transactions?.length ?? 0,
+        debtRecords: data.debtRecords?.length ?? 0,
+        exportedAt: data.exportedAt ?? '',
+        storeName: data.store?.name ?? '',
+      })
+    } catch {
+      setImportError('File JSON tidak valid atau rusak.')
+    }
+  }, [hasBackupAccess, openLimitModal])
+
+  const handleImport = useCallback(async () => {
+    if (!importFile) return
+    setImporting(true)
+    setImportError(null)
+    setShowImportConfirm(false)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const res = await fetch('/api/backup/import', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await res.json()
+
+      if (!res.ok) {
+        setImportError(result.error || 'Gagal mengimport data.')
+        return
+      }
+
+      setImportResult({
+        success: true,
+        message: result.message,
+        imported: result.imported,
+      })
+      setImportFile(null)
+      setImportPreview(null)
+
+      // Reload page after successful import to refresh all stores
+      setTimeout(() => window.location.reload(), 2000)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Gagal mengimport data.')
+    } finally {
+      setImporting(false)
+    }
+  }, [importFile])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileSelect(file)
+  }, [handleFileSelect])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+  }, [])
+
+  const clearImport = useCallback(() => {
+    setImportFile(null)
+    setImportPreview(null)
+    setImportError(null)
+    setImportResult(null)
+  }, [])
 
   const themes = [
     { value: 'light' as const, label: 'Terang', icon: Sun, desc: 'Latar terang' },
@@ -500,6 +698,242 @@ export default function SettingsPage() {
           )}
 
           {/* ============================================================= */}
+          {/* TAB: Backup & Restore                                          */}
+          {/* ============================================================= */}
+          {activeTab === 'backup' && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+
+              {/* ── Export Data ── */}
+              <Card className="transition-shadow hover:shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10">
+                      <Download className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    Export Data
+                  </CardTitle>
+                  <CardDescription>Unduh backup data toko Anda</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleExportJson}
+                      disabled={exportingJson}
+                      className="w-full justify-start rounded-xl"
+                      variant="outline"
+                    >
+                      {exportingJson ? (
+                        <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileJson className="mr-3 h-4 w-4 text-blue-500" />
+                      )}
+                      <div className="text-left">
+                        <p className="text-sm font-medium">{exportingJson ? 'Mengunduh...' : 'Download Backup (JSON)'}</p>
+                        <p className="text-xs text-muted-foreground">Untuk restore ke akun lain</p>
+                      </div>
+                    </Button>
+
+                    <Button
+                      onClick={handleExportCsv}
+                      disabled={exportingCsv}
+                      className="w-full justify-start rounded-xl"
+                      variant="outline"
+                    >
+                      {exportingCsv ? (
+                        <Loader2 className="mr-3 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileSpreadsheet className="mr-3 h-4 w-4 text-emerald-500" />
+                      )}
+                      <div className="text-left">
+                        <p className="text-sm font-medium">{exportingCsv ? 'Mengunduh...' : 'Download Backup (CSV)'}</p>
+                        <p className="text-xs text-muted-foreground">Bisa dibuka di Excel / Google Sheets</p>
+                      </div>
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">
+                      File JSON dapat di-import kembali ke akun manapun. File CSV hanya untuk dibaca, tidak bisa di-import.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* ── Import Data ── */}
+              <Card className="transition-shadow hover:shadow-md">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
+                      <Upload className="h-4 w-4 text-blue-500" />
+                    </div>
+                    Import Data
+                  </CardTitle>
+                  <CardDescription>Restore data dari file backup JSON</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Success message */}
+                  {importResult?.success && (
+                    <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <div className="text-sm text-emerald-800 dark:text-emerald-300">
+                        <p className="font-medium">{importResult.message}</p>
+                        {importResult.imported && (
+                          <p className="mt-1 text-xs">
+                            {importResult.imported.categories} kategori, {importResult.imported.products} produk, {importResult.imported.customers} pelanggan, {importResult.imported.transactions} transaksi
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs">Halaman akan dimuat ulang...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error message */}
+                  {importError && (
+                    <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      <p className="text-xs text-destructive">{importError}</p>
+                    </div>
+                  )}
+
+                  {/* Drop zone / File picker */}
+                  {!importPreview && !importResult?.success && (
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-colors cursor-pointer',
+                        dragOver
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
+                      )}
+                      onClick={() => {
+                        const input = document.createElement('input')
+                        input.type = 'file'
+                        input.accept = '.json'
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0]
+                          if (file) handleFileSelect(file)
+                        }
+                        input.click()
+                      }}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium">Drag & drop file backup</p>
+                        <p className="text-xs text-muted-foreground">atau klik untuk memilih file (.json)</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Preview */}
+                  {importPreview && !importResult?.success && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium">Preview Data</p>
+                        <button
+                          onClick={clearImport}
+                          className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {importPreview.storeName && (
+                        <div className="rounded-xl bg-muted/30 px-4 py-2">
+                          <span className="text-xs text-muted-foreground">Toko: </span>
+                          <span className="text-sm font-medium">{importPreview.storeName}</span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: 'Kategori', value: importPreview.categories },
+                          { label: 'Produk', value: importPreview.products },
+                          { label: 'Pelanggan', value: importPreview.customers },
+                          { label: 'Transaksi', value: importPreview.transactions },
+                          { label: 'Catatan Hutang', value: importPreview.debtRecords },
+                        ].map((item) => (
+                          <div key={item.label} className="flex justify-between rounded-xl bg-muted/30 px-3 py-2">
+                            <span className="text-xs text-muted-foreground">{item.label}</span>
+                            <span className="text-sm font-semibold">{item.value}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {importPreview.exportedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Backup dibuat: {new Date(importPreview.exportedAt).toLocaleString('id-ID')}
+                        </p>
+                      )}
+
+                      {/* Warning */}
+                      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <p className="text-xs text-amber-800 dark:text-amber-300">
+                          <strong>Perhatian:</strong> Semua data yang ada saat ini akan ditimpa dengan data dari file backup ini.
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={() => setShowImportConfirm(true)}
+                        disabled={importing}
+                        className="w-full rounded-xl"
+                        variant="premium"
+                      >
+                        {importing ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengimport...</>
+                        ) : (
+                          <><Upload className="mr-2 h-4 w-4" />Import Data</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* ── Info Card ── */}
+              <Card className="transition-shadow hover:shadow-md lg:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-500/10">
+                      <Info className="h-4 w-4 text-sky-500" />
+                    </div>
+                    Tentang Backup & Restore
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-muted/30 p-4">
+                        <p className="font-medium text-foreground">Data yang di-backup</p>
+                        <ul className="mt-2 space-y-1 text-xs">
+                          <li>- Pengaturan toko (nama, alamat, telepon)</li>
+                          <li>- Kategori produk</li>
+                          <li>- Produk (stok, harga, barcode)</li>
+                          <li>- Pelanggan & catatan hutang</li>
+                          <li>- Riwayat transaksi</li>
+                        </ul>
+                      </div>
+                      <div className="rounded-xl bg-muted/30 p-4">
+                        <p className="font-medium text-foreground">Tips</p>
+                        <ul className="mt-2 space-y-1 text-xs">
+                          <li>- Lakukan backup secara berkala</li>
+                          <li>- File JSON bisa di-restore ke akun lain</li>
+                          <li>- File CSV untuk dibuka di Excel</li>
+                          <li>- Gambar produk tidak termasuk backup</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* ============================================================= */}
           {/* TAB: Danger / Lainnya                                          */}
           {/* ============================================================= */}
           {activeTab === 'danger' && (
@@ -597,6 +1031,60 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* ── Import Confirmation Dialog ── */}
+      <Dialog open={showImportConfirm} onClose={() => !importing && setShowImportConfirm(false)}>
+        <DialogHeader>
+          <DialogTitle>Import Data Backup?</DialogTitle>
+          <DialogClose onClose={() => !importing && setShowImportConfirm(false)} />
+        </DialogHeader>
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="text-sm text-amber-800 dark:text-amber-300">
+            <p className="font-medium">Data saat ini akan ditimpa!</p>
+            <p className="mt-1">
+              Semua <strong>produk</strong>, <strong>kategori</strong>, <strong>transaksi</strong>, <strong>pelanggan</strong>, dan <strong>catatan hutang</strong> yang ada akan dihapus dan diganti dengan data dari file backup.
+            </p>
+          </div>
+        </div>
+        {importPreview && (
+          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div className="flex justify-between rounded-lg bg-muted/30 px-3 py-2">
+              <span className="text-muted-foreground">Kategori</span>
+              <span className="font-semibold">{importPreview.categories}</span>
+            </div>
+            <div className="flex justify-between rounded-lg bg-muted/30 px-3 py-2">
+              <span className="text-muted-foreground">Produk</span>
+              <span className="font-semibold">{importPreview.products}</span>
+            </div>
+            <div className="flex justify-between rounded-lg bg-muted/30 px-3 py-2">
+              <span className="text-muted-foreground">Pelanggan</span>
+              <span className="font-semibold">{importPreview.customers}</span>
+            </div>
+            <div className="flex justify-between rounded-lg bg-muted/30 px-3 py-2">
+              <span className="text-muted-foreground">Transaksi</span>
+              <span className="font-semibold">{importPreview.transactions}</span>
+            </div>
+          </div>
+        )}
+        <div className="mt-5 flex gap-3">
+          <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setShowImportConfirm(false)} disabled={importing}>
+            Batal
+          </Button>
+          <Button
+            variant="premium"
+            className="flex-1 rounded-xl"
+            disabled={importing}
+            onClick={handleImport}
+          >
+            {importing ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengimport...</>
+            ) : (
+              <><Upload className="mr-2 h-4 w-4" />Ya, Import Data</>
+            )}
+          </Button>
+        </div>
+      </Dialog>
+
       {/* ── Reset Confirmation Dialog ── */}
       <Dialog open={showResetDialog} onClose={() => !resetting && setShowResetDialog(false)}>
         <DialogHeader>
@@ -637,6 +1125,9 @@ export default function SettingsPage() {
           </Button>
         </div>
       </Dialog>
+
+      {/* ── Plan Limit Modal (Upgrade to Pro) ── */}
+      <PlanLimitModal {...limitModalProps} />
     </div>
   )
 }

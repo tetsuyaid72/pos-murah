@@ -70,8 +70,8 @@ export function usePlanLimit(): PlanLimitResult {
     const trialExp = isTrialExpired(membershipInfo)
     const daysRemaining = getTrialDaysRemaining(membershipInfo)
 
-    // User is limited if they're on FREE plan and trial has expired
-    const isLimited = membership.plan === 'FREE' && !trialActive
+    // User is limited if they're on BASIC plan and trial has expired
+    const isLimited = membership.plan === 'BASIC' && !trialActive
 
     return {
       plan: membership.plan as PlanType,

@@ -1,8 +1,8 @@
 /**
  * POST /api/auth/register
  *
- * Register a new user + create their store + initialize 30-day trial membership.
- * This is the main onboarding endpoint.
+ * Register a new user + create their store + initialize membership (inactive until payment).
+ * After registration, user is redirected to /upgrade to choose a plan and pay.
  *
  * Body: { name, email, password, storeName }
  */
@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Calculate trial end date (30 days from now)
+    // Membership starts as inactive (trial expired immediately).
+    // User must pay before accessing the dashboard.
     const trialStartAt = new Date()
-    const trialEndAt = new Date()
-    trialEndAt.setDate(trialEndAt.getDate() + 30)
+    const trialEndAt = new Date() // expired immediately — no free access
 
     // Generate IDs upfront for the transaction
     const userId = generateId()
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       await tx.insert(memberships).values({
         id: membershipId,
         storeId,
-        plan: 'FREE',
+        plan: 'BASIC',
         isTrial: true,
         trialStartAt,
         trialEndAt,
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
         entityId: userId,
         metadata: {
           storeName: storeName.trim(),
-          plan: 'FREE',
-          trialEndAt: trialEndAt.toISOString(),
+          plan: 'BASIC',
+          requiresPayment: true,
         },
       })
 
@@ -124,9 +124,9 @@ export async function POST(request: NextRequest) {
           name: storeName.trim(),
         },
         membership: {
-          plan: 'FREE',
+          plan: 'BASIC',
           isTrial: true,
-          trialEndAt,
+          trialEndAt, // expired immediately — user must pay to access
         },
       },
       { status: 201 }

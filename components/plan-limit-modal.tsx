@@ -10,7 +10,7 @@ interface PlanLimitModalProps {
   open: boolean
   onClose: () => void
   /** Type of limit reached */
-  type: 'products' | 'transactions' | 'feature'
+  type: 'products' | 'transactions' | 'customers' | 'feature'
   /** Current usage count (for countable limits) */
   current?: number
   /** Maximum allowed (for countable limits) */
@@ -22,18 +22,23 @@ interface PlanLimitModalProps {
 const LIMIT_MESSAGES = {
   products: {
     title: 'Batas Produk Tercapai',
-    description: 'Anda telah mencapai batas maksimal produk untuk paket Free.',
-    cta: 'Upgrade untuk produk unlimited',
+    description: 'Anda telah mencapai batas maksimal produk untuk paket saat ini.',
+    cta: 'Upgrade paket untuk menambah limit produk',
   },
   transactions: {
     title: 'Batas Transaksi Bulanan Tercapai',
-    description: 'Anda telah mencapai batas maksimal transaksi bulan ini untuk paket Free.',
-    cta: 'Upgrade untuk transaksi unlimited',
+    description: 'Anda telah mencapai batas maksimal transaksi bulan ini.',
+    cta: 'Upgrade paket untuk menambah limit transaksi',
+  },
+  customers: {
+    title: 'Batas Pelanggan Tercapai',
+    description: 'Anda telah mencapai batas maksimal pelanggan untuk paket saat ini.',
+    cta: 'Upgrade paket untuk menambah limit pelanggan',
   },
   feature: {
-    title: 'Fitur Pro',
-    description: 'Fitur ini hanya tersedia di paket Pro.',
-    cta: 'Upgrade untuk akses semua fitur',
+    title: 'Fitur Premium',
+    description: 'Fitur ini memerlukan paket yang lebih tinggi.',
+    cta: 'Upgrade paket untuk akses fitur ini',
   },
 }
 
@@ -84,7 +89,7 @@ export function PlanLimitModal({
         </p>
 
         {/* Usage indicator for countable limits */}
-        {(type === 'products' || type === 'transactions') && current !== undefined && limit !== undefined && (
+        {(type === 'products' || type === 'transactions' || type === 'customers') && current !== undefined && limit !== undefined && (
           <div className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
@@ -106,11 +111,11 @@ export function PlanLimitModal({
         {/* Upgrade benefits */}
         <div className="mt-5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
-            Paket Pro
+            Upgrade Paket
           </p>
           <p className="text-sm text-muted-foreground">{config.cta}</p>
           <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-lg font-bold text-foreground">Rp 49.900</span>
+            <span className="text-lg font-bold text-foreground">Mulai Rp 49.900</span>
             <span className="text-xs text-muted-foreground">/ bulan</span>
           </div>
         </div>
@@ -118,10 +123,10 @@ export function PlanLimitModal({
 
       {/* CTA buttons */}
       <div className="mt-6 flex flex-col gap-2.5">
-        <Link href="/upgrade" onClick={onClose}>
+        <Link href="/upgrade?plan=pro" onClick={onClose}>
           <Button variant="premium" size="lg" className="w-full">
             <Zap className="mr-2 h-4 w-4" />
-            Upgrade ke Pro
+            Lihat Paket Upgrade
           </Button>
         </Link>
         <Button

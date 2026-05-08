@@ -1,8 +1,8 @@
 /**
- * Server-Side Plan Enforcement
+ * Server-Side Plan Enforcement — Warung Madura POS
  *
  * Checks plan limits before allowing resource creation.
- * Used in API routes to enforce FREE plan restrictions.
+ * Full paid model: BASIC / PRO / BUSINESS (no free tier).
  *
  * Usage:
  *   const check = await checkProductLimit(storeId)
@@ -11,7 +11,7 @@
 
 import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { memberships, products, transactions } from '@/lib/db/schema'
+import { memberships, products, transactions, customers } from '@/lib/db/schema'
 import { PLAN_LIMITS, type PlanType, type LimitKey } from '@/lib/features'
 
 interface PlanCheckResult {
@@ -51,13 +51,26 @@ function getEffectiveLimit(
   membership: { plan: string; isTrial: boolean; trialEndAt: Date },
   limitKey: LimitKey
 ): number {
-  // During active trial, unlimited
   if (checkTrialActive(membership)) {
     return 999999
   }
 
   const plan = membership.plan as PlanType
-  return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].FREE
+  return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].BASIC
+}
+
+/**
+ * Get the recommended upgrade plan based on current plan.
+ */
+function getUpgradeSuggestion(currentPlan: PlanType): string {
+  switch (currentPlan) {
+    case 'BASIC':
+      return 'Upgrade ke Pro (Rp 49.900/bulan) untuk limit lebih besar.'
+    case 'PRO':
+      return 'Upgrade ke Business (Rp 99.900/bulan) untuk akses unlimited.'
+    default:
+      return 'Hubungi admin untuk menambah limit.'
+  }
 }
 
 /**
@@ -67,13 +80,12 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
   const membership = await getMembership(storeId)
 
   if (!membership) {
-    // No membership record — treat as FREE with no trial
     return {
       allowed: false,
-      limit: PLAN_LIMITS.max_products.FREE,
+      limit: PLAN_LIMITS.max_products.BASIC,
       current: 0,
-      message: 'Membership tidak ditemukan. Silakan hubungi admin.',
-      plan: 'FREE',
+      message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
+      plan: 'BASIC',
       isTrialActive: false,
     }
   }
@@ -81,7 +93,6 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
   const isTrialActive = checkTrialActive(membership)
   const limit = getEffectiveLimit(membership, 'max_products')
 
-  // Count current active products
   const [result] = await db
     .select({ count: count() })
     .from(products)
@@ -90,12 +101,13 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
   const current = result?.count ?? 0
 
   if (current >= limit) {
+    const plan = membership.plan as PlanType
     return {
       allowed: false,
       limit,
       current,
-      message: `Batas produk tercapai (${current}/${limit}). Upgrade ke Pro untuk produk unlimited.`,
-      plan: membership.plan as PlanType,
+      message: `Batas produk tercapai (${current}/${limit}). ${getUpgradeSuggestion(plan)}`,
+      plan,
       isTrialActive,
     }
   }
@@ -119,10 +131,10 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   if (!membership) {
     return {
       allowed: false,
-      limit: PLAN_LIMITS.max_transactions_monthly.FREE,
+      limit: PLAN_LIMITS.max_transactions_monthly.BASIC,
       current: 0,
-      message: 'Membership tidak ditemukan. Silakan hubungi admin.',
-      plan: 'FREE',
+      message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
+      plan: 'BASIC',
       isTrialActive: false,
     }
   }
@@ -130,7 +142,6 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   const isTrialActive = checkTrialActive(membership)
   const limit = getEffectiveLimit(membership, 'max_transactions_monthly')
 
-  // Count transactions this month
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
@@ -147,12 +158,13 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   const current = result?.count ?? 0
 
   if (current >= limit) {
+    const plan = membership.plan as PlanType
     return {
       allowed: false,
       limit,
       current,
-      message: `Batas transaksi bulanan tercapai (${current}/${limit}). Upgrade ke Pro untuk transaksi unlimited.`,
-      plan: membership.plan as PlanType,
+      message: `Batas transaksi bulanan tercapai (${current}/${limit}). ${getUpgradeSuggestion(plan)}`,
+      plan,
       isTrialActive,
     }
   }
@@ -168,23 +180,71 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
 }
 
 /**
- * Check if a store can access a boolean feature (export, reports, etc.).
+ * Check if a store can add more customers.
+ */
+export async function checkCustomerLimit(storeId: string): Promise<PlanCheckResult> {
+  const membership = await getMembership(storeId)
+
+  if (!membership) {
+    return {
+      allowed: false,
+      limit: PLAN_LIMITS.max_customers.BASIC,
+      current: 0,
+      message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
+      plan: 'BASIC',
+      isTrialActive: false,
+    }
+  }
+
+  const isTrialActive = checkTrialActive(membership)
+  const limit = getEffectiveLimit(membership, 'max_customers')
+
+  const [result] = await db
+    .select({ count: count() })
+    .from(customers)
+    .where(eq(customers.storeId, storeId))
+
+  const current = result?.count ?? 0
+
+  if (current >= limit) {
+    const plan = membership.plan as PlanType
+    return {
+      allowed: false,
+      limit,
+      current,
+      message: `Batas pelanggan tercapai (${current}/${limit}). ${getUpgradeSuggestion(plan)}`,
+      plan,
+      isTrialActive,
+    }
+  }
+
+  return {
+    allowed: true,
+    limit,
+    current,
+    message: '',
+    plan: membership.plan as PlanType,
+    isTrialActive,
+  }
+}
+
+/**
+ * Check if a store can access a boolean feature.
  */
 export async function checkFeatureAccess(
   storeId: string,
-  feature: 'export_excel' | 'export_pdf' | 'advanced_reports' | 'multi_outlet'
+  feature: string
 ): Promise<{ allowed: boolean; message: string; plan: PlanType }> {
   const membership = await getMembership(storeId)
 
   if (!membership) {
     return {
       allowed: false,
-      message: 'Membership tidak ditemukan.',
-      plan: 'FREE',
+      message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
+      plan: 'BASIC',
     }
   }
 
-  // During active trial, all features enabled
   if (checkTrialActive(membership)) {
     return { allowed: true, message: '', plan: membership.plan as PlanType }
   }
@@ -200,10 +260,67 @@ export async function checkFeatureAccess(
       export_pdf: 'Export PDF',
       advanced_reports: 'Laporan Lanjutan',
       multi_outlet: 'Multi-Toko',
+      backup_restore: 'Backup & Restore',
+      bulk_import: 'Bulk Import',
+      shift_management: 'Shift Management',
+      cash_flow: 'Kas Masuk/Keluar',
+      profit_report: 'Laporan Profit',
+      auto_promo: 'Promo Otomatis',
+      voucher_coupon: 'Voucher & Kupon',
+      product_variant: 'Variasi Produk',
+      wa_notification: 'Notifikasi WhatsApp',
+      wa_debt_reminder: 'Reminder Hutang WhatsApp',
+      auto_backup: 'Backup Otomatis',
+      email_report: 'Email Laporan',
+      api_access: 'API Access',
+      loyalty_points: 'Loyalty Points',
+      stock_prediction: 'Prediksi Stok',
+      peak_hour_analysis: 'Analisis Jam Ramai',
+      multi_staff_role: 'Role & Permission',
+      debt_reminder_manual: 'Reminder Hutang',
+      expense_tracking: 'Catatan Pengeluaran',
+      stock_transfer: 'Transfer Stok',
+      batch_price_update: 'Update Harga Massal',
+      multi_payment_split: 'Multi-Payment Split',
     }
+
+    const featureName = featureNames[feature] || feature
     return {
       allowed: false,
-      message: `Fitur ${featureNames[feature] || feature} hanya tersedia di paket Pro. Upgrade sekarang!`,
+      message: `Fitur ${featureName} tidak tersedia di paket ${plan}. ${getUpgradeSuggestion(plan)}`,
+      plan,
+    }
+  }
+
+  return { allowed: true, message: '', plan }
+}
+
+/**
+ * Strict feature access check — does NOT bypass for active trials.
+ */
+export async function checkStrictFeatureAccess(
+  storeId: string,
+  feature: string
+): Promise<{ allowed: boolean; message: string; plan: PlanType }> {
+  const membership = await getMembership(storeId)
+
+  if (!membership) {
+    return {
+      allowed: false,
+      message: 'Membership tidak ditemukan.',
+      plan: 'BASIC',
+    }
+  }
+
+  const { FEATURE_DEFAULTS } = await import('@/lib/features')
+  const featureConfig = FEATURE_DEFAULTS[feature]
+  const plan = membership.plan as PlanType
+  const allowed = featureConfig?.[plan] === true
+
+  if (!allowed) {
+    return {
+      allowed: false,
+      message: `Fitur ini tidak tersedia di paket ${plan}. ${getUpgradeSuggestion(plan)}`,
       plan,
     }
   }

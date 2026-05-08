@@ -53,6 +53,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if user is Google-only (no password set)
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: 'Akun ini terdaftar via Google. Gunakan tombol "Login dengan Google" untuk masuk.' },
+        { status: 400 }
+      )
+    }
+
     // Verify password
     const isValid = await verifyPassword(password, user.passwordHash)
     if (!isValid) {

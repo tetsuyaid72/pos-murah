@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Transaction } from '@/types'
+import { useDashboardStore } from '@/stores/dashboard-store'
 
 function normalizeTransaction(t: Record<string, any>): Transaction {
   return {
@@ -55,6 +56,8 @@ export const useTransactionStore = create<TransactionState & TransactionActions>
       set((state) => ({
         transactions: [transaction, ...state.transactions],
       }))
+      // Invalidate dashboard so it refetches fresh data
+      useDashboardStore.getState().invalidate()
     },
 
     deleteTransaction: async (id: string) => {
@@ -68,6 +71,8 @@ export const useTransactionStore = create<TransactionState & TransactionActions>
         set((state) => ({
           transactions: state.transactions.filter((t) => t.id !== id),
         }))
+        // Invalidate dashboard so it refetches fresh data
+        useDashboardStore.getState().invalidate()
         return { success: true }
       } catch {
         return { success: false, error: 'Gagal menghapus transaksi' }

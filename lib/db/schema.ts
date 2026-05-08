@@ -26,7 +26,8 @@ export const users = pgTable('users', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'),  // nullable for Google OAuth users
+  googleId: text('google_id').unique(), // Google OAuth subject ID
   avatarUrl: text('avatar_url'),
   role: text('role', { enum: ['OWNER', 'CASHIER', 'SUPER_ADMIN'] }).notNull().default('OWNER'),
   isActive: boolean('is_active').notNull().default(true),
@@ -50,7 +51,7 @@ export const stores = pgTable('stores', {
 export const memberships = pgTable('memberships', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().unique().references(() => stores.id, { onDelete: 'cascade' }),
-  plan: text('plan', { enum: ['FREE', 'STARTER', 'PRO', 'ENTERPRISE'] }).notNull().default('FREE'),
+  plan: text('plan', { enum: ['BASIC', 'PRO', 'BUSINESS', 'ENTERPRISE'] }).notNull().default('BASIC'),
   isTrial: boolean('is_trial').notNull().default(true),
   trialStartAt: timestamp('trial_start_at').notNull().defaultNow(),
   trialEndAt: timestamp('trial_end_at').notNull(),
@@ -207,6 +208,22 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 }))
 
 // =============================================================================
+// PASSWORD RESET TOKENS
+// =============================================================================
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => generateId()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usedAt: timestamp('used_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => [
+  index('password_reset_tokens_token_idx').on(table.token),
+  index('password_reset_tokens_user_id_idx').on(table.userId),
+])
+
+// =============================================================================
 // ACTIVITY LOG
 // =============================================================================
 
@@ -286,4 +303,8 @@ export const debtRecordsRelations = relations(debtRecords, ({ one }) => ({
 export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   store: one(stores, { fields: [activityLogs.storeId], references: [stores.id] }),
   user: one(users, { fields: [activityLogs.userId], references: [users.id] }),
+}))
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, { fields: [passwordResetTokens.userId], references: [users.id] }),
 }))
