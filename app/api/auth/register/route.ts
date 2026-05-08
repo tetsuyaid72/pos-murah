@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Membership starts as inactive (trial expired immediately).
-    // User must pay before accessing the dashboard.
+    // Membership starts with a 1-day trial so user can explore the dashboard.
+    // After trial expires, AuthProvider redirects to /upgrade.
     const trialStartAt = new Date()
-    const trialEndAt = new Date() // expired immediately — no free access
+    const trialEndAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day trial
 
     // Generate IDs upfront for the transaction
     const userId = generateId()

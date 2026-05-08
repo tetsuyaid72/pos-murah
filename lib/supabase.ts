@@ -9,11 +9,13 @@ import { createClient } from '@supabase/supabase-js'
 
 // Server-side client (menggunakan service role key untuk full access)
 export function createSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)')
+    throw new Error(
+      'Supabase belum dikonfigurasi. Pastikan NEXT_PUBLIC_SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah di-set di environment variables.'
+    )
   }
 
   return createClient(supabaseUrl, supabaseServiceKey, {
@@ -37,10 +39,32 @@ export function createSupabaseClient() {
 }
 
 /**
+ * Ensure a storage bucket exists (create if missing).
+ * Uses service role key so it has permission to create buckets.
+ */
+async function ensureBucket(bucket: string): Promise<void> {
+  const supabase = createSupabaseAdmin()
+
+  const { data: buckets } = await supabase.storage.listBuckets()
+  const exists = buckets?.some((b) => b.name === bucket)
+
+  if (!exists) {
+    const { error } = await supabase.storage.createBucket(bucket, {
+      public: true,
+      fileSizeLimit: 2 * 1024 * 1024, // 2MB
+      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+    })
+    if (error && !error.message.includes('already exists')) {
+      throw new Error(`Gagal membuat bucket "${bucket}": ${error.message}`)
+    }
+  }
+}
+
+/**
  * Upload file ke Supabase Storage
  *
- * @param bucket - Nama bucket (e.g. "payments", "products", "profiles", "logos")
- * @param filePath - Path di dalam bucket (e.g. "1234-abc.jpg")
+ * @param bucket - Nama bucket (e.g. "uploads")
+ * @param filePath - Path di dalam bucket (e.g. "payments/1234-abc.jpg")
  * @param file - File buffer
  * @param contentType - MIME type
  * @returns Public URL dari file yang diupload
@@ -52,6 +76,9 @@ export async function uploadToStorage(
   contentType: string
 ): Promise<string> {
   const supabase = createSupabaseAdmin()
+
+  // Ensure bucket exists before uploading
+  await ensureBucket(bucket)
 
   const { error } = await supabase.storage
     .from(bucket)

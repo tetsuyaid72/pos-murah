@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   CreditCard,
   QrCode,
-  MessageCircle,
   Loader2,
   Upload,
   ImageIcon,
@@ -26,8 +25,6 @@ const BANK_INFO = {
   accountNumber: '7896118152',
   accountName: 'MUHAMMAD HASBUNA',
 }
-
-const WHATSAPP_NUMBER = '6289691268646'
 
 interface UpgradePaymentPanelProps {
   selectedPlan: SelectedPlan
@@ -146,31 +143,7 @@ export function UpgradePaymentPanel({
     }
   }
 
-  const buildWhatsAppUrl = (imageUrl: string | null) => {
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
-    const now = new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })
-    const fullImageUrl = imageUrl
-      ? (imageUrl.startsWith('http') ? imageUrl : `${baseUrl}${imageUrl}`)
-      : '(tidak ada)'
 
-    const planLabel = selectedPlan === 'business' ? 'Business' : selectedPlan === 'pro' ? 'Pro' : 'Basic'
-    const periodLabel = billingPeriod === 'yearly' ? 'Tahunan' : 'Bulanan'
-
-    const message = `Halo admin, saya sudah melakukan pembayaran ${planLabel} (${periodLabel}) POS.
-
-Nama: ${userName || 'User'}
-Email: ${userEmail || '-'}
-Paket: ${planLabel} (${periodLabel})
-Nominal: ${formattedPrice}
-Tanggal: ${now}
-
-Bukti pembayaran:
-${fullImageUrl}
-
-Mohon konfirmasi ya. Terima kasih!`
-
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
-  }
 
   const handleSubmitPayment = async () => {
     if (!proofFile) {
@@ -214,9 +187,6 @@ Mohon konfirmasi ya. Terima kasih!`
       }
 
       onSubmitPayment()
-
-      const waUrl = buildWhatsAppUrl(uploadedUrl)
-      window.open(waUrl, '_blank')
     } catch {
       setUploadError('Terjadi kesalahan. Silakan coba lagi.')
     } finally {
@@ -464,12 +434,7 @@ Mohon konfirmasi ya. Terima kasih!`
             )}
           </Button>
 
-          <a href={buildWhatsAppUrl(proofUrl)} target="_blank" rel="noopener noreferrer" className="block">
-            <Button variant="ghost" size="lg" className="w-full text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Hubungi Admin via WhatsApp
-            </Button>
-          </a>
+
         </div>
       </div>
 

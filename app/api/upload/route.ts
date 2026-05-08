@@ -1,7 +1,7 @@
 /**
  * POST /api/upload — Upload a file (image)
  *
- * Strategy: Try Supabase Storage first, fallback to local filesystem.
+ * Uses Supabase Storage. Bucket is auto-created if it doesn't exist.
  *
  * Protected: requires authentication.
  * - Payment uploads: only require authenticated user (no store context needed)
@@ -12,8 +12,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { getSession } from '@/lib/auth'
 import { requireTenant, handleTenantError, TenantError } from '@/lib/db/tenant'
 import { uploadToStorage } from '@/lib/supabase'
@@ -86,7 +84,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Try Supabase Storage first, fallback to local filesystem
+    // Upload to Supabase Storage (bucket auto-created if missing)
     try {
       const publicUrl = await uploadToStorage(
         STORAGE_BUCKET,
@@ -95,18 +93,13 @@ export async function POST(request: NextRequest) {
         file.type
       )
       return NextResponse.json({ url: publicUrl }, { status: 200 })
-    } catch (supabaseErr) {
-      console.warn('[Upload] Supabase Storage failed, using local fallback:', supabaseErr)
-
-      // Fallback: save to public/uploads/<folder>/
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', folder)
-      await mkdir(uploadDir, { recursive: true })
-
-      const localPath = path.join(uploadDir, filename)
-      await writeFile(localPath, buffer)
-
-      const publicUrl = `/uploads/${folder}/${filename}`
-      return NextResponse.json({ url: publicUrl }, { status: 200 })
+    } catch (uploadErr) {
+      const message = uploadErr instanceof Error ? uploadErr.message : 'Upload gagal'
+      console.error('[Upload] Supabase Storage error:', message)
+      return NextResponse.json(
+        { error: `Upload gagal: ${message}` },
+        { status: 500 }
+      )
     }
   } catch (error) {
     return handleTenantError(error)

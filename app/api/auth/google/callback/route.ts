@@ -194,10 +194,10 @@ export async function GET(request: NextRequest) {
     const firstName = googleUser.given_name || googleUser.name.split(' ')[0]
     const storeName = `Toko ${firstName}`
 
-    // Membership starts as inactive (trial expired immediately).
-    // User must pay before accessing the dashboard.
+    // Membership starts with a 1-day trial so user can explore the dashboard.
+    // After trial expires, AuthProvider redirects to /upgrade.
     const trialStartAt = new Date()
-    const trialEndAt = new Date() // expired immediately — no free access
+    const trialEndAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day trial
 
     // Create user + store + membership in a transaction
     await db.transaction(async (tx) => {
@@ -253,8 +253,8 @@ export async function GET(request: NextRequest) {
       storeId,
     })
 
-    // New users must pay first — redirect to upgrade page
-    return NextResponse.redirect(new URL('/upgrade', appUrl))
+    // New users get 1-day trial — redirect to dashboard
+    return NextResponse.redirect(new URL('/dashboard', appUrl))
   } catch (error) {
     console.error('Google OAuth callback error:', error)
     return NextResponse.redirect(

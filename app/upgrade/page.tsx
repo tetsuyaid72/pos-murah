@@ -10,7 +10,6 @@ import {
   PartyPopper,
   Loader2,
   ShieldCheck,
-  MessageCircle,
   Zap,
   Check,
   Users,
@@ -25,7 +24,7 @@ import { PLANS, formatPrice, PRICING, getYearlySavingsPercent } from '@/lib/pric
 import type { BillingPeriod } from '@/lib/pricing'
 import { UpgradePaymentPanel } from '@/components/upgrade/payment-panel'
 
-const WHATSAPP_NUMBER = '6289691268646'
+
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
 
@@ -113,21 +112,7 @@ function UpgradePageContent() {
     }
   }, [paymentStatus])
 
-  const buildWhatsAppUrl = () => {
-    const planLabel = selectedPlan === 'business' ? 'Business' : selectedPlan === 'pro' ? 'Pro' : 'Basic'
-    const periodLabel = billingPeriod === 'yearly' ? 'Tahunan' : 'Bulanan'
 
-    const message = `Halo admin, saya ingin konfirmasi pembayaran ${planLabel} (${periodLabel}) POS.
-
-Nama: ${userName || 'User'}
-Email: ${userEmail || '-'}
-Paket: ${planLabel} (${periodLabel})
-Nominal: ${formattedPrice}
-
-Mohon konfirmasi ya. Terima kasih!`
-
-    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`
-  }
 
   // =========================================================================
   // STATE: Loading auth / redirecting unauthenticated user
@@ -240,17 +225,9 @@ Mohon konfirmasi ya. Terima kasih!`
               </p>
             </div>
 
-            <div className="mt-10 space-y-3">
-              <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className="block">
-                <Button variant="outline" size="lg" className="w-full max-w-sm mx-auto text-sm">
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Hubungi Admin via WhatsApp
-                </Button>
-              </a>
-              <p className="text-sm text-slate-400 dark:text-slate-500">
-                Jika sudah lebih dari 24 jam, silakan hubungi admin.
-              </p>
-            </div>
+            <p className="mt-8 text-xs text-slate-400 dark:text-slate-500">
+              Jika sudah lebih dari 24 jam belum diaktifkan, silakan hubungi admin melalui halaman bantuan.
+            </p>
           </div>
         </div>
       </div>
