@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -41,7 +41,22 @@ const BASE_URL = typeof window !== 'undefined' ? window.location.origin : ''
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
 
+/**
+ * Wrapper with Suspense boundary — required by Next.js 16 for useSearchParams()
+ */
 export default function UpgradePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-emerald-50/50 via-background to-background dark:from-emerald-950/20">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600 dark:text-emerald-400" />
+      </div>
+    }>
+      <UpgradePageContent />
+    </Suspense>
+  )
+}
+
+function UpgradePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
