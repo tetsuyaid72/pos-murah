@@ -52,7 +52,7 @@ export default function POSPage() {
       </div>
 
       {/* Right panel — Cart (desktop only) */}
-      <div className="hidden w-[400px] md:block">
+      <div className="hidden md:block md:w-[320px] lg:w-[380px] xl:w-[400px]">
         <CartPanel />
       </div>
 

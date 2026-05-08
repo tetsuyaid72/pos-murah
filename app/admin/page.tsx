@@ -155,7 +155,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       {/* Stat Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {statCards.map((card) => (
           <div
             key={card.label}

@@ -186,8 +186,118 @@ export default function AdminMembershipsPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+              <div className="h-5 rounded bg-muted/50 animate-pulse mb-2" />
+              <div className="h-4 rounded bg-muted/50 animate-pulse w-2/3" />
+            </div>
+          ))
+        ) : memberships.length === 0 ? (
+          <div className="rounded-xl border border-border/50 bg-card p-8 text-center text-muted-foreground shadow-sm">
+            Tidak ada membership ditemukan
+          </div>
+        ) : (
+          memberships.map((m) => {
+            const trialStatus = getTrialStatus(m)
+            return (
+              <div key={m.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm space-y-3">
+                {/* Store name & Plan badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">{m.storeName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{m.ownerName}</p>
+                    <p className="text-[11px] text-muted-foreground truncate">{m.ownerEmail}</p>
+                  </div>
+                  <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0', PLAN_BADGE[m.plan] || '')}>
+                    <Crown className="h-3 w-3" />
+                    {m.plan}
+                  </span>
+                </div>
+
+                {/* Trial status & end date */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium', trialStatus.color)}>
+                    {trialStatus.label}
+                  </span>
+                  {m.isTrial && (
+                    <span className="text-xs text-muted-foreground">
+                      ends {new Date(m.trialEndAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 pt-1 border-t border-border/30">
+                  <button
+                    onClick={() => { setEditingMembership(m); setEditPlan(m.plan) }}
+                    className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border border-border/50"
+                    title="Change Plan"
+                  >
+                    <ArrowUpCircle className="h-3.5 w-3.5 inline mr-1" />
+                    Change Plan
+                  </button>
+                  {m.isTrial && (
+                    <>
+                      <button
+                        onClick={() => handleExtendTrial(m, 7)}
+                        disabled={actionLoading === m.id}
+                        className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-500/10 transition-colors border border-border/50"
+                        title="Extend +7 days"
+                      >
+                        {actionLoading === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : '+7d'}
+                      </button>
+                      <button
+                        onClick={() => handleEndTrial(m)}
+                        disabled={actionLoading === m.id}
+                        className="rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground hover:bg-red-100 hover:text-red-700 dark:hover:bg-red-500/10 transition-colors border border-border/50"
+                        title="End Trial"
+                      >
+                        End
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+
+        {/* Mobile Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-card px-4 py-3 shadow-sm">
+            <p className="text-xs text-muted-foreground">
+              {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => fetchMemberships(pagination.page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs text-muted-foreground">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchMemberships(pagination.page + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

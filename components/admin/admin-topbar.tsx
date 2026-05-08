@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { useUIStore } from '@/stores/ui-store'
@@ -17,9 +18,17 @@ const BREADCRUMB_MAP: Record<string, string> = {
 
 export function AdminTopbar() {
   const pathname = usePathname()
-  const { setSidebarOpen, isMobile } = useUIStore()
+  const { setSidebarOpen, setIsMobile, isMobile } = useUIStore()
 
   const title = BREADCRUMB_MAP[pathname] || 'Admin'
+
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [setIsMobile])
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border/50 bg-card/80 px-4 backdrop-blur-xl sm:px-6">

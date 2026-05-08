@@ -152,8 +152,121 @@ export default function AdminStoresPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+              <div className="h-5 rounded bg-muted/50 animate-pulse mb-3" />
+              <div className="h-4 rounded bg-muted/50 animate-pulse w-2/3 mb-2" />
+              <div className="h-4 rounded bg-muted/50 animate-pulse w-1/2" />
+            </div>
+          ))
+        ) : stores.length === 0 ? (
+          <div className="rounded-xl border border-border/50 bg-card p-8 text-center text-muted-foreground shadow-sm">
+            Tidak ada store ditemukan
+          </div>
+        ) : (
+          stores.map((store) => (
+            <div key={store.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm space-y-3">
+              {/* Store name & status */}
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-medium text-foreground text-sm">{store.name}</h3>
+                <span className={cn(
+                  'inline-flex shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium',
+                  store.isActive
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+                )}>
+                  {store.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+
+              {/* Owner */}
+              <div>
+                <p className="text-foreground text-xs">{store.ownerName}</p>
+                <p className="text-muted-foreground text-[11px]">{store.ownerEmail}</p>
+              </div>
+
+              {/* Plan & Counts */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {store.plan ? (
+                  <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium', PLAN_BADGE[store.plan] || '')}>
+                    {store.plan}
+                    {store.isTrial && ' (Trial)'}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">—</span>
+                )}
+                <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                  <Package className="h-3 w-3" />
+                  {store.productCount}
+                </span>
+                <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                  <Receipt className="h-3 w-3" />
+                  {store.transactionCount}
+                </span>
+              </div>
+
+              {/* Toggle Action */}
+              <div className="flex items-center justify-end pt-1 border-t border-border/30">
+                <button
+                  onClick={() => handleToggleActive(store)}
+                  disabled={actionLoading === store.id}
+                  className={cn(
+                    'rounded-lg p-1.5 transition-colors',
+                    store.isActive
+                      ? 'text-emerald-600 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10'
+                      : 'text-red-600 hover:bg-emerald-100 hover:text-emerald-600 dark:hover:bg-emerald-500/10'
+                  )}
+                  title={store.isActive ? 'Deactivate' : 'Activate'}
+                >
+                  {actionLoading === store.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : store.isActive ? (
+                    <ToggleRight className="h-4 w-4" />
+                  ) : (
+                    <ToggleLeft className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Mobile Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between px-1 py-3">
+            <p className="text-xs text-muted-foreground">
+              Showing {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => fetchStores(pagination.page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs text-muted-foreground">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchStores(pagination.page + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

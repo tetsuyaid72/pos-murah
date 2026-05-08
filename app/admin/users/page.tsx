@@ -195,8 +195,106 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {isLoading ? (
+          [...Array(5)].map((_, i) => (
+            <div key={i} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+              <div className="h-5 rounded bg-muted/50 animate-pulse mb-2" />
+              <div className="h-4 rounded bg-muted/50 animate-pulse w-2/3" />
+            </div>
+          ))
+        ) : users.length === 0 ? (
+          <div className="rounded-xl border border-border/50 bg-card p-8 text-center text-muted-foreground shadow-sm">
+            Tidak ada user ditemukan
+          </div>
+        ) : (
+          users.map((user) => (
+            <div key={user.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-foreground truncate">{user.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => openEdit(user)}
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleToggleActive(user)}
+                    disabled={actionLoading === user.id}
+                    className={cn(
+                      'rounded-lg p-1.5 transition-colors',
+                      user.isActive
+                        ? 'text-muted-foreground hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-500/10'
+                        : 'text-muted-foreground hover:bg-emerald-100 hover:text-emerald-600 dark:hover:bg-emerald-500/10'
+                    )}
+                    title={user.isActive ? 'Deactivate' : 'Activate'}
+                  >
+                    {actionLoading === user.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : user.isActive ? (
+                      <UserX className="h-4 w-4" />
+                    ) : (
+                      <UserCheck className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={cn('inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium', ROLE_BADGE[user.role])}>
+                  {user.role}
+                </span>
+                <span className={cn(
+                  'inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium',
+                  user.isActive
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400'
+                )}>
+                  {user.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+
+        {/* Mobile Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-border/50 pt-3">
+            <p className="text-xs text-muted-foreground">
+              {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page <= 1}
+                onClick={() => fetchUsers(pagination.page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-2 text-xs text-muted-foreground">
+                {pagination.page} / {pagination.totalPages}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pagination.page >= pagination.totalPages}
+                onClick={() => fetchUsers(pagination.page + 1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden md:block rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -290,7 +388,7 @@ export default function AdminUsersPage() {
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Desktop Pagination */}
         {pagination.totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-border/50 px-4 py-3">
             <p className="text-xs text-muted-foreground">
