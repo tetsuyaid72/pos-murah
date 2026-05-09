@@ -7,10 +7,13 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+const STORAGE_FILE_SIZE_LIMIT = 2 * 1024 * 1024 // 2MB
+const STORAGE_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
 // Server-side client (menggunakan service role key untuk full access)
 export function createSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error(
@@ -24,6 +27,35 @@ export function createSupabaseAdmin() {
       persistSession: false,
     },
   })
+}
+
+/**
+ * Ensure a storage bucket exists. Some hosted environments cannot create
+ * buckets automatically, so return a clear error if creation fails.
+ */
+async function ensureBucket(bucket: string): Promise<void> {
+  const supabase = createSupabaseAdmin()
+
+  const { data: bucketInfo, error: getError } = await supabase.storage.getBucket(bucket)
+  if (bucketInfo) return
+
+  const canCreate =
+    getError &&
+    (getError.message.toLowerCase().includes('not found') || getError.message.includes('404'))
+
+  if (!canCreate) {
+    throw new Error(`Gagal memeriksa bucket "${bucket}": ${getError?.message || 'Bucket tidak dapat diakses'}`)
+  }
+
+  const { error: createError } = await supabase.storage.createBucket(bucket, {
+    public: true,
+    fileSizeLimit: STORAGE_FILE_SIZE_LIMIT,
+    allowedMimeTypes: STORAGE_ALLOWED_MIME_TYPES,
+  })
+
+  if (createError && !createError.message.toLowerCase().includes('already exists')) {
+    throw new Error(`Gagal membuat bucket "${bucket}": ${createError.message}`)
+  }
 }
 
 // Client-side Supabase (menggunakan anon key, untuk public access)
@@ -56,6 +88,8 @@ export async function uploadToStorage(
   contentType: string
 ): Promise<string> {
   const supabase = createSupabaseAdmin()
+
+  await ensureBucket(bucket)
 
   const { error } = await supabase.storage
     .from(bucket)
