@@ -106,7 +106,7 @@ export function RegisterForm() {
         return
       }
 
-      router.push(redirectTo || '/dashboard')
+      router.push('/dashboard')
       router.refresh()
     } catch {
       setError('Tidak dapat terhubung ke server')

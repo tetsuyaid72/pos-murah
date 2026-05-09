@@ -1,8 +1,8 @@
 /**
  * POST /api/auth/register
  *
- * Register a new user + create their store + initialize membership (inactive until payment).
- * After registration, user is redirected to /upgrade to choose a plan and pay.
+ * Register a new user + create their store + initialize a 3-day trial membership.
+ * After registration, user is redirected to /dashboard.
  *
  * Body: { name, email, password, storeName }
  */
@@ -50,10 +50,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Membership starts with a 1-day trial so user can explore the dashboard.
+    // Membership starts with a 3-day trial so user can explore the dashboard.
     // After trial expires, AuthProvider redirects to /upgrade.
     const trialStartAt = new Date()
-    const trialEndAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 1 day trial
+    const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3-day trial
 
     // Generate IDs upfront for the transaction
     const userId = generateId()
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         membership: {
           plan: 'BASIC',
           isTrial: true,
-          trialEndAt, // expired immediately — user must pay to access
+          trialEndAt,
         },
       },
       { status: 201 }

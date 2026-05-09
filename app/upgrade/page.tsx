@@ -72,10 +72,10 @@ function UpgradePageContent() {
     fetchAuth()
   }, [fetchAuth])
 
-  // Auto-redirect unauthenticated users to register
+  // Auto-redirect unauthenticated users to register without carrying upgrade intent.
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.replace('/register?redirect=/upgrade')
+      router.replace('/register')
     }
   }, [authLoading, isAuthenticated, router])
 
