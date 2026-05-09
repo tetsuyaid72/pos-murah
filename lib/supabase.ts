@@ -7,18 +7,28 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const STORAGE_FILE_SIZE_LIMIT = 2 * 1024 * 1024 // 2MB
-const STORAGE_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+function readEnv(name: string): string | undefined {
+  const value = process.env[name]?.trim()
+  return value?.replace(/^['"]|['"]$/g, '')
+}
 
 // Server-side client (menggunakan service role key untuk full access)
 export function createSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  const supabaseUrl = readEnv('NEXT_PUBLIC_SUPABASE_URL')
+  const supabaseServiceKey = readEnv('SUPABASE_SERVICE_ROLE_KEY')
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error(
       'Supabase belum dikonfigurasi. Pastikan NEXT_PUBLIC_SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah di-set di environment variables.'
     )
+  }
+
+  if (!supabaseUrl.startsWith('https://') || !supabaseUrl.endsWith('.supabase.co')) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL tidak valid. Gunakan format https://PROJECT_REF.supabase.co tanpa tanda kutip.')
+  }
+
+  if (!supabaseServiceKey.startsWith('sb_secret_') && !supabaseServiceKey.startsWith('eyJ')) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY tidak valid. Gunakan service_role/secret key dari Supabase Dashboard > Settings > API tanpa tanda kutip.')
   }
 
   return createClient(supabaseUrl, supabaseServiceKey, {
@@ -33,35 +43,21 @@ export function createSupabaseAdmin() {
  * Ensure a storage bucket exists. Some hosted environments cannot create
  * buckets automatically, so return a clear error if creation fails.
  */
-async function ensureBucket(bucket: string): Promise<void> {
+async function assertBucketExists(bucket: string): Promise<void> {
   const supabase = createSupabaseAdmin()
 
   const { data: bucketInfo, error: getError } = await supabase.storage.getBucket(bucket)
   if (bucketInfo) return
 
-  const canCreate =
-    getError &&
-    (getError.message.toLowerCase().includes('not found') || getError.message.includes('404'))
-
-  if (!canCreate) {
-    throw new Error(`Gagal memeriksa bucket "${bucket}": ${getError?.message || 'Bucket tidak dapat diakses'}`)
-  }
-
-  const { error: createError } = await supabase.storage.createBucket(bucket, {
-    public: true,
-    fileSizeLimit: STORAGE_FILE_SIZE_LIMIT,
-    allowedMimeTypes: STORAGE_ALLOWED_MIME_TYPES,
-  })
-
-  if (createError && !createError.message.toLowerCase().includes('already exists')) {
-    throw new Error(`Gagal membuat bucket "${bucket}": ${createError.message}`)
-  }
+  throw new Error(
+    `Bucket "${bucket}" tidak ditemukan atau tidak dapat diakses: ${getError?.message || 'unknown error'}`
+  )
 }
 
 // Client-side Supabase (menggunakan anon key, untuk public access)
 export function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = readEnv('NEXT_PUBLIC_SUPABASE_URL')
+  const supabaseAnonKey = readEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error(
@@ -89,7 +85,7 @@ export async function uploadToStorage(
 ): Promise<string> {
   const supabase = createSupabaseAdmin()
 
-  await ensureBucket(bucket)
+  await assertBucketExists(bucket)
 
   const { error } = await supabase.storage
     .from(bucket)
