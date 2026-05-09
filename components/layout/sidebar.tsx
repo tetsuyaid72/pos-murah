@@ -160,7 +160,7 @@ function SidebarContent({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-2">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
         <p className={cn(
           'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
           collapsed && 'sr-only'
@@ -324,32 +324,32 @@ function TrialUpgradeCard({
   onNavigate?: () => void
 }) {
   return (
-    <div className="px-3 pb-3">
-      <div className="overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-3.5 shadow-sm shadow-emerald-500/10 dark:border-emerald-500/20 dark:from-emerald-500/15 dark:via-green-500/10 dark:to-teal-500/15">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
+    <div className="shrink-0 px-3 pb-2 sm:pb-3">
+      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-teal-950/30 sm:p-3.5">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 sm:h-9 sm:w-9">
             <Sparkles className="h-4 w-4" />
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold leading-tight text-emerald-950 dark:text-emerald-50">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold leading-tight text-slate-900 dark:text-emerald-50">
               {isExpired ? 'Trial Anda Berakhir' : 'Trial 3 Hari Aktif'}
             </p>
-            <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+            <p className="mt-1 text-xs font-semibold leading-none text-emerald-700 dark:text-emerald-300">
               Sisa trial: {daysRemaining} hari
+            </p>
+            <p className="mt-2 hidden text-xs leading-relaxed text-slate-600 dark:text-emerald-100/80 sm:block">
+              Upgrade sekarang untuk melanjutkan penggunaan setelah trial berakhir.
             </p>
           </div>
         </div>
 
-        <p className="mb-3 text-[11px] leading-relaxed text-emerald-900/80 dark:text-emerald-100/75">
-          Nikmati akses trial Anda. Upgrade sekarang untuk membuka semua fitur dan melanjutkan penggunaan setelah trial berakhir.
-        </p>
-
         <Link
           href="/upgrade"
           onClick={onNavigate}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-500/25 transition-colors hover:bg-emerald-700"
+          className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700 sm:mt-3 sm:h-10 sm:text-sm"
         >
-          Upgrade Sekarang
+          <span className="sm:hidden">Upgrade</span>
+          <span className="hidden sm:inline">Upgrade Sekarang</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
