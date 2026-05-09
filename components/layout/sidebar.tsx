@@ -14,6 +14,7 @@ import {
   Store,
   Crown,
   Sparkles,
+  ArrowRight,
   Moon,
   Sun,
   BarChart3,
@@ -24,6 +25,7 @@ import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
+import { useSubscriptionStore } from '@/stores/subscription-store'
 
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/user-avatar'
@@ -103,6 +105,7 @@ function SidebarContent({
   const { theme, setTheme } = useUIStore()
   const { storeName, storeLogo, userName, userEmail, userAvatar } = useSettingsStore()
   const { logout, membership, user } = useAuthStore()
+  const { paymentStatus } = useSubscriptionStore()
 
   // Server membership is always the source of truth for plan status
   const plan = membership?.plan || 'FREE'
@@ -116,6 +119,9 @@ function SidebarContent({
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
   })()
   const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
+  const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
+  const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
+  const showTrialUpgradeCard = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
 
   const toggleTheme = () => {
     if (theme === 'light') setTheme('dark')
@@ -228,22 +234,13 @@ function SidebarContent({
         )}
       </nav>
 
-      {/* Upgrade Card — only show for FREE plan */}
-      {!collapsed && plan === 'FREE' && (
-        <Link href="/upgrade" onClick={onNavigate}>
-          <div className="mx-3 mb-3 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-4 text-white shadow-lg shadow-emerald-500/20 transition-transform hover:scale-[1.02]">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-4 w-4" />
-              <span className="text-xs font-bold uppercase tracking-wide">Upgrade Pro</span>
-            </div>
-            <p className="text-[11px] leading-relaxed opacity-90 mb-3">
-              Unlimited transaksi, produk, kasir, dan fitur lengkap lainnya.
-            </p>
-            <div className="w-full rounded-lg bg-white/20 px-3 py-1.5 text-xs font-semibold backdrop-blur-sm text-center">
-              Upgrade Sekarang
-            </div>
-          </div>
-        </Link>
+      {/* Trial Upgrade Card */}
+      {showTrialUpgradeCard && (
+        <TrialUpgradeCard
+          isExpired={isTrialExpired}
+          daysRemaining={trialDaysRemaining}
+          onNavigate={onNavigate}
+        />
       )}
 
       {/* Bottom section */}
@@ -312,6 +309,49 @@ function SidebarContent({
             {!collapsed && <span className="ml-2 text-xs">Tutup Sidebar</span>}
           </Button>
         )}
+      </div>
+    </div>
+  )
+}
+
+function TrialUpgradeCard({
+  isExpired,
+  daysRemaining,
+  onNavigate,
+}: {
+  isExpired: boolean
+  daysRemaining: number
+  onNavigate?: () => void
+}) {
+  return (
+    <div className="px-3 pb-3">
+      <div className="overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 p-3.5 shadow-sm shadow-emerald-500/10 dark:border-emerald-500/20 dark:from-emerald-500/15 dark:via-green-500/10 dark:to-teal-500/15">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/30">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold leading-tight text-emerald-950 dark:text-emerald-50">
+              {isExpired ? 'Trial Anda Berakhir' : 'Trial 3 Hari Aktif'}
+            </p>
+            <p className="mt-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+              Sisa trial: {daysRemaining} hari
+            </p>
+          </div>
+        </div>
+
+        <p className="mb-3 text-[11px] leading-relaxed text-emerald-900/80 dark:text-emerald-100/75">
+          Nikmati akses trial Anda. Upgrade sekarang untuk membuka semua fitur dan melanjutkan penggunaan setelah trial berakhir.
+        </p>
+
+        <Link
+          href="/upgrade"
+          onClick={onNavigate}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-emerald-500/25 transition-colors hover:bg-emerald-700"
+        >
+          Upgrade Sekarang
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   )
