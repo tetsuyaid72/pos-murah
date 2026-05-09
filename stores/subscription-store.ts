@@ -60,10 +60,19 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
         const { paymentStatus } = get()
         const normalizedPlan = normalizePlan(serverPlan)
 
-        // Check if trial is expired (user registered but hasn't paid yet)
+        // Trial memberships are not paid subscriptions, even while active.
         const isTrialExpired = isTrial && trialEndAt && new Date(trialEndAt) <= new Date()
+        const isTrialActive = isTrial && !isTrialExpired
 
-        // If user has a plan AND is not in expired trial → payment is approved (paid user)
+        if (isTrialActive) {
+          set({
+            plan: normalizedPlan,
+            paymentStatus,
+          })
+          return
+        }
+
+        // If user has a plan and is not in trial mode, treat it as paid/approved.
         if (normalizedPlan && !isTrialExpired) {
           set({
             plan: normalizedPlan,

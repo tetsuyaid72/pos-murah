@@ -14,6 +14,7 @@ import {
   Check,
   Users,
   TrendingUp,
+  Hourglass,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -55,7 +56,7 @@ function UpgradePageContent() {
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const { isAuthenticated, isLoading: authLoading, fetchAuth } = useAuthStore()
+  const { isAuthenticated, isLoading: authLoading, membership, fetchAuth } = useAuthStore()
   const { userName, userEmail } = useSettingsStore()
 
   // Derived pricing
@@ -85,6 +86,28 @@ function UpgradePageContent() {
     submitPayment,
   } = useSubscriptionStore()
 
+  const trialEndAt = membership?.trialEndAt ?? null
+  const trialEndDate = trialEndAt ? new Date(trialEndAt) : null
+  const isTrialActive = Boolean(
+    membership?.isTrial &&
+    trialEndDate &&
+    trialEndDate > new Date()
+  )
+  const trialDaysRemaining = trialEndDate
+    ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : 0
+  const isPaidActive = Boolean(plan && paymentStatus === 'approved' && !membership?.isTrial)
+
+  useEffect(() => {
+    console.log('[Upgrade Page] Membership state:', {
+      plan,
+      status: paymentStatus,
+      isTrial: membership?.isTrial ?? false,
+      trialEndsAt: trialEndAt,
+      isPaidActive,
+    })
+  }, [plan, paymentStatus, membership?.isTrial, trialEndAt, isPaidActive])
+
   // Check if server has approved the payment (poll /api/auth/me)
   useEffect(() => {
     if (paymentStatus !== 'pending') return
@@ -94,9 +117,19 @@ function UpgradePageContent() {
         const res = await fetch('/api/auth/me')
         if (!res.ok) return
         const data = await res.json()
-        if (data.membership?.plan === 'BASIC' || data.membership?.plan === 'PRO' || data.membership?.plan === 'BUSINESS') {
-          useSubscriptionStore.getState().syncFromServer(data.membership.plan)
-          setShowSuccess(true)
+        if (
+          data.membership?.plan === 'BASIC' ||
+          data.membership?.plan === 'PRO' ||
+          data.membership?.plan === 'BUSINESS'
+        ) {
+          useSubscriptionStore.getState().syncFromServer(
+            data.membership.plan,
+            data.membership.isTrial,
+            data.membership.trialEndAt
+          )
+          if (!data.membership.isTrial) {
+            setShowSuccess(true)
+          }
         }
       } catch {
         // Ignore network errors
@@ -128,7 +161,7 @@ function UpgradePageContent() {
   // =========================================================================
   // STATE: Already approved (paid)
   // =========================================================================
-  if (plan && paymentStatus === 'approved') {
+  if (isPaidActive && plan) {
     const activePlanKey = plan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
     const activePlanInfo = PLANS[activePlanKey]
 
@@ -187,52 +220,7 @@ function UpgradePageContent() {
   // =========================================================================
   // STATE: Payment Pending
   // =========================================================================
-  if (paymentStatus === 'pending') {
-    return (
-      <div className="min-h-screen bg-white dark:bg-slate-950">
-        <div className="mx-auto max-w-xl px-6 pt-8">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 transition-colors dark:hover:text-slate-300"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Kembali
-          </Link>
-        </div>
-
-        <div className="mx-auto max-w-xl px-6 py-20">
-          <div className="text-center">
-            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-amber-50 dark:bg-amber-500/10">
-              <Clock className="h-10 w-10 text-amber-500 dark:text-amber-400 animate-pulse" />
-            </div>
-
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              Menunggu Verifikasi
-            </h1>
-            <p className="mt-3 text-base text-slate-500 dark:text-slate-400">
-              Pembayaran Anda sedang diproses. Aktivasi maksimal 1x24 jam.
-            </p>
-
-            <div className="mx-auto mt-10 max-w-sm rounded-2xl border border-amber-100 bg-amber-50/50 p-6 dark:border-amber-900/50 dark:bg-amber-950/20">
-              <div className="flex items-center justify-center gap-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                  Pembayaran sedang diverifikasi
-                </span>
-              </div>
-              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                Anda akan mendapat notifikasi setelah akun diaktifkan.
-              </p>
-            </div>
-
-            <p className="mt-8 text-xs text-slate-400 dark:text-slate-500">
-              Jika sudah lebih dari 24 jam belum diaktifkan, silakan hubungi admin melalui halaman bantuan.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const showPendingNotice = paymentStatus === 'pending'
 
   // =========================================================================
   // STATE: Default — Split Layout Upgrade Page
@@ -301,11 +289,59 @@ function UpgradePageContent() {
 
             {/* Headline */}
             <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[42px] lg:leading-tight dark:text-white">
-              Upgrade ke {planInfo.name}
+              {isTrialActive ? 'Upgrade Paket Anda' : `Upgrade ke ${planInfo.name}`}
             </h1>
             <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-md">
-              Akses fitur lengkap untuk mengembangkan bisnis Anda tanpa batas.
+              {isTrialActive
+                ? 'Pilih paket di bawah ini untuk melanjutkan penggunaan setelah trial selesai.'
+                : 'Akses fitur lengkap untuk mengembangkan bisnis Anda tanpa batas.'}
             </p>
+
+            {isTrialActive && (
+              <div className="mt-6 max-w-xl rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 dark:border-emerald-800 dark:bg-emerald-950/30">
+                <div className="flex gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-500/15">
+                    <Hourglass className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                      Anda sedang dalam akses trial 3 hari
+                    </p>
+                    <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-300">
+                      Silakan upgrade ke plan yang Anda inginkan sebelum masa trial berakhir.
+                    </p>
+                    {trialEndDate && (
+                      <p className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-200">
+                        Sisa trial: {trialDaysRemaining} hari · berakhir pada{' '}
+                        {trialEndDate.toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showPendingNotice && (
+              <div className="mt-6 max-w-xl rounded-3xl border border-amber-200 bg-amber-50/80 p-5 dark:border-amber-900/60 dark:bg-amber-950/30">
+                <div className="flex gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-500/15">
+                    <Clock className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                      Anda memiliki pembayaran yang sedang menunggu konfirmasi
+                    </p>
+                    <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+                      Admin sedang memverifikasi pembayaran Anda. Anda tetap dapat melihat pilihan paket di halaman ini.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Price */}
             <div className="mt-8 flex items-baseline gap-2">
