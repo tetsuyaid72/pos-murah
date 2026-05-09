@@ -7,6 +7,8 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+const SUPABASE_PROJECT_URL = 'https://chtlgaqgmpymsbsooows.supabase.co'
+
 function readEnv(name: string): string | undefined {
   const value = process.env[name]?.trim()
   return value?.replace(/^['"]|['"]$/g, '')
@@ -58,6 +60,33 @@ export function createSupabaseClient() {
   return createClient(supabaseUrl, supabaseAnonKey)
 }
 
+export function getStoragePublicUrl(bucket: string, filePath: string): string {
+  const supabaseUrl = SUPABASE_PROJECT_URL
+
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL')
+  }
+
+  const cleanPath = filePath
+    .trim()
+    .replace(/^\/+/, '')
+    .replace(new RegExp(`^${bucket}/`), '')
+
+  return `${supabaseUrl}/storage/v1/object/public/${bucket}/${cleanPath}`
+}
+
+export function normalizeStoragePublicUrl(
+  value: string | null | undefined,
+  bucket = 'uploads'
+): string | null {
+  const proofValue = value?.trim()
+
+  if (!proofValue) return null
+  if (/^https?:\/\//i.test(proofValue)) return proofValue
+
+  return getStoragePublicUrl(bucket, proofValue)
+}
+
 /**
  * Upload file ke Supabase Storage
  *
@@ -93,9 +122,5 @@ export async function uploadToStorage(
     throw new Error(`Upload gagal: ${error.message}`)
   }
 
-  const { data } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(filePath)
-
-  return data.publicUrl
+  return getStoragePublicUrl(bucket, filePath)
 }

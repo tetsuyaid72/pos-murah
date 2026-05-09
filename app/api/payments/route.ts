@@ -8,6 +8,7 @@ import { eq, and, desc } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { payments } from '@/lib/db/schema'
+import { normalizeStoragePublicUrl } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +35,9 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({}))
     const method = body.method === 'QRIS' ? 'QRIS' : 'BANK_TRANSFER'
-    const proofUrl = body.proofUrl || null
+    const proofUrl = typeof body.proofUrl === 'string'
+      ? normalizeStoragePublicUrl(body.proofUrl)
+      : null
 
     // Create payment record
     const [payment] = await db.insert(payments).values({

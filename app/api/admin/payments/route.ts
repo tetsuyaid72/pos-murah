@@ -8,6 +8,7 @@ import { eq, desc, like, or } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { payments, users, stores } from '@/lib/db/schema'
+import { normalizeStoragePublicUrl } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,8 +62,12 @@ export async function GET(request: NextRequest) {
     }
 
     const results = await query
+    const normalizedPayments = results.map((payment) => ({
+      ...payment,
+      proofUrl: normalizeStoragePublicUrl(payment.proofUrl),
+    }))
 
-    return NextResponse.json({ payments: results })
+    return NextResponse.json({ payments: normalizedPayments })
   } catch (error) {
     console.error('Admin payments list error:', error)
     return NextResponse.json({ error: 'Gagal mengambil data' }, { status: 500 })
