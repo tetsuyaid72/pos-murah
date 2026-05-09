@@ -32,39 +32,19 @@ export function createSupabaseClient() {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)')
+    throw new Error(
+      'Missing Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY)'
+    )
   }
 
   return createClient(supabaseUrl, supabaseAnonKey)
 }
 
 /**
- * Ensure a storage bucket exists (create if missing).
- * Uses service role key so it has permission to create buckets.
- */
-async function ensureBucket(bucket: string): Promise<void> {
-  const supabase = createSupabaseAdmin()
-
-  const { data: buckets } = await supabase.storage.listBuckets()
-  const exists = buckets?.some((b) => b.name === bucket)
-
-  if (!exists) {
-    const { error } = await supabase.storage.createBucket(bucket, {
-      public: true,
-      fileSizeLimit: 2 * 1024 * 1024, // 2MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
-    })
-    if (error && !error.message.includes('already exists')) {
-      throw new Error(`Gagal membuat bucket "${bucket}": ${error.message}`)
-    }
-  }
-}
-
-/**
  * Upload file ke Supabase Storage
  *
- * @param bucket - Nama bucket (e.g. "uploads")
- * @param filePath - Path di dalam bucket (e.g. "payments/1234-abc.jpg")
+ * @param bucket - Nama bucket, contoh: "uploads"
+ * @param filePath - Path di dalam bucket, contoh: "payments/1234-abc.jpg"
  * @param file - File buffer
  * @param contentType - MIME type
  * @returns Public URL dari file yang diupload
@@ -77,9 +57,6 @@ export async function uploadToStorage(
 ): Promise<string> {
   const supabase = createSupabaseAdmin()
 
-  // Ensure bucket exists before uploading
-  await ensureBucket(bucket)
-
   const { error } = await supabase.storage
     .from(bucket)
     .upload(filePath, file, {
@@ -91,7 +68,6 @@ export async function uploadToStorage(
     throw new Error(`Upload gagal: ${error.message}`)
   }
 
-  // Get public URL
   const { data } = supabase.storage
     .from(bucket)
     .getPublicUrl(filePath)

@@ -16,6 +16,9 @@ import { getSession } from '@/lib/auth'
 import { requireTenant, handleTenantError, TenantError } from '@/lib/db/tenant'
 import { uploadToStorage } from '@/lib/supabase'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 
@@ -33,8 +36,10 @@ const STORAGE_BUCKET = 'uploads'
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
-    const typeParam = formData.get('type') as string | null
+    const fileValue = formData.get('file')
+    const typeValue = formData.get('type')
+    const file = fileValue instanceof File ? fileValue : null
+    const typeParam = typeof typeValue === 'string' ? typeValue : null
 
     // Payment uploads only require authentication (no store context needed)
     // Other uploads require full tenant context
@@ -95,9 +100,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ url: publicUrl }, { status: 200 })
     } catch (uploadErr) {
       const message = uploadErr instanceof Error ? uploadErr.message : 'Upload gagal'
-      console.error('[Upload] Supabase Storage error:', message)
+      console.error('[Upload] Supabase Storage error:', {
+        message,
+        bucket: STORAGE_BUCKET,
+        path: storagePath,
+        type: typeParam || 'product',
+      })
       return NextResponse.json(
-        { error: `Upload gagal: ${message}` },
+        { error: 'Upload bukti pembayaran gagal. Silakan coba lagi.' },
         { status: 500 }
       )
     }
