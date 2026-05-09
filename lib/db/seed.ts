@@ -29,10 +29,16 @@ async function main() {
   // =========================================================================
   // 1. Super Admin
   // =========================================================================
-  const adminEmail = 'admin@warungmadura.pos'
-  const adminPassword = await bcrypt.hash('admin123456', 12)
+  const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'tetsuyaid72@gmail.com'
+  const adminPasswordPlain = process.env.SUPER_ADMIN_PASSWORD
 
-  // Upsert: check if exists, then insert or skip
+  if (!adminPasswordPlain) {
+    throw new Error('SUPER_ADMIN_PASSWORD is required to seed or update the Super Admin')
+  }
+
+  const adminPassword = await bcrypt.hash(adminPasswordPlain, 12)
+
+  // Upsert: check if exists, then insert or update credentials
   const existingAdmin = await db
     .select({ id: users.id })
     .from(users)
@@ -50,7 +56,17 @@ async function main() {
     })
     console.log(`  Super Admin created: ${adminEmail}`)
   } else {
-    console.log(`  Super Admin already exists: ${adminEmail}`)
+    await db
+      .update(users)
+      .set({
+        name: 'Super Admin',
+        passwordHash: adminPassword,
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      })
+      .where(eq(users.email, adminEmail))
+
+    console.log(`  Super Admin updated: ${adminEmail}`)
   }
 
   // =========================================================================
