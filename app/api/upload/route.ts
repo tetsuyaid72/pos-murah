@@ -1,7 +1,7 @@
 /**
  * POST /api/upload — Upload a file (image)
  *
- * Uses Supabase Storage. Bucket is auto-created if it doesn't exist.
+ * Uses Supabase Storage. Bucket must already exist in Supabase.
  *
  * Protected: requires authentication.
  * - Payment uploads: only require authenticated user (no store context needed)
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Upload to Supabase Storage (bucket auto-created if missing)
+    // Upload to Supabase Storage
     try {
       const publicUrl = await uploadToStorage(
         STORAGE_BUCKET,
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         type: typeParam || 'product',
       })
       return NextResponse.json(
-        { error: 'Upload bukti pembayaran gagal. Silakan coba lagi.' },
+        { error: message },
         { status: 500 }
       )
     }
