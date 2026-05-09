@@ -4,13 +4,48 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, gte, lte, desc, isNull } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, isNull, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { transactions, transactionItems, products } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
 import { logActivityAsync } from '@/lib/activity'
 import { generateId } from '@/lib/utils'
 import { checkTransactionLimit } from '@/lib/plan-guard'
+
+type TransactionItemInput = {
+  productId?: string
+  productName: string
+  quantity: number
+  unitPrice: number
+  costPrice?: number
+  discountAmount?: number
+  subtotal: number
+}
+
+function toTransactionItemValues(items: TransactionItemInput[], transactionId: string) {
+  return items.map((item) => ({
+    transactionId,
+    productId: item.productId || null,
+    productName: item.productName,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    costPrice: item.costPrice ?? 0,
+    discountAmount: item.discountAmount ?? 0,
+    subtotal: item.subtotal,
+  }))
+}
+
+function mergeStockQuantities(items: TransactionItemInput[]) {
+  const quantities = new Map<string, number>()
+
+  for (const item of items) {
+    if (!item.productId) continue
+
+    quantities.set(item.productId, (quantities.get(item.productId) ?? 0) + item.quantity)
+  }
+
+  return Array.from(quantities, ([productId, quantity]) => ({ productId, quantity }))
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -73,7 +108,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
 
     const {
-      items,
+      items: rawItems,
       subtotal,
       discountAmount = 0,
       discountType = 'FIXED',
@@ -86,9 +121,11 @@ export async function POST(request: NextRequest) {
       notes,
     } = body
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
+    if (!rawItems || !Array.isArray(rawItems) || rawItems.length === 0) {
       return NextResponse.json({ error: 'Transaksi harus memiliki minimal 1 item' }, { status: 400 })
     }
+
+    const items = rawItems as TransactionItemInput[]
 
     if (!totalAmount || totalAmount <= 0) {
       return NextResponse.json({ error: 'Total transaksi tidak valid' }, { status: 400 })
@@ -123,42 +160,17 @@ export async function POST(request: NextRequest) {
       })
 
       // 2. Insert transaction items
-      const itemValues = items.map((item: {
-        productId?: string
-        productName: string
-        quantity: number
-        unitPrice: number
-        costPrice?: number
-        discountAmount?: number
-        subtotal: number
-      }) => ({
-        transactionId,
-        productId: item.productId || null,
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        costPrice: item.costPrice ?? 0,
-        discountAmount: item.discountAmount ?? 0,
-        subtotal: item.subtotal,
-      }))
+      const itemValues = toTransactionItemValues(items, transactionId)
+      const stockAdjustments = mergeStockQuantities(items)
 
       await tx.insert(transactionItems).values(itemValues)
 
-      // 3. Decrease stock for each product
-      for (const item of items) {
-        if (item.productId) {
-          const [product] = await tx
-            .select({ stock: products.stock, storeId: products.storeId })
-            .from(products)
-            .where(and(eq(products.id, item.productId), eq(products.storeId, storeId)))
-
-          if (product) {
-            await tx
-              .update(products)
-              .set({ stock: product.stock - item.quantity })
-              .where(and(eq(products.id, item.productId), eq(products.storeId, storeId)))
-          }
-        }
+      // 3. Decrease stock per unique product without extra select queries
+      for (const item of stockAdjustments) {
+        await tx
+          .update(products)
+          .set({ stock: sql`${products.stock} - ${item.quantity}` })
+          .where(and(eq(products.id, item.productId), eq(products.storeId, storeId)))
       }
     })
 

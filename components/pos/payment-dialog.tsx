@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, startTransition } from 'react'
+import dynamic from 'next/dynamic'
 import {
   X,
   Banknote,
@@ -11,7 +12,6 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatRupiah } from '@/lib/format'
-import { generateInvoiceNumber } from '@/lib/format'
 import { generateId } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { useCartStore } from '@/stores/cart-store'
@@ -21,10 +21,12 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { ReceiptPreview } from '@/components/pos/receipt-preview'
-import { getPrinter } from '@/lib/printer/bluetooth'
-import { buildReceipt } from '@/lib/printer/receipt-builder'
 import type { PaymentMethod, Transaction } from '@/types'
+
+const ReceiptPreview = dynamic(
+  () => import('@/components/pos/receipt-preview').then((mod) => mod.ReceiptPreview),
+  { ssr: false }
+)
 
 interface PaymentDialogProps {
   open: boolean
@@ -43,7 +45,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
   const { items, getTotal, getSubtotal, paymentMethod, setPaymentMethod, clearCart, discountAmount, discountType } =
     useCartStore()
   const { fetchProducts } = useProductStore()
-  const { addTransaction, transactions } = useTransactionStore()
+  const { addTransaction } = useTransactionStore()
   const {
     autoPrint,
     printerPaperSize,
@@ -56,6 +58,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 
   const [amountPaid, setAmountPaid] = useState('')
   const [isSuccess, setIsSuccess] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
 
@@ -64,33 +67,6 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
   const paidNum = parseInt(amountPaid) || 0
   const change = paidNum - total
 
-  // Reset state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setAmountPaid('')
-      setIsSuccess(false)
-      setLastTransaction(null)
-      setShowReceipt(false)
-    }
-  }, [open])
-
-  // Keyboard shortcut: Enter to confirm payment
-  useEffect(() => {
-    if (!open || isSuccess) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && canPay) {
-        handlePayment()
-      }
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  })
-
   const canPay =
     paymentMethod === 'cash'
       ? paidNum >= total
@@ -98,8 +74,23 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
         ? true
         : true // debt
 
+  const resetDialogState = useCallback(() => {
+    setAmountPaid('')
+    setIsSuccess(false)
+    setIsProcessing(false)
+    setLastTransaction(null)
+    setShowReceipt(false)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    resetDialogState()
+    onClose()
+  }, [resetDialogState, onClose])
+
   const handlePayment = useCallback(async () => {
-    if (!canPay) return
+    if (!canPay || isProcessing) return
+
+    setIsProcessing(true)
 
     // Build transaction items for API
     const txItems = items.map((item) => ({
@@ -172,8 +163,9 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       // Save to local store for dashboard display
       addTransaction(transaction)
 
-      // Refresh products to get updated stock from DB
-      fetchProducts()
+      startTransition(() => {
+        fetchProducts()
+      })
 
       // Store transaction for receipt
       setLastTransaction(transaction)
@@ -183,9 +175,14 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 
       // Auto-print to thermal printer if enabled and connected
       if (autoPrint) {
-        const printer = getPrinter()
-        if (printer.isConnected) {
-          try {
+        try {
+          const [{ getPrinter }, { buildReceipt }] = await Promise.all([
+            import('@/lib/printer/bluetooth'),
+            import('@/lib/printer/receipt-builder'),
+          ])
+
+          const printer = getPrinter()
+          if (printer.isConnected) {
             const receiptData = buildReceipt(transaction, {
               paperSize: printerPaperSize,
               storeName,
@@ -197,23 +194,40 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
             printer.print(receiptData).catch(() => {
               // Silently fail auto-print — user can still manually print
             })
-          } catch {
-            // Silently fail — don't block the success flow
           }
+        } catch {
+          // Silently fail — don't block the success flow
         }
       }
     } catch (err) {
       console.error('Payment error:', err)
+    } finally {
+      setIsProcessing(false)
     }
-  }, [canPay, items, subtotal, discountAmount, discountType, total, paymentMethod, paidNum, change, addTransaction, fetchProducts, autoPrint, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
+  }, [canPay, isProcessing, items, subtotal, discountAmount, discountType, total, paymentMethod, paidNum, change, addTransaction, fetchProducts, autoPrint, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
+
+  // Keyboard shortcut: Enter to confirm payment
+  useEffect(() => {
+    if (!open || isSuccess || isProcessing) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && canPay) {
+        handlePayment()
+      }
+      if (e.key === 'Escape') {
+        handleClose()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, isSuccess, isProcessing, canPay, handlePayment, handleClose])
 
   const handleDone = useCallback(() => {
     clearCart()
-    setIsSuccess(false)
-    setLastTransaction(null)
-    setShowReceipt(false)
+    resetDialogState()
     onClose()
-  }, [clearCart, onClose])
+  }, [clearCart, resetDialogState, onClose])
 
   const handleExactAmount = () => {
     setAmountPaid(total.toString())
@@ -226,7 +240,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={!isSuccess ? onClose : undefined}
+        onClick={!isSuccess ? handleClose : undefined}
       />
 
       {/* Dialog */}
@@ -254,8 +268,9 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
               paidNum={paidNum}
               change={change}
               canPay={canPay}
+              isProcessing={isProcessing}
               onPay={handlePayment}
-              onClose={onClose}
+              onClose={handleClose}
               onExactAmount={handleExactAmount}
             />
           )}
@@ -282,6 +297,7 @@ function PaymentForm({
   paidNum,
   change,
   canPay,
+  isProcessing,
   onPay,
   onClose,
   onExactAmount,
@@ -294,6 +310,7 @@ function PaymentForm({
   paidNum: number
   change: number
   canPay: boolean
+  isProcessing: boolean
   onPay: () => void
   onClose: () => void
   onExactAmount: () => void
@@ -430,10 +447,12 @@ function PaymentForm({
       <Button
         size="lg"
         className="w-full text-base font-bold"
-        disabled={!canPay}
+        disabled={!canPay || isProcessing}
         onClick={onPay}
       >
-        {paymentMethod === 'cash'
+        {isProcessing
+          ? 'Memproses...'
+          : paymentMethod === 'cash'
           ? 'Konfirmasi Pembayaran'
           : paymentMethod === 'qris'
             ? 'Konfirmasi QRIS'
