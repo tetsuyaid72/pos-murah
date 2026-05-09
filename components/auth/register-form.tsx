@@ -5,6 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react'
+import {
+  NEW_USER_DISCOUNT_PERCENT,
+  PLANS,
+  PRICING,
+  formatPrice,
+  getPromoPricing,
+  type PaidPlanType,
+} from '@/lib/pricing'
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -41,6 +49,9 @@ export function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirect')
+  const planParam = searchParams.get('plan')
+  const selectedPlanKey: PaidPlanType | null =
+    planParam === 'basic' ? 'BASIC' : planParam === 'business' ? 'BUSINESS' : planParam === 'pro' ? 'PRO' : null
   const nameRef = useRef<HTMLInputElement>(null)
 
   const [name, setName] = useState('')
@@ -69,6 +80,10 @@ export function RegisterForm() {
     if (!confirmPassword) return true
     return password === confirmPassword
   }, [password, confirmPassword])
+
+  const selectedPromo = selectedPlanKey
+    ? getPromoPricing(PRICING[selectedPlanKey].monthly, true)
+    : null
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -132,6 +147,23 @@ export function RegisterForm() {
         <p className="text-slate-500 text-sm mt-2">
           Daftar untuk mulai mengelola bisnis Anda
         </p>
+        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <span className="inline-flex rounded-full bg-amber-500 px-3 py-1 text-[11px] font-bold text-white">
+            Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+          </span>
+          <p className="mt-2 text-sm font-semibold text-amber-900">Promo khusus pelanggan baru</p>
+          {selectedPlanKey && selectedPromo ? (
+            <p className="mt-1 text-xs text-amber-800">
+              Paket {PLANS[selectedPlanKey].name}: Harga normal{' '}
+              <span className="line-through">{formatPrice(selectedPromo.originalPrice)}</span>. Sekarang hanya{' '}
+              <span className="font-bold">{formatPrice(selectedPromo.finalAmount)}</span>/bulan.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-amber-800">
+              Harga normal dicoret, sekarang hanya 40% dari harga paket untuk user baru.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Form */}

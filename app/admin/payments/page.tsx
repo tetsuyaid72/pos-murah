@@ -19,6 +19,14 @@ import { formatRupiah } from '@/lib/format'
 interface Payment {
   id: string
   amount: number
+  plan: 'BASIC' | 'PRO' | 'BUSINESS' | 'ENTERPRISE'
+  billingPeriod: 'monthly' | 'yearly'
+  originalPrice: number
+  discountPercent: number
+  discountAmount: number
+  finalAmount: number
+  promoCode: string | null
+  promoType: string | null
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
   method: 'BANK_TRANSFER' | 'QRIS'
   proofUrl: string | null
@@ -91,8 +99,9 @@ export default function AdminPaymentsPage() {
   }, [])
 
   const handleAction = async (paymentId: string, action: 'approve' | 'reject') => {
+    const payment = payments.find((item) => item.id === paymentId)
     const confirmMsg = action === 'approve'
-      ? 'Yakin ingin approve pembayaran ini? User akan di-upgrade ke Pro.'
+      ? `Yakin ingin approve pembayaran ini? User akan di-upgrade ke ${payment?.plan ?? 'plan yang dipilih'}.`
       : 'Yakin ingin reject pembayaran ini?'
 
     if (!window.confirm(confirmMsg)) return
@@ -111,7 +120,7 @@ export default function AdminPaymentsPage() {
       }
 
       setToast({
-        message: action === 'approve' ? 'User berhasil di-approve ke Pro!' : 'Pembayaran ditolak.',
+        message: action === 'approve' ? `User berhasil di-approve ke ${payment?.plan ?? 'plan yang dipilih'}!` : 'Pembayaran ditolak.',
         type: action === 'approve' ? 'success' : 'error',
       })
 
@@ -261,7 +270,17 @@ export default function AdminPaymentsPage() {
                           {payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : 'QRIS'}
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-foreground">
-                          {formatRupiah(payment.amount)}
+                          <div className="space-y-0.5">
+                            <p>{formatRupiah(payment.finalAmount ?? payment.amount)}</p>
+                            <p className="text-[10px] font-normal text-muted-foreground">
+                              {payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                            </p>
+                            {payment.promoType && (
+                              <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                {payment.promoType} · normal <span className="line-through">{formatRupiah(payment.originalPrice)}</span>
+                              </p>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
                           {formatDate(payment.createdAt)}
@@ -328,8 +347,18 @@ export default function AdminPaymentsPage() {
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{payment.storeName}</span>
-                      <span>{formatRupiah(payment.amount)}</span>
+                      <span>{formatRupiah(payment.finalAmount ?? payment.amount)}</span>
                     </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Tahunan'}</span>
+                      {payment.promoType && <span className="font-semibold text-emerald-600 dark:text-emerald-400">{payment.promoType}</span>}
+                    </div>
+                    {payment.promoType && (
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Harga normal</span>
+                        <span className="line-through">{formatRupiah(payment.originalPrice)}</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : 'QRIS'}</span>
                       <span>{formatDate(payment.createdAt)}</span>

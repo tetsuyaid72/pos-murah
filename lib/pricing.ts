@@ -10,10 +10,27 @@
 import type { PlanType } from '@/lib/features'
 
 export type BillingPeriod = 'monthly' | 'yearly'
+export type PaidPlanType = Exclude<PlanType, 'ENTERPRISE'>
+export type NewUserPromoInput = {
+  user?: { createdAt?: string | Date | null } | null
+  membership?: { isTrial?: boolean | null } | null
+  memberships?: Array<{ isTrial?: boolean | null }> | null
+  payments?: Array<{ status?: string | null }> | null
+}
 
 export interface PlanPricing {
   monthly: number
   yearly: number
+}
+
+export interface PromoPricing {
+  originalPrice: number
+  discountPercent: number
+  discountAmount: number
+  finalAmount: number
+  promoCode: string | null
+  promoType: string | null
+  isPromoApplied: boolean
 }
 
 export interface PlanInfo {
@@ -33,10 +50,13 @@ export interface PlanInfo {
   }
 }
 
+export const NEW_USER_DISCOUNT_PERCENT = 60
+export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
+
 /**
  * Pricing per plan (in Rupiah).
  */
-export const PRICING: Record<Exclude<PlanType, 'ENTERPRISE'>, PlanPricing> = {
+export const PRICING: Record<PaidPlanType, PlanPricing> = {
   BASIC: {
     monthly: 19_900,
     yearly: 189_000, // hemat ~21%
@@ -72,10 +92,62 @@ export function formatPrice(amount: number): string {
   }).format(amount)
 }
 
+export const formatRupiah = formatPrice
+
+export function calculateDiscountedPrice(originalPrice: number, discountPercent: number): number {
+  const payablePercent = Math.max(0, 100 - discountPercent)
+  const discountedPrice = Math.round((originalPrice * payablePercent) / 100)
+
+  if (discountedPrice >= 1000) {
+    return Math.max(0, Math.floor(discountedPrice / 1000) * 1000 - 100)
+  }
+
+  if (discountedPrice >= 100) {
+    return Math.max(0, Math.floor(discountedPrice / 100) * 100)
+  }
+
+  return Math.max(0, discountedPrice)
+}
+
+export function getPromoPricing(
+  originalPrice: number,
+  isEligible: boolean,
+  discountPercent = NEW_USER_DISCOUNT_PERCENT
+): PromoPricing {
+  const finalAmount = isEligible
+    ? calculateDiscountedPrice(originalPrice, discountPercent)
+    : originalPrice
+  const discountAmount = Math.max(0, originalPrice - finalAmount)
+
+  return {
+    originalPrice,
+    discountPercent: isEligible ? discountPercent : 0,
+    discountAmount,
+    finalAmount,
+    promoCode: isEligible ? NEW_USER_PROMO_CODE : null,
+    promoType: isEligible ? NEW_USER_PROMO_CODE : null,
+    isPromoApplied: isEligible,
+  }
+}
+
+export function isEligibleForNewUserPromo(input: NewUserPromoInput): boolean {
+  const payments = input.payments ?? []
+  const memberships = input.memberships ?? []
+  const hasApprovedPayment = payments.some((payment) => payment.status === 'APPROVED')
+  const hasPaidMembership = memberships.some((membership) => membership.isTrial === false)
+
+  if (hasApprovedPayment || hasPaidMembership) return false
+  if (input.membership?.isTrial === false) return false
+  if (input.membership?.isTrial) return true
+  if (input.user?.createdAt) return true
+
+  return !payments.length && !memberships.length
+}
+
 /**
  * Complete plan information for display purposes.
  */
-export const PLANS: Record<Exclude<PlanType, 'ENTERPRISE'>, PlanInfo> = {
+export const PLANS: Record<PaidPlanType, PlanInfo> = {
   BASIC: {
     name: 'Basic',
     slug: 'basic',

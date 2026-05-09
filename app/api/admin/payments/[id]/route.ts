@@ -52,9 +52,9 @@ export async function PATCH(
         approvedAt: new Date(),
       }).where(eq(payments.id, id))
 
-      // Upgrade membership to PRO
+      // Activate the requested plan from the approved payment.
       await db.update(memberships).set({
-        plan: 'PRO',
+        plan: payment.plan,
         isTrial: false,
       }).where(eq(memberships.storeId, payment.storeId))
 

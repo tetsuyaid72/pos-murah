@@ -2,7 +2,7 @@
 
 import { Check, Sparkles, Zap, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PLANS, PRICING, formatPrice, getYearlySavingsPercent } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getPromoPricing, getYearlySavingsPercent } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
@@ -11,6 +11,7 @@ interface PricingCardsProps {
   selectedPlan: SelectedPlan
   onSelectPlan: (plan: SelectedPlan) => void
   billingPeriod: BillingPeriod
+  isNewUserPromoEligible?: boolean
 }
 
 const PLAN_ICONS = {
@@ -21,7 +22,7 @@ const PLAN_ICONS = {
 
 const PLAN_KEYS = ['basic', 'pro', 'business'] as const
 
-export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod }: PricingCardsProps) {
+export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod, isNewUserPromoEligible = false }: PricingCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {PLAN_KEYS.map((planKey) => {
@@ -29,7 +30,9 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod }: Pric
         const planInfo = PLANS[pricingKey]
         const pricing = PRICING[pricingKey]
         const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
-        const monthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
+        const promoPricing = getPromoPricing(price, isNewUserPromoEligible)
+        const originalMonthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
+        const monthlyEquivalent = billingPeriod === 'yearly' ? Math.round(promoPricing.finalAmount / 12) : promoPricing.finalAmount
         const isSelected = selectedPlan === planKey
         const isPopular = planInfo.popular
         const Icon = PLAN_ICONS[planKey]
@@ -50,6 +53,11 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod }: Pric
             {isPopular && (
               <span className="absolute -top-2.5 left-4 inline-flex items-center rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
                 Populer
+              </span>
+            )}
+            {isNewUserPromoEligible && (
+              <span className="absolute -top-2.5 right-4 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
               </span>
             )}
 
@@ -73,15 +81,28 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod }: Pric
 
             {/* Price */}
             <div className="mt-3">
+              {isNewUserPromoEligible && (
+                <p className="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+                  Harga normal <span className="line-through">{formatPrice(originalMonthlyEquivalent)}</span>/bulan
+                </p>
+              )}
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                <span className={cn(
+                  'text-2xl font-bold',
+                  isNewUserPromoEligible ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
+                )}>
                   {formatPrice(monthlyEquivalent)}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">/bulan</span>
               </div>
+              {isNewUserPromoEligible && (
+                <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  Sekarang hanya {formatPrice(promoPricing.finalAmount)}
+                </p>
+              )}
               {billingPeriod === 'yearly' && (
                 <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  {formatPrice(price)}/tahun (hemat {savings}%)
+                  {formatPrice(promoPricing.finalAmount)}/tahun (hemat {savings}%)
                 </p>
               )}
             </div>

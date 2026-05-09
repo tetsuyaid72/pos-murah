@@ -19,9 +19,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSubscriptionStore } from '@/stores/subscription-store'
-import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
-import { PLANS, formatPrice, PRICING, getYearlySavingsPercent } from '@/lib/pricing'
+import {
+  NEW_USER_DISCOUNT_PERCENT,
+  PLANS,
+  PRICING,
+  formatPrice,
+  getPromoPricing,
+  getYearlySavingsPercent,
+  isEligibleForNewUserPromo,
+} from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 import { UpgradePaymentPanel } from '@/components/upgrade/payment-panel'
 
@@ -55,18 +62,23 @@ function UpgradePageContent() {
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>(initialPlan)
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
   const [showSuccess, setShowSuccess] = useState(false)
+  const [now] = useState(() => new Date())
 
   const { isAuthenticated, isLoading: authLoading, membership, fetchAuth } = useAuthStore()
-  const { userName, userEmail } = useSettingsStore()
 
   // Derived pricing
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
   const pricing = PRICING[pricingKey]
   const currentPrice = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
-  const formattedPrice = formatPrice(currentPrice)
+  const isNewUserPromoEligible = isEligibleForNewUserPromo({ membership })
+  const promoPricing = getPromoPricing(currentPrice, isNewUserPromoEligible)
+  const formattedPrice = formatPrice(promoPricing.finalAmount)
   const savings = getYearlySavingsPercent(pricingKey)
-  const monthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
+  const originalMonthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
+  const promoMonthlyEquivalent = billingPeriod === 'yearly'
+    ? Math.round(promoPricing.finalAmount / 12)
+    : promoPricing.finalAmount
 
   // Fetch auth state on mount
   useEffect(() => {
@@ -91,12 +103,22 @@ function UpgradePageContent() {
   const isTrialActive = Boolean(
     membership?.isTrial &&
     trialEndDate &&
-    trialEndDate > new Date()
+    trialEndDate > now
   )
   const trialDaysRemaining = trialEndDate
-    ? Math.max(0, Math.ceil((trialEndDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0
   const isPaidActive = Boolean(plan && paymentStatus === 'approved' && !membership?.isTrial)
+
+  useEffect(() => {
+    console.log('[Pricing Promo]', {
+      plan: pricingKey,
+      isNewUserPromoEligible,
+      originalPrice: promoPricing.originalPrice,
+      discountPercent: promoPricing.discountPercent,
+      finalAmount: promoPricing.finalAmount,
+    })
+  }, [pricingKey, isNewUserPromoEligible, promoPricing.originalPrice, promoPricing.discountPercent, promoPricing.finalAmount])
 
   useEffect(() => {
     console.log('[Upgrade Page] Membership state:', {
@@ -293,9 +315,16 @@ function UpgradePageContent() {
             </h1>
             <p className="mt-4 text-lg text-slate-500 dark:text-slate-400 max-w-md">
               {isTrialActive
-                ? 'Pilih paket di bawah ini untuk melanjutkan penggunaan setelah trial selesai.'
+                ? `Anda sedang trial. Upgrade sekarang dan dapatkan diskon ${NEW_USER_DISCOUNT_PERCENT}% untuk pelanggan baru.`
                 : 'Akses fitur lengkap untuk mengembangkan bisnis Anda tanpa batas.'}
             </p>
+
+            {isNewUserPromoEligible && (
+              <div className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800 shadow-sm dark:bg-amber-500/15 dark:text-amber-300">
+                <PartyPopper className="h-4 w-4" />
+                Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+              </div>
+            )}
 
             {isTrialActive && (
               <div className="mt-6 max-w-xl rounded-3xl border border-emerald-200 bg-emerald-50/80 p-5 dark:border-emerald-800 dark:bg-emerald-950/30">
@@ -308,7 +337,7 @@ function UpgradePageContent() {
                       Anda sedang dalam akses trial 3 hari
                     </p>
                     <p className="mt-1 text-sm text-emerald-700 dark:text-emerald-300">
-                      Silakan upgrade ke plan yang Anda inginkan sebelum masa trial berakhir.
+                      Anda sedang trial. Upgrade sekarang dan dapatkan diskon {NEW_USER_DISCOUNT_PERCENT}% untuk pelanggan baru.
                     </p>
                     {trialEndDate && (
                       <p className="mt-2 text-xs font-medium text-emerald-800 dark:text-emerald-200">
@@ -344,11 +373,35 @@ function UpgradePageContent() {
             )}
 
             {/* Price */}
-            <div className="mt-8 flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-slate-900 dark:text-white">
-                {formatPrice(monthlyEquivalent)}
-              </span>
-              <span className="text-base text-slate-400 dark:text-slate-500">/ bulan</span>
+            <div className="mt-8 space-y-2">
+              {isNewUserPromoEligible && (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Promo khusus pelanggan baru
+                  </p>
+                  <p className="text-sm text-slate-400 dark:text-slate-500">
+                    Harga normal{' '}
+                    <span className="line-through">{formatPrice(originalMonthlyEquivalent)}</span>
+                    <span> / bulan</span>
+                  </p>
+                </div>
+              )}
+              <div className="flex items-baseline gap-2">
+                <span className={cn(
+                  'font-bold',
+                  isNewUserPromoEligible
+                    ? 'text-5xl text-emerald-600 dark:text-emerald-400'
+                    : 'text-4xl text-slate-900 dark:text-white'
+                )}>
+                  {formatPrice(promoMonthlyEquivalent)}
+                </span>
+                <span className="text-base text-slate-400 dark:text-slate-500">/ bulan</span>
+              </div>
+              {isNewUserPromoEligible && (
+                <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  Sekarang hanya {formatPrice(promoPricing.finalAmount)} {billingPeriod === 'monthly' ? 'bulan ini' : 'per tahun'}
+                </p>
+              )}
             </div>
             {billingPeriod === 'yearly' && (
               <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
@@ -453,8 +506,7 @@ function UpgradePageContent() {
             <UpgradePaymentPanel
               selectedPlan={selectedPlan}
               billingPeriod={billingPeriod}
-              userName={userName}
-              userEmail={userEmail}
+              isNewUserPromoEligible={isNewUserPromoEligible}
               onSubmitPayment={submitPayment}
             />
           </div>

@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { FEATURE_DEFAULTS } from '@/lib/features'
-import { PLANS, PRICING, formatPrice } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getPromoPricing } from '@/lib/pricing'
 
 interface FeatureFlag {
   id: string
@@ -185,6 +185,7 @@ export default function AdminSettingsPage() {
                 <tr className="border-b border-border/50">
                   <th className="px-3 py-2 text-left font-medium text-muted-foreground">Plan</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Monthly</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Promo User Baru</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Yearly</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Products</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Tx/Month</th>
@@ -205,6 +206,14 @@ export default function AdminSettingsPage() {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-right text-foreground">{formatPrice(plan.pricing.monthly)}</td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="space-y-0.5">
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {formatPrice(getPromoPricing(plan.pricing.monthly, true).finalAmount)}
+                        </span>
+                        <p className="text-[10px] text-muted-foreground">Diskon {NEW_USER_DISCOUNT_PERCENT}%</p>
+                      </div>
+                    </td>
                     <td className="px-3 py-2 text-right text-foreground">{formatPrice(plan.pricing.yearly)}</td>
                     <td className="px-3 py-2 text-right text-muted-foreground">
                       {plan.limits.products === 'unlimited' ? '∞' : plan.limits.products}

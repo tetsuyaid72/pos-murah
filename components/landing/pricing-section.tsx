@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { PLANS, PRICING, formatPrice, getYearlySavingsPercent } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getPromoPricing, getYearlySavingsPercent } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 
 export function PricingSection() {
@@ -26,7 +26,7 @@ export function PricingSection() {
             Harga <span className="gradient-text">Sederhana & Transparan</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Mulai dari Rp 19.900/bulan. Coba demo gratis tanpa daftar.
+            Promo khusus pelanggan baru: diskon {NEW_USER_DISCOUNT_PERCENT}% untuk semua paket. Coba demo gratis tanpa daftar.
           </p>
         </div>
 
@@ -127,9 +127,10 @@ interface PricingCardProps {
 function PricingCard({ plan, period, planKey, href, cta, variant }: PricingCardProps) {
   const pricing = PRICING[planKey]
   const price = period === 'monthly' ? pricing.monthly : pricing.yearly
+  const promoPricing = getPromoPricing(price, true)
   const periodLabel = period === 'monthly' ? '/bulan' : '/tahun'
   const savings = period === 'yearly' ? getYearlySavingsPercent(planKey) : 0
-  const monthlyEquiv = period === 'yearly' ? Math.round(pricing.yearly / 12) : null
+  const monthlyEquiv = period === 'yearly' ? Math.round(promoPricing.finalAmount / 12) : null
 
   return (
     <div
@@ -153,13 +154,25 @@ function PricingCard({ plan, period, planKey, href, cta, variant }: PricingCardP
 
       {/* Plan header */}
       <div className="mb-5">
+        <span className="mb-3 inline-flex rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+          Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+        </span>
         <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
+        <p className="mt-2 text-xs font-medium text-muted-foreground">
+          Promo khusus pelanggan baru
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Harga normal <span className="line-through">{formatPrice(price)}</span>
+        </p>
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            {formatPrice(price)}
+          <span className="text-3xl font-bold tracking-tight text-emerald-600 sm:text-4xl dark:text-emerald-400">
+            {formatPrice(promoPricing.finalAmount)}
           </span>
           <span className="text-sm text-muted-foreground">{periodLabel}</span>
         </div>
+        <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+          Sekarang hanya {formatPrice(promoPricing.finalAmount)}
+        </p>
 
         {monthlyEquiv && (
           <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
