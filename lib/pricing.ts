@@ -59,15 +59,15 @@ export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
 export const PRICING: Record<PaidPlanType, PlanPricing> = {
   BASIC: {
     monthly: 19_900,
-    yearly: 189_000, // hemat ~21%
+    yearly: 189_000,
   },
   PRO: {
     monthly: 49_900,
-    yearly: 479_000, // hemat ~20%
+    yearly: 479_000,
   },
   BUSINESS: {
     monthly: 99_900,
-    yearly: 949_000, // hemat ~21%
+    yearly: 949_000,
   },
 }
 
@@ -96,17 +96,9 @@ export const formatRupiah = formatPrice
 
 export function calculateDiscountedPrice(originalPrice: number, discountPercent: number): number {
   const payablePercent = Math.max(0, 100 - discountPercent)
-  const discountedPrice = Math.round((originalPrice * payablePercent) / 100)
+  const discountedPrice = (originalPrice * payablePercent) / 100
 
-  if (discountedPrice >= 1000) {
-    return Math.max(0, Math.floor(discountedPrice / 1000) * 1000 - 100)
-  }
-
-  if (discountedPrice >= 100) {
-    return Math.max(0, Math.floor(discountedPrice / 100) * 100)
-  }
-
-  return Math.max(0, discountedPrice)
+  return Math.max(0, Math.round(discountedPrice / 100) * 100)
 }
 
 export function getPromoPricing(
@@ -245,6 +237,25 @@ export function getPlanPrice(plan: PlanType, period: BillingPeriod): number {
 export function getMonthlyEquivalent(plan: keyof typeof PRICING, period: BillingPeriod): number {
   if (period === 'monthly') return PRICING[plan].monthly
   return Math.round(PRICING[plan].yearly / 12)
+}
+
+export function getDisplayPricing(
+  plan: keyof typeof PRICING,
+  period: BillingPeriod,
+  isPromoEligible: boolean
+) {
+  const normalPrice = getPlanPrice(plan, period)
+  const promo = getPromoPricing(normalPrice, isPromoEligible)
+  const monthlyEquivalent = period === 'yearly'
+    ? Math.round(promo.finalAmount / 12)
+    : promo.finalAmount
+
+  return {
+    normalPrice,
+    finalPrice: promo.finalAmount,
+    monthlyEquivalent,
+    promo,
+  }
 }
 
 /**

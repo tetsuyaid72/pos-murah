@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getPromoPricing, PRICING } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getDisplayPricing } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
@@ -51,10 +51,9 @@ export function UpgradePaymentPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
-  const pricing = PRICING[pricingKey]
-  const currentPrice = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
-  const promoPricing = getPromoPricing(currentPrice, isNewUserPromoEligible)
-  const formattedPrice = formatPrice(promoPricing.finalAmount)
+  const displayPricing = getDisplayPricing(pricingKey, billingPeriod, isNewUserPromoEligible)
+  const promoPricing = displayPricing.promo
+  const formattedPrice = formatPrice(displayPricing.finalPrice)
 
   // Determine current step
   const currentStep = proofFile ? 3 : 1
@@ -253,13 +252,13 @@ export function UpgradePaymentPanel({
             {isNewUserPromoEligible && (
               <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
                 <span className="inline-flex rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                  Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+                  Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
                 </span>
                 <p className="mt-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
                   Promo khusus pelanggan baru
                 </p>
                 <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>. Sekarang hanya{' '}
+                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>. Sekarang{' '}
                   <span className="font-bold">{formattedPrice}</span>.
                 </p>
               </div>
@@ -357,7 +356,7 @@ export function UpgradePaymentPanel({
                 </p>
                 {isNewUserPromoEligible && (
                   <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    Sekarang hanya {formattedPrice}
+                    Sekarang {formattedPrice}
                   </p>
                 )}
               </div>
@@ -380,7 +379,7 @@ export function UpgradePaymentPanel({
               </p>
               {isNewUserPromoEligible && (
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span> · Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span> · Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
                 </p>
               )}
             </div>

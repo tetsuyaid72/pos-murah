@@ -1,6 +1,6 @@
 'use client'
 
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getPromoPricing, getYearlySavingsPercent } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
@@ -14,11 +14,8 @@ interface OrderSummaryProps {
 export function OrderSummary({ selectedPlan, billingPeriod, isNewUserPromoEligible = false }: OrderSummaryProps) {
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
-  const pricing = PRICING[pricingKey]
-  const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
-  const promoPricing = getPromoPricing(price, isNewUserPromoEligible)
-  const formattedPrice = formatPrice(promoPricing.finalAmount)
-  const savings = billingPeriod === 'yearly' ? getYearlySavingsPercent(pricingKey) : 0
+  const displayPricing = getDisplayPricing(pricingKey, billingPeriod, isNewUserPromoEligible)
+  const formattedPrice = formatPrice(displayPricing.finalPrice)
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-800/50">
@@ -37,32 +34,24 @@ export function OrderSummary({ selectedPlan, billingPeriod, isNewUserPromoEligib
             {billingPeriod === 'monthly' ? 'Bulanan' : 'Tahunan'}
           </span>
         </div>
-        {billingPeriod === 'yearly' && savings > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-slate-600 dark:text-slate-300">Diskon</span>
-            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
-              Hemat {savings}%
-            </span>
-          </div>
-        )}
         {isNewUserPromoEligible && (
           <>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600 dark:text-slate-300">Promo</span>
               <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
-                Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+                Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600 dark:text-slate-300">Harga normal</span>
               <span className="text-sm text-slate-400 line-through dark:text-slate-500">
-                {formatPrice(promoPricing.originalPrice)}
+                {formatPrice(displayPricing.promo.originalPrice)}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-600 dark:text-slate-300">Potongan</span>
               <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                -{formatPrice(promoPricing.discountAmount)}
+                -{formatPrice(displayPricing.promo.discountAmount)}
               </span>
             </div>
           </>

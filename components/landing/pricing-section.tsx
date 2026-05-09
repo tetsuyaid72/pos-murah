@@ -5,17 +5,11 @@ import Link from 'next/link'
 import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getPromoPricing, getYearlySavingsPercent } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getDisplayPricing } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
 
 export function PricingSection() {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
-
-  const maxSavings = Math.max(
-    getYearlySavingsPercent('BASIC'),
-    getYearlySavingsPercent('PRO'),
-    getYearlySavingsPercent('BUSINESS'),
-  )
 
   return (
     <section id="harga" className="relative border-y border-border/50 bg-muted/20 py-20 sm:py-28">
@@ -26,7 +20,7 @@ export function PricingSection() {
             Harga <span className="gradient-text">Sederhana & Transparan</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Promo khusus pelanggan baru: diskon {NEW_USER_DISCOUNT_PERCENT}% untuk semua paket. Coba demo gratis tanpa daftar.
+            Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru. Coba demo gratis tanpa daftar.
           </p>
         </div>
 
@@ -54,7 +48,7 @@ export function PricingSection() {
           >
             Tahunan
             <span className="absolute -top-2 -right-2 inline-flex items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
-              -{maxSavings}%
+              -{NEW_USER_DISCOUNT_PERCENT}%
             </span>
           </button>
         </div>
@@ -125,12 +119,9 @@ interface PricingCardProps {
 }
 
 function PricingCard({ plan, period, planKey, href, cta, variant }: PricingCardProps) {
-  const pricing = PRICING[planKey]
-  const price = period === 'monthly' ? pricing.monthly : pricing.yearly
-  const promoPricing = getPromoPricing(price, true)
+  const displayPricing = getDisplayPricing(planKey, period, true)
   const periodLabel = period === 'monthly' ? '/bulan' : '/tahun'
-  const savings = period === 'yearly' ? getYearlySavingsPercent(planKey) : 0
-  const monthlyEquiv = period === 'yearly' ? Math.round(promoPricing.finalAmount / 12) : null
+  const monthlyEquiv = period === 'yearly' ? displayPricing.monthlyEquivalent : null
 
   return (
     <div
@@ -155,28 +146,28 @@ function PricingCard({ plan, period, planKey, href, cta, variant }: PricingCardP
       {/* Plan header */}
       <div className="mb-5">
         <span className="mb-3 inline-flex rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
-          Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+          Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
         </span>
         <h3 className="text-lg font-semibold text-foreground">{plan.name}</h3>
         <p className="mt-2 text-xs font-medium text-muted-foreground">
           Promo khusus pelanggan baru
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Harga normal <span className="line-through">{formatPrice(price)}</span>
+          Harga normal <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
         </p>
         <div className="mt-3 flex items-baseline gap-1">
           <span className="text-3xl font-bold tracking-tight text-emerald-600 sm:text-4xl dark:text-emerald-400">
-            {formatPrice(promoPricing.finalAmount)}
+            {formatPrice(displayPricing.finalPrice)}
           </span>
           <span className="text-sm text-muted-foreground">{periodLabel}</span>
         </div>
         <p className="mt-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-          Sekarang hanya {formatPrice(promoPricing.finalAmount)}
+          Sekarang {formatPrice(displayPricing.finalPrice)} {periodLabel}
         </p>
 
         {monthlyEquiv && (
           <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
-            = {formatPrice(monthlyEquiv)}/bulan (hemat {savings}%)
+            Estimasi {formatPrice(monthlyEquiv)}/bulan, ditagih tahunan
           </p>
         )}
 

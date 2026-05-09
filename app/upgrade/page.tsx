@@ -23,10 +23,8 @@ import { useAuthStore } from '@/stores/auth-store'
 import {
   NEW_USER_DISCOUNT_PERCENT,
   PLANS,
-  PRICING,
   formatPrice,
-  getPromoPricing,
-  getYearlySavingsPercent,
+  getDisplayPricing,
   isEligibleForNewUserPromo,
 } from '@/lib/pricing'
 import type { BillingPeriod } from '@/lib/pricing'
@@ -69,16 +67,10 @@ function UpgradePageContent() {
   // Derived pricing
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
-  const pricing = PRICING[pricingKey]
-  const currentPrice = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
   const isNewUserPromoEligible = isEligibleForNewUserPromo({ membership })
-  const promoPricing = getPromoPricing(currentPrice, isNewUserPromoEligible)
-  const formattedPrice = formatPrice(promoPricing.finalAmount)
-  const savings = getYearlySavingsPercent(pricingKey)
-  const originalMonthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
-  const promoMonthlyEquivalent = billingPeriod === 'yearly'
-    ? Math.round(promoPricing.finalAmount / 12)
-    : promoPricing.finalAmount
+  const displayPricing = getDisplayPricing(pricingKey, billingPeriod, isNewUserPromoEligible)
+  const promoPricing = displayPricing.promo
+  const formattedPrice = formatPrice(displayPricing.finalPrice)
 
   // Fetch auth state on mount
   useEffect(() => {
@@ -322,7 +314,7 @@ function UpgradePageContent() {
             {isNewUserPromoEligible && (
               <div className="mt-5 inline-flex items-center gap-2 self-start rounded-full bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800 shadow-sm dark:bg-amber-500/15 dark:text-amber-300">
                 <PartyPopper className="h-4 w-4" />
-                Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+                Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
               </div>
             )}
 
@@ -381,8 +373,7 @@ function UpgradePageContent() {
                   </p>
                   <p className="text-sm text-slate-400 dark:text-slate-500">
                     Harga normal{' '}
-                    <span className="line-through">{formatPrice(originalMonthlyEquivalent)}</span>
-                    <span> / bulan</span>
+                    <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
                   </p>
                 </div>
               )}
@@ -393,19 +384,19 @@ function UpgradePageContent() {
                     ? 'text-5xl text-emerald-600 dark:text-emerald-400'
                     : 'text-4xl text-slate-900 dark:text-white'
                 )}>
-                  {formatPrice(promoMonthlyEquivalent)}
+                  {formatPrice(displayPricing.monthlyEquivalent)}
                 </span>
                 <span className="text-base text-slate-400 dark:text-slate-500">/ bulan</span>
               </div>
               {isNewUserPromoEligible && (
                 <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  Sekarang hanya {formatPrice(promoPricing.finalAmount)} {billingPeriod === 'monthly' ? 'bulan ini' : 'per tahun'}
+                  Sekarang {formatPrice(displayPricing.finalPrice)} {billingPeriod === 'monthly' ? '/bulan' : '/tahun'}
                 </p>
               )}
             </div>
             {billingPeriod === 'yearly' && (
               <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                Ditagih {formattedPrice}/tahun — hemat {savings}%
+                Estimasi {formatPrice(displayPricing.monthlyEquivalent)}/bulan, ditagih {formattedPrice}/tahun
               </p>
             )}
 
@@ -432,9 +423,7 @@ function UpgradePageContent() {
                 )}
               >
                 Tahunan
-                {savings > 0 && (
-                  <span className="ml-1.5 text-xs text-emerald-600 font-bold dark:text-emerald-400">-{savings}%</span>
-                )}
+                <span className="ml-1.5 text-xs text-emerald-600 font-bold dark:text-emerald-400">-{NEW_USER_DISCOUNT_PERCENT}%</span>
               </button>
             </div>
 
