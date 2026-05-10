@@ -13,6 +13,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { users, passwordResetTokens } from '@/lib/db/schema'
 import { sendPasswordResetEmail } from '@/lib/email'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function POST(request: NextRequest) {
   try {
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Build reset URL for logging in development
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = getAppUrl()
     const resetUrl = `${appUrl}/reset-password?token=${token}`
 
     // Always log reset link in development for easy testing

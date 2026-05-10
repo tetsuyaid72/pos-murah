@@ -11,6 +11,7 @@
  */
 
 import nodemailer from 'nodemailer'
+import { getAppUrl } from '@/lib/app-url'
 
 const APP_NAME = 'Warung Madura POS'
 
@@ -31,7 +32,7 @@ export async function sendPasswordResetEmail(
   email: string,
   token: string
 ): Promise<{ success: boolean; error?: string }> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = getAppUrl()
   const resetUrl = `${appUrl}/reset-password?token=${token}`
 
   try {

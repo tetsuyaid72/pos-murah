@@ -8,6 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { getAppUrl } from '@/lib/app-url'
 
 export async function GET() {
   const clientId = process.env.GOOGLE_CLIENT_ID
@@ -18,7 +19,7 @@ export async function GET() {
     )
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = getAppUrl()
   const redirectUri = `${appUrl}/api/auth/google/callback`
 
   // Generate random state for CSRF protection

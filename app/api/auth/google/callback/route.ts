@@ -14,6 +14,7 @@ import { users, stores, memberships, activityLogs } from '@/lib/db/schema'
 import { setSessionCookie } from '@/lib/auth'
 import { generateId } from '@/lib/utils'
 import { seedDemoData } from '@/lib/db/demo-seed'
+import { getAppUrl } from '@/lib/app-url'
 
 interface GoogleTokenResponse {
   access_token: string
@@ -34,7 +35,7 @@ interface GoogleUserInfo {
 }
 
 export async function GET(request: NextRequest) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const appUrl = getAppUrl()
 
   try {
     const { searchParams } = request.nextUrl

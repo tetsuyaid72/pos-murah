@@ -16,7 +16,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getDisplayPricing } from '@/lib/pricing'
-import type { BillingPeriod } from '@/lib/pricing'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
 
@@ -28,14 +27,12 @@ const BANK_INFO = {
 
 interface UpgradePaymentPanelProps {
   selectedPlan: SelectedPlan
-  billingPeriod: BillingPeriod
   isNewUserPromoEligible: boolean
   onSubmitPayment: () => void
 }
 
 export function UpgradePaymentPanel({
   selectedPlan,
-  billingPeriod,
   isNewUserPromoEligible,
   onSubmitPayment,
 }: UpgradePaymentPanelProps) {
@@ -51,7 +48,7 @@ export function UpgradePaymentPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
-  const displayPricing = getDisplayPricing(pricingKey, billingPeriod, isNewUserPromoEligible)
+  const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
   const promoPricing = displayPricing.promo
   const formattedPrice = formatPrice(displayPricing.finalPrice)
 
@@ -169,7 +166,7 @@ export function UpgradePaymentPanel({
             method: activeTab === 'qris' ? 'QRIS' : 'BANK_TRANSFER',
             proofUrl: uploadedUrl,
             plan: selectedPlan.toUpperCase(),
-            billingPeriod,
+            billingPeriod: 'monthly',
             amount: promoPricing.finalAmount,
             originalPrice: promoPricing.originalPrice,
             discountPercent: promoPricing.discountPercent,

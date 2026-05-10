@@ -27,7 +27,6 @@ import {
   getDisplayPricing,
   isEligibleForNewUserPromo,
 } from '@/lib/pricing'
-import type { BillingPeriod } from '@/lib/pricing'
 import { UpgradePaymentPanel } from '@/components/upgrade/payment-panel'
 
 
@@ -58,7 +57,6 @@ function UpgradePageContent() {
   const initialPlan: SelectedPlan = planParam === 'business' ? 'business' : planParam === 'basic' ? 'basic' : 'pro'
 
   const [selectedPlan, setSelectedPlan] = useState<SelectedPlan>(initialPlan)
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly')
   const [showSuccess, setShowSuccess] = useState(false)
   const [now] = useState(() => new Date())
 
@@ -68,9 +66,8 @@ function UpgradePageContent() {
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
   const isNewUserPromoEligible = isEligibleForNewUserPromo({ membership })
-  const displayPricing = getDisplayPricing(pricingKey, billingPeriod, isNewUserPromoEligible)
+  const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
   const promoPricing = displayPricing.promo
-  const formattedPrice = formatPrice(displayPricing.finalPrice)
 
   // Fetch auth state on mount
   useEffect(() => {
@@ -390,41 +387,9 @@ function UpgradePageContent() {
               </div>
               {isNewUserPromoEligible && (
                 <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  Sekarang {formatPrice(displayPricing.finalPrice)} {billingPeriod === 'monthly' ? '/bulan' : '/tahun'}
+                  Sekarang {formatPrice(displayPricing.finalPrice)} /bulan
                 </p>
               )}
-            </div>
-            {billingPeriod === 'yearly' && (
-              <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                Estimasi {formatPrice(displayPricing.monthlyEquivalent)}/bulan, ditagih {formattedPrice}/tahun
-              </p>
-            )}
-
-            {/* Billing toggle */}
-            <div className="mt-5 flex items-center gap-3">
-              <button
-                onClick={() => setBillingPeriod('monthly')}
-                className={cn(
-                  'rounded-full px-4 py-2 text-sm font-medium transition-all',
-                  billingPeriod === 'monthly'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                )}
-              >
-                Bulanan
-              </button>
-              <button
-                onClick={() => setBillingPeriod('yearly')}
-                className={cn(
-                  'rounded-full px-4 py-2 text-sm font-medium transition-all',
-                  billingPeriod === 'yearly'
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-                )}
-              >
-                Tahunan
-                <span className="ml-1.5 text-xs text-emerald-600 font-bold dark:text-emerald-400">-{NEW_USER_DISCOUNT_PERCENT}%</span>
-              </button>
             </div>
 
             {/* Key benefits */}
@@ -494,7 +459,6 @@ function UpgradePageContent() {
           <div className="flex flex-col justify-center border-t border-slate-100 bg-slate-50/50 px-6 py-12 lg:border-l lg:border-t-0 lg:px-12 lg:py-20 dark:border-slate-800 dark:bg-slate-900/30">
             <UpgradePaymentPanel
               selectedPlan={selectedPlan}
-              billingPeriod={billingPeriod}
               isNewUserPromoEligible={isNewUserPromoEligible}
               onSubmitPayment={submitPayment}
             />

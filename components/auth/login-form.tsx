@@ -20,7 +20,10 @@ function GoogleIcon({ className }: { className?: string }) {
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect')
+  const rawRedirectTo = searchParams.get('redirect')
+  const redirectTo = rawRedirectTo?.startsWith('/') && !rawRedirectTo.startsWith('//')
+    ? rawRedirectTo
+    : null
   const oauthError = searchParams.get('error')
   const emailRef = useRef<HTMLInputElement>(null)
 
@@ -57,13 +60,8 @@ export function LoginForm() {
         return
       }
 
-      if (redirectTo) {
-        router.push(redirectTo)
-      } else if (data.user?.role === 'SUPER_ADMIN') {
-        router.push('/admin')
-      } else {
-        router.push('/dashboard')
-      }
+      const destination = redirectTo || (data.user?.role === 'SUPER_ADMIN' ? '/admin' : '/dashboard')
+      router.replace(destination)
       router.refresh()
     } catch {
       setError('Tidak dapat terhubung ke server')

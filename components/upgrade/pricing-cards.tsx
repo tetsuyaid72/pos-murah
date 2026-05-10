@@ -2,15 +2,13 @@
 
 import { Check, Sparkles, Zap, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getPromoPricing, getYearlySavingsPercent } from '@/lib/pricing'
-import type { BillingPeriod } from '@/lib/pricing'
+import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
 
 interface PricingCardsProps {
   selectedPlan: SelectedPlan
   onSelectPlan: (plan: SelectedPlan) => void
-  billingPeriod: BillingPeriod
   isNewUserPromoEligible?: boolean
 }
 
@@ -22,22 +20,16 @@ const PLAN_ICONS = {
 
 const PLAN_KEYS = ['basic', 'pro', 'business'] as const
 
-export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod, isNewUserPromoEligible = false }: PricingCardsProps) {
+export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligible = false }: PricingCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {PLAN_KEYS.map((planKey) => {
         const pricingKey = planKey.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
         const planInfo = PLANS[pricingKey]
-        const pricing = PRICING[pricingKey]
-        const price = billingPeriod === 'monthly' ? pricing.monthly : pricing.yearly
-        const promoPricing = getPromoPricing(price, isNewUserPromoEligible)
-        const originalMonthlyEquivalent = billingPeriod === 'yearly' ? Math.round(pricing.yearly / 12) : pricing.monthly
-        const monthlyEquivalent = billingPeriod === 'yearly' ? Math.round(promoPricing.finalAmount / 12) : promoPricing.finalAmount
+        const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
         const isSelected = selectedPlan === planKey
         const isPopular = planInfo.popular
         const Icon = PLAN_ICONS[planKey]
-        const savings = billingPeriod === 'yearly' ? getYearlySavingsPercent(pricingKey) : 0
-
         return (
           <button
             key={planKey}
@@ -57,7 +49,7 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod, isNewU
             )}
             {isNewUserPromoEligible && (
               <span className="absolute -top-2.5 right-4 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                Diskon {NEW_USER_DISCOUNT_PERCENT}% User Baru
+                Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
               </span>
             )}
 
@@ -83,7 +75,7 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod, isNewU
             <div className="mt-3">
               {isNewUserPromoEligible && (
                 <p className="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">
-                  Harga normal <span className="line-through">{formatPrice(originalMonthlyEquivalent)}</span>/bulan
+                  Harga normal <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
                 </p>
               )}
               <div className="flex items-baseline gap-1">
@@ -91,18 +83,13 @@ export function PricingCards({ selectedPlan, onSelectPlan, billingPeriod, isNewU
                   'text-2xl font-bold',
                   isNewUserPromoEligible ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
                 )}>
-                  {formatPrice(monthlyEquivalent)}
+                  {formatPrice(displayPricing.monthlyEquivalent)}
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">/bulan</span>
               </div>
               {isNewUserPromoEligible && (
                 <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  Sekarang hanya {formatPrice(promoPricing.finalAmount)}
-                </p>
-              )}
-              {billingPeriod === 'yearly' && (
-                <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400">
-                  {formatPrice(promoPricing.finalAmount)}/tahun (hemat {savings}%)
+                  Sekarang {formatPrice(displayPricing.finalPrice)} /bulan
                 </p>
               )}
             </div>

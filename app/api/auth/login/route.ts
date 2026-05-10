@@ -10,8 +10,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { users, activityLogs } from '@/lib/db/schema'
+import { users, stores, memberships, activityLogs } from '@/lib/db/schema'
 import { verifyPassword, setSessionCookie } from '@/lib/auth'
+import { generateId } from '@/lib/utils'
+import { seedDemoData } from '@/lib/db/demo-seed'
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,13 +72,47 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let store = user.store
+
+    // Production test accounts must have a tenant so dashboard APIs can resolve storeId.
+    if (!store && user.role !== 'SUPER_ADMIN') {
+      const storeId = generateId()
+      const membershipId = generateId()
+      const trialStartAt = new Date()
+      const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+
+      await db.transaction(async (tx) => {
+        await tx.insert(stores).values({
+          id: storeId,
+          name: `Toko ${user.name}`,
+          ownerId: user.id,
+        })
+
+        await tx.insert(memberships).values({
+          id: membershipId,
+          storeId,
+          plan: 'BASIC',
+          isTrial: true,
+          trialStartAt,
+          trialEndAt,
+        })
+
+        await seedDemoData(tx, storeId)
+      })
+
+      store = await db.query.stores.findFirst({
+        where: eq(stores.id, storeId),
+        with: { membership: true },
+      }) ?? null
+    }
+
     // Update last login
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
 
     // Log login activity
-    if (user.store) {
+    if (store) {
       await db.insert(activityLogs).values({
-        storeId: user.store.id,
+        storeId: store.id,
         userId: user.id,
         action: 'user.login',
         entity: 'user',
@@ -89,7 +125,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       role: user.role,
-      storeId: user.store?.id ?? null,
+      storeId: store?.id ?? null,
     })
 
     return NextResponse.json({
@@ -99,17 +135,17 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
       },
-      store: user.store
+      store: store
         ? {
-            id: user.store.id,
-            name: user.store.name,
+            id: store.id,
+            name: store.name,
           }
         : null,
-      membership: user.store?.membership
+      membership: store?.membership
         ? {
-            plan: user.store.membership.plan,
-            isTrial: user.store.membership.isTrial,
-            trialEndAt: user.store.membership.trialEndAt,
+            plan: store.membership.plan,
+            isTrial: store.membership.isTrial,
+            trialEndAt: store.membership.trialEndAt,
           }
         : null,
     })
