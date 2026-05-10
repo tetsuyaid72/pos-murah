@@ -19,3 +19,8 @@ export function getAppUrl(): string {
 
   return normalizedUrl.replace(/\/$/, '')
 }
+
+export function isSecureAppUrl(): boolean {
+  return getAppUrl().startsWith('https://')
+}
+

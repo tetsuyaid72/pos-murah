@@ -9,6 +9,7 @@
 import { SignJWT, jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
+import { isSecureAppUrl } from '@/lib/app-url'
 
 // =============================================================================
 // Configuration
@@ -92,7 +93,7 @@ export async function setSessionCookie(payload: SessionPayload): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureAppUrl(),
     sameSite: 'lax',
     maxAge: SESSION_DURATION,
     path: '/',

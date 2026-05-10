@@ -8,7 +8,7 @@
 
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getAppUrl } from '@/lib/app-url'
+import { getAppUrl, isSecureAppUrl } from '@/lib/app-url'
 
 export async function GET() {
   const clientId = process.env.GOOGLE_CLIENT_ID
@@ -29,7 +29,7 @@ export async function GET() {
   const cookieStore = await cookies()
   cookieStore.set('google-oauth-state', state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecureAppUrl(),
     sameSite: 'lax',
     maxAge: 600, // 10 minutes
     path: '/',
