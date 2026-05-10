@@ -1,4 +1,4 @@
-const PRODUCTION_APP_URL = 'https://pos-murah.vercel.app'
+const PRODUCTION_APP_URL = 'http://warungmadura-pos.web.id'
 
 export function getAppUrl(): string {
   const configuredUrl =
@@ -8,16 +8,14 @@ export function getAppUrl(): string {
     process.env.VERCEL_URL
 
   if (!configuredUrl) {
-    return process.env.NODE_ENV === 'production' ? PRODUCTION_APP_URL : 'http://localhost:3000'
+    return process.env.NODE_ENV === 'production'
+      ? PRODUCTION_APP_URL
+      : 'http://localhost:3000'
   }
 
   const normalizedUrl = configuredUrl.startsWith('http')
     ? configuredUrl
     : `https://${configuredUrl}`
-
-  if (normalizedUrl.includes('warungmadura.com')) {
-    return PRODUCTION_APP_URL
-  }
 
   return normalizedUrl.replace(/\/$/, '')
 }
