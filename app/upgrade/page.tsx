@@ -460,6 +460,7 @@ function UpgradePageContent() {
             <UpgradePaymentPanel
               selectedPlan={selectedPlan}
               isNewUserPromoEligible={isNewUserPromoEligible}
+              paymentStatus={paymentStatus}
               onSubmitPayment={submitPayment}
             />
           </div>
