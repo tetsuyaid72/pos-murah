@@ -60,6 +60,10 @@ function UpgradePageContent() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [now] = useState(() => new Date())
 
+  useEffect(() => {
+    setSelectedPlan(initialPlan)
+  }, [initialPlan])
+
   const { isAuthenticated, isLoading: authLoading, membership, fetchAuth } = useAuthStore()
 
   // Derived pricing
@@ -84,7 +88,6 @@ function UpgradePageContent() {
   const {
     plan,
     paymentStatus,
-    submitPayment,
   } = useSubscriptionStore()
 
   const trialEndAt = membership?.trialEndAt ?? null
@@ -97,7 +100,21 @@ function UpgradePageContent() {
   const trialDaysRemaining = trialEndDate
     ? Math.max(0, Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
     : 0
-  const isPaidActive = Boolean(plan && paymentStatus === 'approved' && !membership?.isTrial)
+  const planRank: Record<SelectedPlan, number> = {
+    basic: 1,
+    pro: 2,
+    business: 3,
+  }
+  const currentPlanSlug = plan ?? null
+  const isUpgradeTargetHigher = Boolean(
+    currentPlanSlug && planRank[selectedPlan] > planRank[currentPlanSlug]
+  )
+  const isPaidActive = Boolean(
+    plan &&
+    paymentStatus === 'approved' &&
+    !membership?.isTrial &&
+    !isUpgradeTargetHigher
+  )
 
   useEffect(() => {
     console.log('[Pricing Promo]', {
@@ -116,8 +133,17 @@ function UpgradePageContent() {
       isTrial: membership?.isTrial ?? false,
       trialEndsAt: trialEndAt,
       isPaidActive,
+      selectedPlan,
+      isUpgradeTargetHigher,
     })
-  }, [plan, paymentStatus, membership?.isTrial, trialEndAt, isPaidActive])
+  }, [plan, paymentStatus, membership?.isTrial, trialEndAt, isPaidActive, selectedPlan, isUpgradeTargetHigher])
+
+  // If payment is still pending, always keep user on the dedicated success page.
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && paymentStatus === 'pending') {
+      router.replace('/successpayment')
+    }
+  }, [authLoading, isAuthenticated, paymentStatus, router])
 
   // Check if server has approved the payment (poll /api/auth/me)
   useEffect(() => {
@@ -161,7 +187,7 @@ function UpgradePageContent() {
   // =========================================================================
   // STATE: Loading auth / redirecting unauthenticated user
   // =========================================================================
-  if (authLoading || !isAuthenticated) {
+  if (authLoading || !isAuthenticated || paymentStatus === 'pending') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
         <Loader2 className="h-8 w-8 animate-spin text-emerald-600 dark:text-emerald-400" />
@@ -460,8 +486,7 @@ function UpgradePageContent() {
             <UpgradePaymentPanel
               selectedPlan={selectedPlan}
               isNewUserPromoEligible={isNewUserPromoEligible}
-              paymentStatus={paymentStatus}
-              onSubmitPayment={submitPayment}
+              onSubmitPayment={() => undefined}
             />
           </div>
         </div>

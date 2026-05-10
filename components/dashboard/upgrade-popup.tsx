@@ -8,9 +8,9 @@ import { Check, Zap, ShieldCheck } from 'lucide-react'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 import { PLANS, formatPrice, PRICING } from '@/lib/pricing'
 
-/** Popup will not reappear for this many days after user dismisses it */
-const POPUP_COOLDOWN_DAYS = 3
-const POPUP_STORAGE_KEY = 'pos-upgrade-popup-dismissed'
+/** Popup will not reappear for this many days after it is shown to a subscribed user. */
+const POPUP_COOLDOWN_DAYS = 7
+const POPUP_STORAGE_KEY = 'pos-upgrade-popup-last-shown'
 
 export function UpgradePopup() {
   const [open, setOpen] = useState(false)
@@ -19,29 +19,34 @@ export function UpgradePopup() {
   // Determine what to upsell based on current plan
   const isBasic = plan === 'basic'
   const isPro = plan === 'pro'
+  const isPending = paymentStatus === 'pending'
   const shouldShow = (isBasic || isPro) && paymentStatus === 'approved'
 
   const nextPlan = isBasic ? 'PRO' : 'BUSINESS'
   const nextPlanInfo = isBasic ? PLANS.PRO : PLANS.BUSINESS
   const nextPlanPrice = isBasic ? PRICING.PRO.monthly : PRICING.BUSINESS.monthly
   const nextPlanSlug = isBasic ? 'pro' : 'business'
+  const ctaHref = isPending ? '/successpayment' : `/upgrade?plan=${nextPlanSlug}`
+  const ctaLabel = isPending ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
 
   useEffect(() => {
     if (!shouldShow) return
 
-    const lastDismissed = localStorage.getItem(POPUP_STORAGE_KEY)
-    if (lastDismissed) {
-      const elapsed = Date.now() - Number(lastDismissed)
+    const lastShown = localStorage.getItem(POPUP_STORAGE_KEY)
+    if (lastShown) {
+      const elapsed = Date.now() - Number(lastShown)
       const cooldownMs = POPUP_COOLDOWN_DAYS * 24 * 60 * 60 * 1000
       if (elapsed < cooldownMs) return
     }
 
-    const timer = setTimeout(() => setOpen(true), 3000)
+    const timer = setTimeout(() => {
+      localStorage.setItem(POPUP_STORAGE_KEY, String(Date.now()))
+      setOpen(true)
+    }, 3000)
     return () => clearTimeout(timer)
   }, [shouldShow])
 
   const handleDismiss = useCallback(() => {
-    localStorage.setItem(POPUP_STORAGE_KEY, String(Date.now()))
     setOpen(false)
   }, [])
 
@@ -91,10 +96,10 @@ export function UpgradePopup() {
 
       {/* CTA buttons */}
       <div className="flex flex-col gap-2.5">
-        <Link href={`/upgrade?plan=${nextPlanSlug}`}>
+        <Link href={ctaHref}>
           <Button variant="premium" size="lg" className="w-full">
             <Zap className="mr-2 h-4 w-4" />
-            Upgrade Sekarang
+            {ctaLabel}
           </Button>
         </Link>
         <Button

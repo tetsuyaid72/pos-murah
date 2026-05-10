@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, and, gte, lte, desc, isNull, sql } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, isNull, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { transactions, transactionItems, products } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
@@ -20,6 +20,52 @@ type TransactionItemInput = {
   costPrice?: number
   discountAmount?: number
   subtotal: number
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) > 0
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) >= 0
+}
+
+function normalizeTransactionItems(items: TransactionItemInput[]) {
+  return items.map((item, index) => {
+    if (!item.productId || typeof item.productId !== 'string') {
+      throw new Error(`Item ke-${index + 1} tidak memiliki productId yang valid`)
+    }
+    if (!item.productName || typeof item.productName !== 'string') {
+      throw new Error(`Item ke-${index + 1} tidak memiliki nama produk yang valid`)
+    }
+    if (!isPositiveInteger(item.quantity)) {
+      throw new Error(`Qty untuk ${item.productName} tidak valid`)
+    }
+    if (!isNonNegativeInteger(item.unitPrice)) {
+      throw new Error(`Harga jual untuk ${item.productName} tidak valid`)
+    }
+    if (!isNonNegativeInteger(item.subtotal)) {
+      throw new Error(`Subtotal untuk ${item.productName} tidak valid`)
+    }
+
+    const costPrice = isNonNegativeInteger(item.costPrice) ? item.costPrice : 0
+    const discountAmount = isNonNegativeInteger(item.discountAmount) ? item.discountAmount : 0
+    const expectedSubtotal = item.quantity * item.unitPrice - discountAmount
+
+    if (expectedSubtotal !== item.subtotal) {
+      throw new Error(`Subtotal untuk ${item.productName} tidak cocok dengan qty dan harga`)
+    }
+
+    return {
+      productId: item.productId,
+      productName: item.productName.trim(),
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      costPrice,
+      discountAmount,
+      subtotal: item.subtotal,
+    }
+  })
 }
 
 function toTransactionItemValues(items: TransactionItemInput[], transactionId: string) {
@@ -125,10 +171,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Transaksi harus memiliki minimal 1 item' }, { status: 400 })
     }
 
-    const items = rawItems as TransactionItemInput[]
+    const items = normalizeTransactionItems(rawItems as TransactionItemInput[])
 
     if (!totalAmount || totalAmount <= 0) {
       return NextResponse.json({ error: 'Total transaksi tidak valid' }, { status: 400 })
+    }
+
+    const productIds = Array.from(new Set(items.map((item) => item.productId).filter(Boolean)))
+    const existingProducts = productIds.length
+      ? await db.query.products.findMany({
+          where: and(inArray(products.id, productIds), eq(products.storeId, storeId)),
+          columns: { id: true, name: true, costPrice: true, sellingPrice: true, stock: true, isActive: true },
+        })
+      : []
+
+    const productMap = new Map(existingProducts.map((product) => [product.id, product]))
+
+    for (const item of items) {
+      const product = productMap.get(item.productId)
+      if (!product) {
+        return NextResponse.json(
+          { error: `Produk untuk item "${item.productName}" tidak ditemukan atau bukan milik toko ini` },
+          { status: 400 }
+        )
+      }
+      if (!product.isActive) {
+        return NextResponse.json(
+          { error: `Produk "${product.name}" sudah nonaktif dan tidak bisa dijual` },
+          { status: 400 }
+        )
+      }
     }
 
     // Generate invoice number: INV-{YYYYMMDD}-{random}

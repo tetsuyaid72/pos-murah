@@ -37,8 +37,8 @@ export function KpiCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-3xl border border-border/40 bg-card p-6 transition-all duration-300',
-        'shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-1',
+        'group relative flex h-[135px] flex-col overflow-hidden rounded-2xl border border-border/40 bg-card p-4 transition-all duration-300',
+        'shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-card-hover)] hover:-translate-y-0.5',
         className
       )}
     >
@@ -53,7 +53,7 @@ export function KpiCard({
       <div className="flex items-start justify-between">
         {/* Icon */}
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105"
+          className="flex h-10 w-10 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-105"
           style={{
             background: `linear-gradient(135deg, ${iconBgFrom}, ${iconBgTo})`,
           }}
@@ -65,7 +65,7 @@ export function KpiCard({
         {trend && (
           <div
             className={cn(
-              'flex items-center gap-0.5 rounded-full px-2.5 py-1 text-xs font-semibold',
+              'flex items-center gap-0.5 rounded-full px-2 py-1 text-[11px] font-semibold',
               trend.positive
                 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
                 : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
@@ -82,18 +82,18 @@ export function KpiCard({
       </div>
 
       {/* Content */}
-      <div className="mt-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="mt-3 flex-1">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           {title}
         </p>
-        <p className="mt-1.5 text-2xl font-bold tabular-nums tracking-tight text-foreground md:text-3xl">
+        <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-foreground lg:text-2xl">
           {value}
         </p>
       </div>
 
       {/* Mini sparkline */}
       {sparkData.length > 1 && (
-        <div className="mt-4 h-10 w-full opacity-60 transition-opacity group-hover:opacity-100">
+        <div className="mt-2.5 h-7 w-full opacity-60 transition-opacity group-hover:opacity-100">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sparkData}>
               <Line

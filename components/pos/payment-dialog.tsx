@@ -124,7 +124,13 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       })
 
       if (!res.ok) {
-        console.error('Transaction failed:', await res.text())
+        const errorText = await res.text()
+        try {
+          const errorJson = JSON.parse(errorText) as { error?: string; stack?: string }
+          console.error('Transaction failed:', errorJson.error ?? errorText)
+        } catch {
+          console.error('Transaction failed:', errorText)
+        }
         return
       }
 

@@ -22,6 +22,7 @@ interface CartState {
   paymentMethod: PaymentMethod
   customerId: string | null
   notes: string | null
+  storeId: string | null
 }
 
 interface CartActions {
@@ -33,6 +34,8 @@ interface CartActions {
   setPaymentMethod: (method: PaymentMethod) => void
   setCustomerId: (id: string | null) => void
   setNotes: (notes: string | null) => void
+  setStoreContext: (storeId: string | null) => void
+  removeMissingProducts: (validProductIds: string[]) => void
   clearCart: () => void
   getSubtotal: () => number
   getTotal: () => number
@@ -46,6 +49,7 @@ const initialState: CartState = {
   paymentMethod: 'cash',
   customerId: null,
   notes: null,
+  storeId: null,
 }
 
 export const useCartStore = create<CartState & CartActions>()(persist((set, get) => ({
@@ -141,8 +145,28 @@ export const useCartStore = create<CartState & CartActions>()(persist((set, get)
     set({ notes })
   },
 
+  setStoreContext: (storeId: string | null) => {
+    set((state) => {
+      if (state.storeId === storeId) return state
+      return {
+        ...initialState,
+        storeId,
+      }
+    })
+  },
+
+  removeMissingProducts: (validProductIds: string[]) => {
+    const validIds = new Set(validProductIds)
+    set((state) => ({
+      items: state.items.filter((item) => validIds.has(item.productId)),
+    }))
+  },
+
   clearCart: () => {
-    set(initialState)
+    set((state) => ({
+      ...initialState,
+      storeId: state.storeId,
+    }))
   },
 
   getSubtotal: () => {

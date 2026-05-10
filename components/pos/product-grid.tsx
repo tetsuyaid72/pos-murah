@@ -30,7 +30,7 @@ export function ProductGrid() {
 
   if (viewMode === 'list') {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
         <AnimatePresence mode="popLayout">
           {products.map((product) => (
             <ProductListItem key={product.id} product={product} />
@@ -41,7 +41,7 @@ export function ProductGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
       <AnimatePresence mode="popLayout">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSubscriptionStore } from '@/stores/subscription-store'
 import {
   Package,
   Receipt,
@@ -54,33 +55,37 @@ function UsageBar({ label, icon: Icon, current, limit, percentage, suffix }: Usa
   const isUnlimited = limit >= 999999
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-foreground">{label}</span>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
+          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-medium leading-tight text-foreground">{label}</span>
         </div>
-        <span className="text-sm tabular-nums text-muted-foreground">
+        <span className="text-xs tabular-nums text-muted-foreground md:text-sm">
           {isUnlimited ? (
-            <span className="text-emerald-600 dark:text-emerald-400 font-medium">Unlimited</span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">Unlimited</span>
           ) : (
             <>
-              <span className={cn(
-                'font-semibold',
-                percentage >= 90 ? 'text-red-600 dark:text-red-400' :
-                percentage >= 70 ? 'text-amber-600 dark:text-amber-400' :
-                'text-foreground'
-              )}>
+              <span
+                className={cn(
+                  'font-semibold',
+                  percentage >= 90
+                    ? 'text-red-600 dark:text-red-400'
+                    : percentage >= 70
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-foreground'
+                )}
+              >
                 {current.toLocaleString('id-ID')}
               </span>
               <span className="text-muted-foreground">/{formatLimit(limit)}</span>
-              {suffix && <span className="text-muted-foreground ml-1 text-xs">({suffix})</span>}
+              {suffix && <span className="ml-1 text-xs text-muted-foreground">({suffix})</span>}
             </>
           )}
         </span>
       </div>
       {!isUnlimited && (
-        <div className={cn('h-2 rounded-full overflow-hidden', getBarBg(percentage))}>
+        <div className={cn('h-2 overflow-hidden rounded-full', getBarBg(percentage))}>
           <div
             className={cn('h-full rounded-full transition-all duration-500', getBarColor(percentage))}
             style={{ width: `${Math.min(100, percentage)}%` }}
@@ -91,13 +96,10 @@ function UsageBar({ label, icon: Icon, current, limit, percentage, suffix }: Usa
   )
 }
 
-/**
- * Dashboard widget showing current resource usage vs plan limits.
- * Fetches data from /api/plan/usage.
- */
 export function UsageIndicator() {
   const [data, setData] = useState<UsageData | null>(null)
   const [loading, setLoading] = useState(true)
+  const { paymentStatus } = useSubscriptionStore()
 
   useEffect(() => {
     async function fetchUsage() {
@@ -108,7 +110,7 @@ export function UsageIndicator() {
           setData(json)
         }
       } catch {
-        // Silently fail — usage indicator is non-critical
+        // Silently fail - usage indicator is non-critical
       } finally {
         setLoading(false)
       }
@@ -118,12 +120,12 @@ export function UsageIndicator() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border/40 bg-card p-5 animate-pulse">
-        <div className="h-4 w-32 bg-muted rounded mb-4" />
-        <div className="space-y-4">
-          <div className="h-8 bg-muted rounded" />
-          <div className="h-8 bg-muted rounded" />
-          <div className="h-8 bg-muted rounded" />
+      <div className="rounded-2xl border border-border/40 bg-card p-4 animate-pulse">
+        <div className="mb-3 h-4 w-32 rounded bg-muted" />
+        <div className="space-y-3">
+          <div className="h-8 rounded bg-muted" />
+          <div className="h-8 rounded bg-muted" />
+          <div className="h-8 rounded bg-muted" />
         </div>
       </div>
     )
@@ -133,22 +135,25 @@ export function UsageIndicator() {
 
   const { usage, warnings, plan } = data
   const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+  const nextPlanSlug = plan === 'BASIC' ? 'pro' : plan === 'PRO' ? 'business' : 'business'
+  const upgradeHref = paymentStatus === 'pending' ? '/successpayment' : `/upgrade?plan=${nextPlanSlug}`
+  const upgradeLabel =
+    paymentStatus === 'pending' ? 'Lihat Status Pembayaran' : 'Upgrade untuk limit lebih besar'
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-card shadow-[var(--shadow-card)]">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border/40 bg-card shadow-[var(--shadow-card)]">
+      <div className="shrink-0 flex items-center justify-between px-4 pb-2 pt-4 md:px-5 md:pt-5">
+
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+          <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
           <h3 className="text-sm font-semibold text-foreground">Penggunaan</h3>
-          <span className="rounded-md bg-emerald-100 dark:bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+          <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
             {planLabel}
           </span>
         </div>
       </div>
 
-      {/* Usage Bars */}
-      <div className="px-5 pb-4 space-y-4">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-4 md:px-5">
         <UsageBar
           label="Produk"
           icon={Package}
@@ -173,27 +178,25 @@ export function UsageIndicator() {
         />
       </div>
 
-      {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="mx-5 mb-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3">
+        <div className="mx-4 mb-4 max-h-[58px] shrink-0 overflow-y-auto rounded-xl border border-amber-200 bg-amber-50 p-2.5 dark:border-amber-800 dark:bg-amber-950/20 md:mx-5">
           {warnings.map((warning, i) => (
             <div key={i} className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
               <p className="text-xs text-amber-700 dark:text-amber-400">{warning}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Upgrade CTA */}
       {plan !== 'BUSINESS' && (
-        <div className="border-t border-border/40 px-5 py-3">
+        <div className="shrink-0 border-t border-border/40 px-4 py-3 md:px-5">
           <Link
-            href="/upgrade"
-            className="flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+            href={upgradeHref}
+            className="flex items-center justify-center gap-1.5 text-xs font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300"
           >
             <Zap className="h-3.5 w-3.5" />
-            Upgrade untuk limit lebih besar
+            {upgradeLabel}
           </Link>
         </div>
       )}

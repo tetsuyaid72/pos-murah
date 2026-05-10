@@ -26,19 +26,19 @@ export function CartItem({ item }: CartItemProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="flex items-start gap-3 rounded-xl border border-border/40 bg-muted/20 p-3.5 transition-all duration-200 hover:bg-muted/40"
+      className="flex items-start gap-2.5 rounded-xl border border-border/50 bg-background/90 p-3 shadow-sm transition-all duration-200 hover:bg-muted/20"
     >
       {/* Thumbnail */}
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+        className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg"
         style={{ backgroundColor: `${categoryColor}15` }}
       >
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
             alt={item.productName}
-            width={40}
-            height={40}
+            width={36}
+            height={36}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -48,7 +48,7 @@ export function CartItem({ item }: CartItemProps) {
 
       {/* Product info */}
       <div className="flex-1 min-w-0">
-        <h4 className="truncate text-sm font-semibold text-foreground">
+        <h4 className="truncate text-sm font-medium text-foreground">
           {item.productName}
         </h4>
         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -61,19 +61,19 @@ export function CartItem({ item }: CartItemProps) {
         <button
           onClick={() => updateQuantity(item.id, item.quantity - 1)}
           aria-label="Kurangi jumlah"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+          className="flex h-7 w-7 items-center justify-center rounded-md border border-border/50 bg-card text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground cursor-pointer"
         >
           <Minus className="h-3 w-3" />
         </button>
 
-        <span className="w-7 text-center text-sm font-bold tabular-nums text-foreground">
+        <span className="w-6 text-center text-sm font-bold tabular-nums text-foreground">
           {item.quantity}
         </span>
 
         <button
           onClick={() => updateQuantity(item.id, item.quantity + 1)}
           aria-label="Tambah jumlah"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/50 bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+          className="flex h-7 w-7 items-center justify-center rounded-md border border-border/50 bg-card text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground cursor-pointer"
         >
           <Plus className="h-3 w-3" />
         </button>

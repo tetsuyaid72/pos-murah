@@ -79,7 +79,7 @@ export function Sidebar() {
     <aside
       className={cn(
         'sticky top-0 flex h-screen flex-col border-r border-border/50 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-out',
-        sidebarCollapsed ? 'w-[76px]' : 'w-[272px]'
+        sidebarCollapsed ? 'w-[68px]' : 'w-56'
       )}
     >
       <SidebarContent
@@ -121,6 +121,12 @@ function SidebarContent({
   const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
   const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
   const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
+  const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/upgrade'
+  const ctaLabel = paymentStatus === 'pending' ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
+  const ctaLabelMobile = paymentStatus === 'pending' ? 'Status Bayar' : 'Upgrade'
+  const ctaDescription = paymentStatus === 'pending'
+    ? 'Pembayaran Anda sedang diverifikasi admin. Pantau statusnya di sini.'
+    : 'Upgrade sekarang untuk melanjutkan penggunaan setelah trial berakhir.'
   const showTrialUpgradeCard = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
 
   const toggleTheme = () => {
@@ -132,20 +138,20 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Logo / Brand */}
-      <div className={cn('flex items-center gap-3 px-5 py-6', collapsed && 'justify-center px-3')}>
+      <div className={cn('flex items-center gap-2.5 px-4 py-4', collapsed && 'justify-center px-2')}>
         {/* Store logo or default icon */}
-        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20">
+        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20">
           {storeLogo ? (
             <Image
               src={storeLogo}
               alt={storeName}
               fill
               className="object-cover"
-              sizes="40px"
+              sizes="36px"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <Store className="h-5 w-5" />
+              <Store className="h-4.5 w-4.5" />
             </div>
           )}
         </div>
@@ -160,7 +166,7 @@ function SidebarContent({
       </div>
 
       {/* Navigation */}
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2.5 py-1.5">
         <p className={cn(
           'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
           collapsed && 'sr-only'
@@ -177,7 +183,7 @@ function SidebarContent({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium leading-tight transition-all duration-200',
                 isActive
                   ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
                   : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -190,7 +196,7 @@ function SidebarContent({
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
               )}
               <Icon className={cn(
-                'h-[18px] w-[18px] shrink-0 transition-colors',
+                'h-4 w-4 shrink-0 transition-colors',
                 isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground group-hover:text-foreground'
               )} />
               {!collapsed && <span>{item.label}</span>}
@@ -211,7 +217,7 @@ function SidebarContent({
               href="/admin"
               onClick={onNavigate}
               className={cn(
-                'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium leading-tight transition-all duration-200',
                 pathname.startsWith('/admin')
                   ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
                   : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -223,7 +229,7 @@ function SidebarContent({
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
               )}
               <ShieldCheck className={cn(
-                'h-[18px] w-[18px] shrink-0 transition-colors',
+                'h-4 w-4 shrink-0 transition-colors',
                 pathname.startsWith('/admin')
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-muted-foreground group-hover:text-foreground'
@@ -239,17 +245,21 @@ function SidebarContent({
         <TrialUpgradeCard
           isExpired={isTrialExpired}
           daysRemaining={trialDaysRemaining}
+          ctaHref={ctaHref}
+          ctaLabel={ctaLabel}
+          ctaLabelMobile={ctaLabelMobile}
+          ctaDescription={ctaDescription}
           onNavigate={onNavigate}
         />
       )}
 
       {/* Bottom section */}
-      <div className={cn('border-t border-border/50 p-3', collapsed && 'px-2')}>
+      <div className={cn('border-t border-border/50 p-2.5', collapsed && 'px-2')}>
         {/* Dark mode toggle */}
         <button
           onClick={toggleTheme}
           className={cn(
-            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
+            'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
             collapsed && 'justify-center px-2'
           )}
           title={collapsed ? `Tema: ${theme}` : undefined}
@@ -264,7 +274,7 @@ function SidebarContent({
 
         {/* User profile mini */}
         <div className={cn(
-          'mt-1 flex items-center gap-3 rounded-xl px-3 py-2.5',
+          'mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2',
           collapsed && 'justify-center px-2'
         )}>
           <UserAvatar name={userName} imageUrl={userAvatar} size="md" />
@@ -280,7 +290,7 @@ function SidebarContent({
         <button
           onClick={logout}
           className={cn(
-            'mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer',
+            'mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer',
             collapsed && 'justify-center px-2'
           )}
           title={collapsed ? 'Keluar' : undefined}
@@ -317,15 +327,23 @@ function SidebarContent({
 function TrialUpgradeCard({
   isExpired,
   daysRemaining,
+  ctaHref,
+  ctaLabel,
+  ctaLabelMobile,
+  ctaDescription,
   onNavigate,
 }: {
   isExpired: boolean
   daysRemaining: number
+  ctaHref: string
+  ctaLabel: string
+  ctaLabelMobile: string
+  ctaDescription: string
   onNavigate?: () => void
 }) {
   return (
-    <div className="shrink-0 px-3 pb-2 sm:pb-3">
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-teal-950/30 sm:p-3.5">
+    <div className="shrink-0 px-2.5 pb-2 sm:pb-2.5">
+      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-teal-950/30">
         <div className="flex items-start gap-2.5 sm:gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 sm:h-9 sm:w-9">
             <Sparkles className="h-4 w-4" />
@@ -338,18 +356,18 @@ function TrialUpgradeCard({
               Sisa trial: {daysRemaining} hari
             </p>
             <p className="mt-2 hidden text-xs leading-relaxed text-slate-600 dark:text-emerald-100/80 sm:block">
-              Upgrade sekarang untuk melanjutkan penggunaan setelah trial berakhir.
+              {ctaDescription}
             </p>
           </div>
         </div>
 
         <Link
-          href="/upgrade"
+          href={ctaHref}
           onClick={onNavigate}
           className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700 sm:mt-3 sm:h-10 sm:text-sm"
         >
-          <span className="sm:hidden">Upgrade</span>
-          <span className="hidden sm:inline">Upgrade Sekarang</span>
+          <span className="sm:hidden">{ctaLabelMobile}</span>
+          <span className="hidden sm:inline">{ctaLabel}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
@@ -374,11 +392,23 @@ const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass
     iconClass: 'text-blue-500',
     textClass: 'text-blue-600 dark:text-blue-400',
   },
+  BASIC: {
+    label: 'Basic Plan',
+    icon: Crown,
+    iconClass: 'text-sky-500',
+    textClass: 'text-sky-600 dark:text-sky-400',
+  },
   PRO: {
     label: 'Pro Plan',
     icon: Crown,
     iconClass: 'text-emerald-500',
     textClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  BUSINESS: {
+    label: 'Business Plan',
+    icon: Crown,
+    iconClass: 'text-violet-500',
+    textClass: 'text-violet-600 dark:text-violet-400',
   },
   ENTERPRISE: {
     label: 'Enterprise',

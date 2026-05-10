@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, ArrowRight, PackageX } from 'lucide-react'
+import { AlertTriangle, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -17,12 +17,12 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
     .sort((a, b) => a.stock - b.stock)
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-full min-h-0 overflow-hidden rounded-2xl">
+      <CardHeader className="px-4 pb-2 pt-4 md:px-5 md:pt-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold md:text-base">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-50 dark:bg-amber-500/10">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
             </div>
             Stok Menipis
             {lowStockProducts.length > 0 && (
@@ -42,11 +42,11 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex h-full min-h-0 flex-col px-4 pb-4 pt-1 md:px-5">
         {lowStockProducts.length === 0 ? (
-          <div className="flex h-[200px] flex-col items-center justify-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10">
-              <svg className="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="flex h-[180px] flex-col items-center justify-center gap-2.5 lg:h-[188px]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10">
+              <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
@@ -56,7 +56,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
             </div>
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-1">
             {lowStockProducts.slice(0, 5).map((product) => {
               const isCritical = product.stock <= STOCK_LEVELS.CRITICAL
               const isOut = product.stock <= 0
@@ -67,12 +67,12 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
               return (
                 <div
                   key={product.id}
-                  className="flex items-center gap-3 rounded-xl border border-border/40 p-3 transition-all duration-200 hover:bg-muted/30 hover:shadow-sm"
+                  className="flex items-center gap-2.5 rounded-xl border border-border/40 p-2.5 transition-all duration-200 hover:bg-muted/30 hover:shadow-sm"
                 >
                   {/* Stock indicator */}
                   <div
                     className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold',
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold',
                       isOut
                         ? 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400'
                         : isCritical
@@ -88,7 +88,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
                     <p className="truncate text-sm font-medium text-foreground">
                       {product.name}
                     </p>
-                    <div className="mt-1.5 flex items-center gap-2">
+                    <div className="mt-1 flex items-center gap-2">
                       {/* Mini progress bar */}
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted/80">
                         <div
@@ -103,7 +103,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                      <span className="shrink-0 text-[10px] leading-none text-muted-foreground">
                         min: {product.minStock}
                       </span>
                     </div>
@@ -112,7 +112,7 @@ export function LowStockAlert({ products }: LowStockAlertProps) {
                   {/* Status label */}
                   <span
                     className={cn(
-                      'shrink-0 rounded-lg px-2 py-1 text-[10px] font-semibold',
+                      'shrink-0 rounded-lg px-2 py-1 text-[10px] font-semibold leading-none',
                       isOut
                         ? 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400'
                         : isCritical

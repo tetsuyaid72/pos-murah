@@ -32,19 +32,19 @@ export function DashboardHeader({ period, onPeriodChange, posHref = '/pos' }: Da
   const { user } = useAuthStore()
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       {/* Left: Greeting */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">
           {getGreeting()}, {user?.name || 'Pengguna'}
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
           Ringkasan performa toko Anda
         </p>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         {/* Period filter pills */}
         <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
           {PERIOD_OPTIONS.map((opt) => (
@@ -52,7 +52,7 @@ export function DashboardHeader({ period, onPeriodChange, posHref = '/pos' }: Da
               key={opt.value}
               onClick={() => onPeriodChange(opt.value)}
               className={cn(
-                'rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer',
+                'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium leading-tight transition-all duration-200',
                 period === opt.value
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -65,8 +65,8 @@ export function DashboardHeader({ period, onPeriodChange, posHref = '/pos' }: Da
 
         {/* Open POS */}
         <Link href={posHref}>
-          <Button variant="premium">
-            <ShoppingCart className="mr-2 h-4 w-4" />
+          <Button variant="premium" className="h-9 px-3 text-sm">
+            <ShoppingCart className="mr-1.5 h-4 w-4" />
             Buka Kasir
           </Button>
         </Link>

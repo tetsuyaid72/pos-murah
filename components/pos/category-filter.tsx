@@ -7,15 +7,15 @@ export function CategoryFilter() {
   const { categories, selectedCategoryId, setSelectedCategory } = useProductStore()
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="mt-3 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
       {/* All categories chip */}
       <button
         onClick={() => setSelectedCategory(null)}
         className={cn(
-          'shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer',
+          'h-8 shrink-0 rounded-full border border-transparent bg-muted/40 px-4 text-[13px] font-medium text-muted-foreground transition-all duration-200 cursor-pointer hover:bg-muted hover:text-foreground',
           !selectedCategoryId
-            ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/20'
-            : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
+            ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20 ring-1 ring-emerald-400/30 hover:bg-emerald-500 hover:text-white'
+            : undefined
         )}
       >
         Semua
@@ -33,16 +33,12 @@ export function CategoryFilter() {
               )
             }
             className={cn(
-              'shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer',
+              'h-8 shrink-0 rounded-full border border-transparent bg-muted/40 px-4 text-[13px] font-medium text-muted-foreground transition-all duration-200 cursor-pointer hover:bg-muted hover:text-foreground',
               isActive
-                ? 'text-white shadow-sm'
-                : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-            style={
-              isActive
-                ? { backgroundColor: category.color, boxShadow: `0 2px 8px ${category.color}40` }
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/20 ring-1 ring-emerald-400/30 hover:bg-emerald-500 hover:text-white'
                 : undefined
-            }
+            )}
+            style={undefined}
           >
             {category.name}
           </button>

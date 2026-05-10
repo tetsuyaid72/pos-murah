@@ -97,6 +97,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
       localStorage.removeItem('pos-settings')
       localStorage.removeItem('pos-subscription')
       localStorage.removeItem('pos-upgrade-popup-dismissed')
+      localStorage.removeItem('pos-cart')
     }
     set({
       user: null,

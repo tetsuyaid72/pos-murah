@@ -17,7 +17,7 @@ const SIZE_MAP = {
   sm: { container: 'h-10 w-10', icon: 'h-5 w-5', image: 40 },
   md: { container: 'h-16 w-16', icon: 'h-7 w-7', image: 64 },
   lg: { container: 'h-[120px] w-[120px]', icon: 'h-12 w-12', image: 120 },
-  card: { container: 'aspect-square w-full', icon: 'h-10 w-10', image: 200 },
+  card: { container: 'h-24 w-full', icon: 'h-9 w-9', image: 80 },
 }
 
 export function ProductImage({ product, size = 'md', className }: ProductImageProps) {
@@ -42,7 +42,7 @@ export function ProductImage({ product, size = 'md', className }: ProductImagePr
           alt={product.name}
           width={sizeConfig.image}
           height={sizeConfig.image}
-          className="h-full w-full object-cover"
+          className="max-h-20 w-full object-contain transition-transform duration-200 group-hover:scale-105"
           onError={() => setImageError(true)}
         />
       </div>

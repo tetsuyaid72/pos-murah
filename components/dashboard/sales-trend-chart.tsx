@@ -39,9 +39,6 @@ const DAYS_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 export function SalesTrendChart({ trend }: SalesTrendChartProps) {
   const [mode, setMode] = useState<ChartMode>('revenue')
 
-  // Debug: log data reaching the chart
-  console.log('[SalesTrendChart] trend data:', trend?.length, 'points', trend?.slice(0, 3))
-
   const chartData = trend.map((point) => {
     const d = new Date(point.date + 'T00:00:00')
     const label = trend.length <= 7
@@ -74,10 +71,10 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
   const gradientId = `gradient-${mode}`
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base font-semibold">Trend Penjualan</CardTitle>
+    <Card className="h-[220px] shrink-0 overflow-hidden rounded-2xl">
+      <CardHeader className="space-y-0 px-4 pb-2 pt-3.5">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="text-sm font-semibold md:text-base">Trend Penjualan</CardTitle>
 
           {/* Mode toggle */}
           <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
@@ -86,7 +83,7 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                 key={tab.value}
                 onClick={() => setMode(tab.value)}
                 className={cn(
-                  'rounded-lg px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer',
+                  'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium leading-tight transition-all duration-200',
                   mode === tab.value
                     ? 'bg-card text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
@@ -98,21 +95,21 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-2">
-        <div className="h-[300px] w-full md:h-[340px]">
+      <CardContent className="h-full px-3 pb-3 pt-0">
+        <div className="h-[154px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             {mode === 'transactions' ? (
-              <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.5} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   className="fill-muted-foreground"
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   className="fill-muted-foreground"
                   axisLine={false}
                   tickLine={false}
@@ -122,10 +119,10 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                   contentStyle={{
                     backgroundColor: 'var(--card)',
                     border: '1px solid var(--border)',
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     fontSize: '12px',
                     boxShadow: '0 8px 25px rgb(0 0 0 / 0.1)',
-                    padding: '12px 16px',
+                    padding: '8px 10px',
                   }}
                   formatter={tooltipFormatter}
                   cursor={{ fill: 'var(--muted)', opacity: 0.3, radius: 8 }}
@@ -134,11 +131,11 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                   dataKey="transactions"
                   fill={chartColor}
                   radius={[8, 8, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={24}
                 />
               </BarChart>
             ) : (
-              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={chartColor} stopOpacity={0.15} />
@@ -148,13 +145,13 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.5} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   className="fill-muted-foreground"
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 11 }}
                   className="fill-muted-foreground"
                   axisLine={false}
                   tickLine={false}
@@ -164,10 +161,10 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                   contentStyle={{
                     backgroundColor: 'var(--card)',
                     border: '1px solid var(--border)',
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     fontSize: '12px',
                     boxShadow: '0 8px 25px rgb(0 0 0 / 0.1)',
-                    padding: '12px 16px',
+                    padding: '8px 10px',
                   }}
                   formatter={tooltipFormatter}
                 />
@@ -175,10 +172,10 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
                   type="monotone"
                   dataKey={mode}
                   stroke={chartColor}
-                  strokeWidth={2.5}
+                  strokeWidth={2.25}
                   fill={`url(#${gradientId})`}
                   dot={false}
-                  activeDot={{ r: 5, strokeWidth: 2, fill: 'var(--card)', stroke: chartColor }}
+                  activeDot={{ r: 4, strokeWidth: 2, fill: 'var(--card)', stroke: chartColor }}
                 />
               </AreaChart>
             )}

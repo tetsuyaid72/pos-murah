@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Copy,
@@ -12,12 +13,11 @@ import {
   ImageIcon,
   X,
   Check,
-  Clock3,
-  ArrowRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getDisplayPricing } from '@/lib/pricing'
+import { useSubscriptionStore } from '@/stores/subscription-store'
 
 type SelectedPlan = 'basic' | 'pro' | 'business'
 
@@ -30,14 +30,12 @@ const BANK_INFO = {
 interface UpgradePaymentPanelProps {
   selectedPlan: SelectedPlan
   isNewUserPromoEligible: boolean
-  paymentStatus?: 'none' | 'pending' | 'approved'
   onSubmitPayment: () => void
 }
 
 export function UpgradePaymentPanel({
   selectedPlan,
   isNewUserPromoEligible,
-  paymentStatus = 'none',
   onSubmitPayment,
 }: UpgradePaymentPanelProps) {
   const [activeTab, setActiveTab] = useState<'bank' | 'qris'>('bank')
@@ -49,17 +47,17 @@ export function UpgradePaymentPanel({
   const [, setProofUrl] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [showPendingSuccess, setShowPendingSuccess] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const router = useRouter()
+  const { submitPayment } = useSubscriptionStore()
 
   const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
   const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
   const promoPricing = displayPricing.promo
   const formattedPrice = formatPrice(displayPricing.finalPrice)
-  const isPendingState = paymentStatus === 'pending' || showPendingSuccess
 
   // Determine current step
-  const currentStep = isPendingState ? 3 : proofFile ? 3 : 1
+  const currentStep = proofFile ? 3 : 1
 
   const handleCopy = () => {
     navigator.clipboard.writeText(BANK_INFO.accountNumber)
@@ -193,81 +191,20 @@ export function UpgradePaymentPanel({
         // API not available, continue with local state
       }
 
+      const paymentSummary = {
+        plan: selectedPlan,
+        method: activeTab === 'qris' ? 'qris' as const : 'bank' as const,
+        amount: promoPricing.finalAmount,
+      }
+
+      submitPayment(paymentSummary)
       onSubmitPayment()
-      setShowPendingSuccess(true)
+      router.push(`/successpayment?plan=${selectedPlan}&method=${activeTab === 'qris' ? 'qris' : 'bank'}&amount=${promoPricing.finalAmount}`)
     } catch {
       setUploadError('Terjadi kesalahan. Silakan coba lagi.')
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  if (isPendingState) {
-    return (
-      <div className="mx-auto w-full max-w-md">
-        <div className="rounded-3xl border border-emerald-200/80 bg-white p-8 shadow-sm shadow-emerald-100/60 dark:border-emerald-900/60 dark:bg-slate-800 dark:shadow-none">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600/80 dark:text-emerald-400/80">
-              Pembayaran Berhasil Dikirim
-            </p>
-            <h3 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">
-              Mohon tunggu verifikasi admin
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Bukti pembayaran Anda sudah kami terima. Tim kami akan memverifikasi pembayaran dan mengaktifkan paket Anda maksimal dalam 1x24 jam.
-            </p>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm dark:bg-slate-800 dark:text-emerald-400">
-                <Clock3 className="h-4.5 w-4.5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                  Status saat ini: Menunggu verifikasi
-                </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-                  Anda tidak perlu upload ulang. Halaman ini akan menampilkan status pending sampai pembayaran disetujui admin.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm dark:bg-slate-700/30">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-500 dark:text-slate-400">Paket</span>
-              <span className="font-semibold text-slate-900 dark:text-white">{pricingKey}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-500 dark:text-slate-400">Metode</span>
-              <span className="font-semibold text-slate-900 dark:text-white">{activeTab === 'qris' ? 'QRIS' : 'Transfer Bank'}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-slate-500 dark:text-slate-400">Nominal</span>
-              <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formattedPrice}</span>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <Button asChild variant="premium" size="xl" className="w-full">
-              <a href="/dashboard">
-                Kembali ke Dashboard
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
-          Jika pembayaran belum diverifikasi setelah 1x24 jam, silakan hubungi admin.
-        </p>
-      </div>
-    )
   }
 
   return (

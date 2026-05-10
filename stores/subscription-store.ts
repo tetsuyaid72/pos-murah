@@ -5,15 +5,23 @@ import type { BillingPeriod } from '@/lib/pricing'
 export type Plan = 'basic' | 'pro' | 'business'
 export type PaymentStatus = 'none' | 'pending' | 'approved'
 
+interface PendingPaymentSummary {
+  plan: Plan
+  method: 'bank' | 'qris'
+  amount: number
+  submittedAt: string
+}
+
 interface SubscriptionState {
   plan: Plan | null // null = no active subscription
   billingPeriod: BillingPeriod
   paymentStatus: PaymentStatus
   paymentDate: string | null // ISO string
+  pendingPaymentSummary: PendingPaymentSummary | null
 }
 
 interface SubscriptionActions {
-  submitPayment: () => void
+  submitPayment: (summary?: { plan: Plan; method: 'bank' | 'qris'; amount: number }) => void
   setBillingPeriod: (period: BillingPeriod) => void
   resetSubscription: () => void
   /**
@@ -37,6 +45,15 @@ function normalizePlan(serverPlan: string): Plan | null {
   }
 }
 
+function getPlanRank(plan: Plan | null): number {
+  switch (plan) {
+    case 'basic': return 1
+    case 'pro': return 2
+    case 'business': return 3
+    default: return 0
+  }
+}
+
 export const useSubscriptionStore = create<SubscriptionState & SubscriptionActions>()(
   persist(
     (set, get) => ({
@@ -44,11 +61,19 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
       billingPeriod: 'monthly',
       paymentStatus: 'none',
       paymentDate: null,
+      pendingPaymentSummary: null,
 
-      submitPayment: () => {
+      submitPayment: (summary) => {
+        const submittedAt = new Date().toISOString()
         set({
           paymentStatus: 'pending',
-          paymentDate: new Date().toISOString(),
+          paymentDate: submittedAt,
+          pendingPaymentSummary: summary
+            ? {
+                ...summary,
+                submittedAt,
+              }
+            : null,
         })
       },
 
@@ -57,7 +82,7 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
       },
 
       syncFromServer: (serverPlan: string, isTrial?: boolean, trialEndAt?: string | null) => {
-        const { paymentStatus } = get()
+        const { paymentStatus, pendingPaymentSummary } = get()
         const normalizedPlan = normalizePlan(serverPlan)
 
         // Trial memberships are not paid subscriptions, even while active.
@@ -72,11 +97,26 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
           return
         }
 
+        // If user is upgrading to a higher tier and server is still on the old tier,
+        // keep pending until the server plan catches up with the requested target.
+        if (
+          pendingPaymentSummary &&
+          paymentStatus === 'pending' &&
+          getPlanRank(pendingPaymentSummary.plan) > getPlanRank(normalizedPlan)
+        ) {
+          set({
+            plan: normalizedPlan,
+            paymentStatus: 'pending',
+          })
+          return
+        }
+
         // If user has a plan and is not in trial mode, treat it as paid/approved.
         if (normalizedPlan && !isTrialExpired) {
           set({
             plan: normalizedPlan,
             paymentStatus: 'approved',
+            pendingPaymentSummary: null,
           })
           return
         }
@@ -100,6 +140,7 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
         set({
           plan: null,
           paymentStatus: 'none',
+          pendingPaymentSummary: null,
         })
       },
 
@@ -109,6 +150,7 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
           billingPeriod: 'monthly',
           paymentStatus: 'none',
           paymentDate: null,
+          pendingPaymentSummary: null,
         })
       },
     }),

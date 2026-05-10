@@ -65,7 +65,7 @@ export function AdminSidebar() {
     <aside
       className={cn(
         'sticky top-0 flex h-screen flex-col border-r border-border/50 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-out',
-        sidebarCollapsed ? 'w-[76px]' : 'w-[272px]'
+        sidebarCollapsed ? 'w-[68px]' : 'w-[224px]'
       )}
     >
       <AdminSidebarContent
@@ -99,9 +99,9 @@ function AdminSidebarContent({
   return (
     <div className="flex h-full flex-col">
       {/* Brand */}
-      <div className={cn('flex items-center gap-3 px-5 py-6', collapsed && 'justify-center px-3')}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-500/10">
-          <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+      <div className={cn('flex items-center gap-2.5 px-4 py-4', collapsed && 'justify-center px-2')}>
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-500/10">
+          <ShieldCheck className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
         </div>
         {!collapsed && (
           <div className="flex flex-col min-w-0">
@@ -114,7 +114,7 @@ function AdminSidebarContent({
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-2">
+      <nav className="flex-1 space-y-1 px-2.5 py-1.5">
         <p className={cn(
           'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
           collapsed && 'sr-only'
@@ -133,7 +133,7 @@ function AdminSidebarContent({
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                'group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium leading-tight transition-all duration-200',
                 isActive
                   ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
                   : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
@@ -145,7 +145,7 @@ function AdminSidebarContent({
                 <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
               )}
               <Icon className={cn(
-                'h-[18px] w-[18px] shrink-0 transition-colors',
+                'h-4 w-4 shrink-0 transition-colors',
                 isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground group-hover:text-foreground'
               )} />
               {!collapsed && <span>{item.label}</span>}
@@ -155,13 +155,13 @@ function AdminSidebarContent({
       </nav>
 
       {/* Bottom section */}
-      <div className={cn('border-t border-border/50 p-3', collapsed && 'px-2')}>
+      <div className={cn('border-t border-border/50 p-2.5', collapsed && 'px-2')}>
         {/* Back to main dashboard */}
         <Link
           href="/dashboard"
           onClick={onNavigate}
           className={cn(
-            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground',
+            'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground',
             collapsed && 'justify-center px-2'
           )}
           title={collapsed ? 'Kembali ke Dashboard' : undefined}
@@ -174,7 +174,7 @@ function AdminSidebarContent({
         <button
           onClick={toggleTheme}
           className={cn(
-            'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
+            'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
             collapsed && 'justify-center px-2'
           )}
           title={collapsed ? `Tema: ${theme}` : undefined}

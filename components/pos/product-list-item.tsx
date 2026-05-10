@@ -30,8 +30,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
       onClick={handleAdd}
       disabled={isOutOfStock}
       className={cn(
-        'group flex w-full items-center gap-3 rounded-lg border bg-card px-4 py-3 text-left transition-all cursor-pointer',
-        'hover:border-primary/30 hover:shadow-sm',
+        'group flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-card/95 px-4 py-3 text-left transition-all duration-200 cursor-pointer backdrop-blur-sm',
+        'hover:-translate-y-0.5 hover:shadow-md',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isOutOfStock && 'cursor-not-allowed opacity-60'
       )}
@@ -69,13 +69,13 @@ export function ProductListItem({ product }: ProductListItemProps) {
       </div>
 
       {/* Price */}
-      <p className="shrink-0 text-sm font-bold text-primary">
+      <p className="shrink-0 text-sm font-bold text-emerald-600 dark:text-emerald-400">
         {formatRupiah(product.sellingPrice)}
       </p>
 
       {/* Add button */}
       {!isOutOfStock && (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white opacity-0 transition-all duration-200 group-hover:opacity-100">
           <Plus className="h-4 w-4" />
         </div>
       )}

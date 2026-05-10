@@ -46,19 +46,19 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1400px] space-y-6 p-5 md:p-8 lg:p-10">
-          {/* Header */}
-          <DashboardHeader period={period} onPeriodChange={handlePeriodChange} />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden lg:h-screen">
+      <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto lg:overflow-hidden">
+        <div className="mx-auto flex h-full max-w-[1366px] min-h-0 flex-col gap-3 p-4 lg:overflow-hidden">
+          <div className="shrink-0">
+            <DashboardHeader period={period} onPeriodChange={handlePeriodChange} />
+          </div>
 
-          {/* KPI Cards */}
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
-                  className="h-[180px] animate-pulse rounded-3xl border border-border/40 bg-muted/30"
+                  className="h-[135px] animate-pulse rounded-2xl border border-border/40 bg-muted/30"
                 />
               ))}
             </div>
@@ -66,37 +66,34 @@ export default function DashboardPage() {
             <KpiGrid kpi={data.kpi} />
           )}
 
-          {/* Chart + Top Products */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+          <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:overflow-hidden">
+            <div className="flex min-h-0 flex-col gap-3">
               {isLoading ? (
-                <div className="h-[400px] animate-pulse rounded-xl border border-border/40 bg-muted/30" />
+                <div className="h-[220px] shrink-0 animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
               ) : (
                 <SalesTrendChart trend={data.trend} />
               )}
+
+              <div className="min-h-0 flex-1">
+                <LowStockAlert products={products} />
+              </div>
             </div>
-            <div>
+
+            <div className="flex min-h-0 flex-col gap-3">
               {isLoading ? (
-                <div className="h-[400px] animate-pulse rounded-xl border border-border/40 bg-muted/30" />
+                <div className="h-[260px] shrink-0 animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
               ) : (
                 <TopProducts topProducts={data.topProducts} />
               )}
-            </div>
-          </div>
 
-          {/* Usage Indicator + Low Stock Alert */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2">
-              <LowStockAlert products={products} />
+              <div className="min-h-0 flex-1">
+                <UsageIndicator />
+              </div>
             </div>
-            <div>
-              <UsageIndicator />
-            </div>
-          </div>
+          </section>
         </div>
       </div>
 
-      {/* Upgrade Popup for free plan users */}
       <UpgradePopup />
     </div>
   )
