@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CheckCircle2, Clock3 } from 'lucide-react'
@@ -21,6 +21,20 @@ const METHOD_LABELS = {
 } as const
 
 export default function SuccessPaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-white">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
+        </div>
+      }
+    >
+      <SuccessPaymentContent />
+    </Suspense>
+  )
+}
+
+function SuccessPaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, isLoading, fetchAuth } = useAuthStore()
