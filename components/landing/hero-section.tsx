@@ -1,140 +1,124 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Play } from 'lucide-react'
+import { BadgeCheck, BarChart3, CheckCircle2, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+
+const trustPoints = [
+  'Mudah digunakan',
+  'Data aman & tersimpan',
+  'Bisa diakses kapan saja',
+]
+
+const floatingStats = [
+  { title: 'Penjualan Hari Ini', value: 'Rp 12.750.000', icon: BarChart3 },
+  { title: 'Transaksi Sukses', value: '128', icon: BadgeCheck },
+  { title: 'Produk Terjual', value: '348', icon: Package },
+]
+
+// Foto POS/kasir dari Unsplash agar visual hero terasa seperti produk nyata.
+const posImageUrl =
+  'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80'
 
 export function HeroSection() {
-  const [iframeLoaded, setIframeLoaded] = useState(false)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    // Trigger fade-in after mount
-    const timer = setTimeout(() => setVisible(true), 100)
-    return () => clearTimeout(timer)
-  }, [])
-
   return (
-    <section className="relative overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28">
-      {/* Subtle background gradient */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-50/50 via-transparent to-transparent dark:from-emerald-950/20" />
+    <section className="relative overflow-hidden bg-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute right-[-10rem] top-[-4rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(0,178,111,0.16)_0%,rgba(180,242,214,0.22)_36%,rgba(255,255,255,0)_74%)] blur-3xl" />
+        <div className="absolute right-[8%] top-[18%] h-[22rem] w-[22rem] rounded-full bg-[radial-gradient(circle,rgba(242,251,247,0.98)_0%,rgba(242,251,247,0.52)_58%,rgba(255,255,255,0)_100%)] blur-2xl" />
+      </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-        {/* Text content — centered */}
-        <div className="mx-auto max-w-3xl text-center">
-          {/* Badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Tanpa ribet, siap pakai
-          </div>
+      <div className="relative mx-auto max-w-[1200px] px-6 py-[78px] sm:px-8 sm:py-[84px] lg:grid lg:grid-cols-[minmax(0,46%)_minmax(0,54%)] lg:items-center lg:gap-8">
+        <div className="max-w-[540px]">
+          <span className="inline-flex items-center rounded-full border border-[#D8F3E8] bg-[#F2FBF7] px-4 py-2 text-sm font-semibold text-[#00B26F]">
+            ERP POS untuk penjualan, stok, dan pembayaran
+          </span>
 
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Kelola Warung Anda{' '}
-            <span className="gradient-text">Lebih Mudah</span>{' '}
-            dalam 1 Aplikasi
+          <h1 className="mt-6 text-[2.85rem] font-bold leading-[0.98] tracking-[-0.045em] text-[#0B1020] sm:text-[3.4rem] lg:text-[4.15rem]">
+            <span className="block">Permudah Penjualan,</span>
+            <span className="block text-[#00B26F]">Stok & Pembayaran</span>
+            <span className="block">dalam Satu Aplikasi</span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
-            Aplikasi kasir online yang membantu UMKM mencatat transaksi, mengontrol stok, dan melihat laporan bisnis — langsung dari HP atau laptop.
+          <p className="mt-6 max-w-[520px] text-[15.5px] leading-7 text-[#5B6475] sm:text-lg">
+            Warung Madura POS membantu UMKM dan pemilik toko mengelola transaksi,
+            stok, laporan, dan pembayaran dengan lebih mudah, cepat, dan akurat.
           </p>
 
-          {/* CTA buttons */}
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link href="/register">
-              <Button variant="premium" size="lg" className="text-base px-8">
-                Coba Gratis
-                <ArrowRight className="ml-2 h-4 w-4" />
+              <Button
+                size="lg"
+                className="h-14 rounded-2xl bg-[#00B26F] px-7 text-[15px] font-semibold text-white shadow-[0_14px_30px_rgba(0,178,111,0.22)] transition hover:bg-[#009C61]"
+              >
+                Coba Gratis 3 Hari
               </Button>
             </Link>
+
             <Link href="/demo">
-              <Button variant="outline" size="lg" className="text-base px-8">
-                <Play className="mr-2 h-4 w-4" />
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 rounded-2xl border-[#E7ECF2] bg-white px-7 text-[15px] font-semibold text-[#0B1020] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:border-[#CFE8DD] hover:bg-[#F8FCFA]"
+              >
                 Lihat Demo
               </Button>
             </Link>
           </div>
+
+          <div className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#5B6475] sm:text-[15px]">
+            {trustPoints.map((point) => (
+              <span key={point} className="inline-flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 text-[#00B26F]" />
+                {point}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* App Preview — Premium Browser Mockup */}
-        <div
-          className={cn(
-            'mt-16 sm:mt-20 transition-all duration-1000 ease-out',
-            visible
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-8'
-          )}
-        >
-          <div className="relative mx-auto max-w-4xl">
-            {/* Blurred background glow */}
-            <div className="pointer-events-none absolute -inset-8 -z-10 rounded-3xl bg-gradient-to-br from-emerald-400/20 via-emerald-500/10 to-teal-400/20 blur-3xl" />
+        <div className="relative mt-12 lg:mt-0">
+          <div className="relative mx-auto flex min-h-[380px] w-full max-w-[640px] items-center justify-center sm:min-h-[440px] lg:min-h-[520px] lg:justify-end">
+            <div className="pointer-events-none absolute right-[6%] top-[6%] h-[88%] w-[88%] rounded-[44px] bg-gradient-to-br from-[#E9F8F1] via-[#F4FBF7] to-white" />
+            <div className="pointer-events-none absolute bottom-10 right-[14%] h-14 w-[56%] rounded-full bg-emerald-100/80 blur-2xl" />
 
-            {/* Floating animation wrapper */}
-            <div className="animate-float">
-              {/* Browser chrome frame */}
-              <div className="overflow-hidden rounded-2xl border border-border/40 bg-card shadow-2xl shadow-emerald-900/10 dark:shadow-black/30">
-                {/* Title bar */}
-                <div className="flex items-center gap-3 border-b border-border/40 bg-muted/60 px-4 py-3">
-                  <div className="flex gap-2">
-                    <div className="h-3 w-3 rounded-full bg-[#FF5F57]" />
-                    <div className="h-3 w-3 rounded-full bg-[#FEBC2E]" />
-                    <div className="h-3 w-3 rounded-full bg-[#28C840]" />
-                  </div>
-                  <div className="flex-1 flex justify-center">
-                    <div className="flex items-center gap-2 rounded-lg bg-background/80 border border-border/50 px-4 py-1.5 text-xs text-muted-foreground">
-                      <svg className="h-3 w-3 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                      </svg>
-                      app.warungmadura.com/dashboard
-                    </div>
-                  </div>
-                  <div className="w-[52px]" /> {/* Spacer for symmetry */}
-                </div>
-
-                {/* Iframe container — cropped to show key area */}
-                <div className="relative h-[320px] sm:h-[400px] lg:h-[460px] w-full overflow-hidden bg-background">
-                  {/* Loading skeleton */}
-                  {!iframeLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-                        <span className="text-sm text-muted-foreground">Memuat preview...</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <iframe
-                    src="/demo?embed=true"
-                    title="Warung Madura POS — Live Preview Aplikasi Kasir"
-                    className={cn(
-                      'absolute top-0 left-0 border-0 transition-opacity duration-700',
-                      iframeLoaded ? 'opacity-100' : 'opacity-0'
-                    )}
-                    loading="lazy"
-                    sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
-                    onLoad={() => setIframeLoaded(true)}
-                    style={{
-                      transform: 'scale(0.65)',
-                      transformOrigin: 'top left',
-                      width: '153.85%',   // 1/0.65
-                      height: '153.85%',
-                    }}
-                  />
-
-                  {/* Bottom fade overlay — hides the cut-off */}
-                  <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent" />
-                </div>
+            <div className="relative w-full pr-0 sm:pr-6 md:pr-16">
+              <div className="relative z-10 mx-auto aspect-[4/3] w-full max-w-[560px] overflow-hidden rounded-[28px] border border-[#E7ECF2] bg-white shadow-[0_32px_60px_-20px_rgba(11,16,32,0.22)]">
+                <img
+                  src={posImageUrl}
+                  alt="Perangkat POS untuk kasir dan pembayaran"
+                  className="h-full w-full object-cover"
+                  loading="eager"
+                />
               </div>
 
-              {/* Overlay badge — value text */}
-              <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-10">
-                <div className="flex items-center gap-2 rounded-full border border-border/50 bg-card px-5 py-2.5 shadow-lg">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-sm font-medium text-foreground">
-                    Pantau penjualan secara real-time
-                  </span>
-                </div>
+              <div className="relative z-20 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:absolute md:-right-2 md:top-10 md:mt-0 md:w-[220px] md:grid-cols-1">
+                {floatingStats.map((stat, index) => {
+                  const Icon = stat.icon
+
+                  return (
+                    <div
+                      key={stat.title}
+                      className={`rounded-[20px] border border-[#E7ECF2] bg-white/96 p-3.5 shadow-[0_18px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm ${
+                        index === 2 ? 'hidden sm:block' : ''
+                      } ${index === 1 ? 'md:translate-x-3' : ''} ${
+                        index === 2 ? 'md:-translate-x-1' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-medium text-[#5B6475]">
+                            {stat.title}
+                          </p>
+                          <p className="mt-1 text-[15px] font-bold tracking-[-0.02em] text-[#0B1020]">
+                            {stat.value}
+                          </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#F2FBF7] text-[#00B26F]">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
