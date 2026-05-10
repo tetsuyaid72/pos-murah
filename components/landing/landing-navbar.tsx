@@ -29,7 +29,7 @@ export function LandingNavbar() {
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
         scrolled
-          ? 'glass border-b border-border/50 shadow-sm'
+          ? 'border-b border-slate-200/60 bg-white/80 shadow-[0_2px_12px_rgba(15,23,42,0.04)] backdrop-blur-xl'
           : 'bg-transparent'
       )}
     >
@@ -39,8 +39,8 @@ export function LandingNavbar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-md shadow-emerald-500/20">
             <Store className="h-4.5 w-4.5" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            Warung Madura <span className="gradient-text">POS</span>
+          <span className="text-lg font-bold tracking-tight text-slate-900">
+            Warung Madura <span className="text-emerald-600">POS</span>
           </span>
         </Link>
 
@@ -51,7 +51,7 @@ export function LandingNavbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
               >
                 {link.label}
               </Link>
@@ -59,7 +59,7 @@ export function LandingNavbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
               >
                 {link.label}
               </a>
@@ -84,7 +84,7 @@ export function LandingNavbar() {
         {/* Mobile menu button */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors hover:text-slate-900 md:hidden"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -93,7 +93,7 @@ export function LandingNavbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="glass border-t border-border/50 md:hidden">
+        <div className="border-t border-slate-100 bg-white/95 backdrop-blur-xl md:hidden">
           <div className="mx-auto max-w-6xl space-y-1 px-4 py-4 sm:px-6">
             {navLinks.map((link) =>
               link.href.startsWith('/') ? (
@@ -101,7 +101,7 @@ export function LandingNavbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
                 >
                   {link.label}
                 </Link>
@@ -110,7 +110,7 @@ export function LandingNavbar() {
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="block rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900"
                 >
                   {link.label}
                 </a>

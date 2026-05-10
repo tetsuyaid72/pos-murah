@@ -23,39 +23,39 @@ const steps = [
 
 export function HowItWorksSection() {
   return (
-    <section className="relative border-y border-border/50 bg-muted/20 py-20 sm:py-28">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+    <section className="relative border-y border-slate-100 py-14 sm:py-20 md:py-28" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f8fffb 45%, #f3fff8 100%)' }}>
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
         {/* Section header */}
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Mulai dalam <span className="gradient-text">3 Langkah</span>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">
+            Mulai dalam <span className="text-emerald-600">3 Langkah</span>
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
+          <p className="mt-3 text-sm text-slate-500 sm:mt-4 sm:text-lg">
             Tidak perlu keahlian teknis. Siapa saja bisa langsung pakai.
           </p>
         </div>
 
         {/* Steps */}
-        <div className="mt-16 grid gap-8 sm:grid-cols-3">
+        <div className="mt-10 grid gap-8 sm:mt-16 sm:grid-cols-3">
           {steps.map((item, index) => (
             <div key={item.step} className="relative text-center">
-              {/* Connector line (desktop only) */}
+              {/* Connector line (tablet+ only) */}
               {index < steps.length - 1 && (
-                <div className="pointer-events-none absolute top-10 left-[calc(50%+40px)] hidden h-px w-[calc(100%-80px)] border-t-2 border-dashed border-emerald-200 dark:border-emerald-800 sm:block" />
+                <div className="pointer-events-none absolute left-[calc(50%+40px)] top-10 hidden h-px w-[calc(100%-80px)] border-t-2 border-dashed border-emerald-200 sm:block" />
               )}
 
               {/* Step number + icon */}
-              <div className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-500/10">
-                <item.icon className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                <span className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white shadow-md">
+              <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 sm:mb-5 sm:h-20 sm:w-20">
+                <item.icon className="h-6 w-6 text-emerald-600 sm:h-8 sm:w-8" />
+                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white shadow-[0_4px_12px_rgba(16,185,129,0.3)] sm:h-7 sm:w-7 sm:text-xs">
                   {item.step}
                 </span>
               </div>
 
-              <h3 className="text-lg font-semibold text-foreground">
+              <h3 className="text-base font-semibold text-slate-900 sm:text-lg">
                 {item.title}
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500 sm:mt-2 sm:text-sm">
                 {item.description}
               </p>
             </div>

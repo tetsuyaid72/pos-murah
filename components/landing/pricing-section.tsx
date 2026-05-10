@@ -6,28 +6,28 @@ import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getDisplayPrici
 
 export function PricingSection() {
   return (
-    <section id="harga" className="relative overflow-hidden border-y border-emerald-900/5 bg-[#f6fbf7] py-20 sm:py-28">
-      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-100/70 to-transparent" />
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+    <section id="harga" className="relative overflow-hidden border-y border-slate-100 bg-white py-14 sm:py-20 md:py-28">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40" style={{ background: 'linear-gradient(to bottom, #f8fffb, transparent)' }} />
+      <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex rounded-full border border-emerald-200 bg-white px-4 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm">
+          <span className="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm sm:px-4 sm:py-1.5 sm:text-xs">
             Promo User Baru: Diskon {NEW_USER_DISCOUNT_PERCENT}%
           </span>
-          <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+          <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-950 sm:mt-5 sm:text-3xl md:text-4xl lg:text-5xl">
             Pilih Paket yang Sesuai untuk Warung Anda
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-base text-slate-600 sm:text-lg">
+          <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:mt-4 sm:text-base md:text-lg">
             Mulai kelola penjualan, stok, dan laporan dengan lebih mudah.
           </p>
         </div>
 
-        <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-3 lg:gap-6">
+        <div className="mx-auto mt-8 grid max-w-sm gap-5 sm:mt-12 sm:max-w-none md:grid-cols-3 lg:gap-6">
           <PricingCard plan={PLANS.BASIC} planKey="BASIC" href="/register?plan=basic" cta="Mulai Basic" />
           <PricingCard plan={PLANS.PRO} planKey="PRO" href="/register?plan=pro" cta="Mulai Pro" popular />
           <PricingCard plan={PLANS.BUSINESS} planKey="BUSINESS" href="/register?plan=business" cta="Mulai Business" />
         </div>
 
-        <div className="mx-auto mt-12 max-w-md rounded-2xl border border-emerald-100 bg-white/80 p-5 text-center shadow-sm">
+        <div className="mx-auto mt-8 max-w-md rounded-2xl border border-emerald-100 bg-white/80 p-4 text-center shadow-sm sm:mt-12 sm:p-5">
           <p className="text-sm text-slate-600">Belum yakin? Coba demo gratis tanpa daftar.</p>
           <Link href="/demo" className="mt-4 inline-flex">
             <Button variant="outline" size="lg" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
