@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const geistSans = Geist({
@@ -52,7 +53,9 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   )
 }

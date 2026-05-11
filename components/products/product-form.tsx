@@ -113,18 +113,19 @@ export function ProductForm({ product }: ProductFormProps) {
 
   return (
     <div className="mx-auto max-w-2xl">
+
       {/* Header */}
-      <div className="mb-6 flex items-center gap-4">
+      <div className="mb-4 flex items-start gap-3 md:mb-6 md:items-center md:gap-4">
         <Link href="/products">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg md:h-10 md:w-10">
+            <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-[20px] font-bold leading-tight md:text-2xl">
             {isEditing ? 'Edit Produk' : 'Tambah Produk'}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[12px] leading-tight text-muted-foreground md:text-sm">
             {isEditing
               ? 'Perbarui informasi produk'
               : 'Isi data produk baru untuk ditambahkan ke inventori'}
@@ -133,34 +134,35 @@ export function ProductForm({ product }: ProductFormProps) {
       </div>
 
       {apiError && (
-        <div className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="mb-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[12px] text-destructive md:mb-4 md:px-4 md:py-3 md:text-sm">
           {apiError}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
         {/* Product Image */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Gambar Produk</CardTitle>
+          <CardHeader className="px-4 py-2.5 md:px-6 md:py-6">
+            <CardTitle className="text-[14px] md:text-base">Gambar Produk</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ImageUpload value={imageUrl} onChange={setImageUrl} />
+          <CardContent className="px-4 pb-3 pt-0 md:px-6 md:pb-6">
+            <ImageUpload value={imageUrl} onChange={setImageUrl} compact />
           </CardContent>
         </Card>
 
         {/* Basic Info */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Informasi Dasar</CardTitle>
+          <CardHeader className="px-4 py-3 md:px-6 md:py-6">
+            <CardTitle className="text-[14px] md:text-base">Informasi Dasar</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 px-4 pb-4 pt-0 md:space-y-4 md:px-6 md:pb-6">
             {/* Name */}
-            <div className="space-y-2">
-              <Label htmlFor="name">Nama Produk *</Label>
+            <div className="space-y-1.5 md:space-y-2">
+              <Label htmlFor="name" className="text-[12px] md:text-sm">Nama Produk *</Label>
               <Input
                 id="name"
                 placeholder="Contoh: Indomie Goreng"
+                className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                 {...register('name')}
               />
               {errors.name && (
@@ -169,23 +171,25 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
 
             {/* Barcode & SKU */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="barcode">Barcode</Label>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="barcode" className="text-[12px] md:text-sm">Barcode</Label>
                 <Input
                   id="barcode"
                   placeholder="Scan atau ketik barcode"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('barcode')}
                 />
                 {errors.barcode && (
                   <p className="text-xs text-destructive">{errors.barcode.message}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="sku" className="text-[12px] md:text-sm">SKU</Label>
                 <Input
                   id="sku"
                   placeholder="Kode internal"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('sku')}
                 />
                 {errors.sku && (
@@ -195,10 +199,10 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
 
             {/* Category & Unit */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="categoryId">Kategori *</Label>
-                <Select id="categoryId" {...register('categoryId')}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="categoryId" className="text-[12px] md:text-sm">Kategori *</Label>
+                <Select id="categoryId" className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:px-3 md:text-sm" {...register('categoryId')}>
                   <option value="">Pilih kategori</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -210,9 +214,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   <p className="text-xs text-destructive">{errors.categoryId.message}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="unit">Satuan *</Label>
-                <Select id="unit" {...register('unit')}>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="unit" className="text-[12px] md:text-sm">Satuan *</Label>
+                <Select id="unit" className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:px-3 md:text-sm" {...register('unit')}>
                   {PRODUCT_UNITS.map((u) => (
                     <option key={u.value} value={u.value}>
                       {u.label}
@@ -229,29 +233,31 @@ export function ProductForm({ product }: ProductFormProps) {
 
         {/* Pricing */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Harga</CardTitle>
+          <CardHeader className="px-4 py-3 md:px-6 md:py-6">
+            <CardTitle className="text-[14px] md:text-base">Harga</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="costPrice">Harga Modal (Rp)</Label>
+          <CardContent className="space-y-3 px-4 pb-4 pt-0 md:space-y-4 md:px-6 md:pb-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="costPrice" className="text-[12px] md:text-sm">Harga Modal (Rp)</Label>
                 <Input
                   id="costPrice"
                   type="number"
                   placeholder="0"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('costPrice', { valueAsNumber: true })}
                 />
                 {errors.costPrice && (
                   <p className="text-xs text-destructive">{errors.costPrice.message}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sellingPrice">Harga Jual (Rp) *</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="sellingPrice" className="text-[12px] md:text-sm">Harga Jual (Rp) *</Label>
                 <Input
                   id="sellingPrice"
                   type="number"
                   placeholder="0"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('sellingPrice', { valueAsNumber: true })}
                 />
                 {errors.sellingPrice && (
@@ -264,29 +270,31 @@ export function ProductForm({ product }: ProductFormProps) {
 
         {/* Stock */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Stok</CardTitle>
+          <CardHeader className="px-4 py-3 md:px-6 md:py-6">
+            <CardTitle className="text-[14px] md:text-base">Stok</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="stock">Stok Saat Ini</Label>
+          <CardContent className="space-y-3 px-4 pb-4 pt-0 md:space-y-4 md:px-6 md:pb-6">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="stock" className="text-[12px] md:text-sm">Stok Saat Ini</Label>
                 <Input
                   id="stock"
                   type="number"
                   placeholder="0"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('stock', { valueAsNumber: true })}
                 />
                 {errors.stock && (
                   <p className="text-xs text-destructive">{errors.stock.message}</p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="minStock">Minimal Stok (Warning)</Label>
+              <div className="space-y-1.5 md:space-y-2">
+                <Label htmlFor="minStock" className="text-[12px] md:text-sm">Minimal Stok (Warning)</Label>
                 <Input
                   id="minStock"
                   type="number"
                   placeholder="5"
+                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
                   {...register('minStock', { valueAsNumber: true })}
                 />
                 {errors.minStock && (
@@ -298,14 +306,14 @@ export function ProductForm({ product }: ProductFormProps) {
         </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex items-center justify-end gap-2 md:gap-3">
           <Link href="/products">
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" className="h-9 px-3 text-[12px] md:h-10 md:px-4 md:text-sm">
               Batal
             </Button>
           </Link>
-          <Button type="submit" disabled={isSubmitting}>
-            <Save className="mr-2 h-4 w-4" />
+          <Button type="submit" disabled={isSubmitting} className="h-9 px-3 text-[12px] md:h-10 md:px-4 md:text-sm">
+            <Save className="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
             {isSubmitting
               ? 'Menyimpan...'
               : isEditing

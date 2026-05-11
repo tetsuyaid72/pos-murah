@@ -9,9 +9,10 @@ import type { Transaction } from '@/types'
 
 interface ExportCSVProps {
   transactions: Transaction[]
+  mobile?: boolean
 }
 
-export function ExportCSV({ transactions }: ExportCSVProps) {
+export function ExportCSV({ transactions, mobile = false }: ExportCSVProps) {
   const { gate, canUse, modalProps } = usePlanGate()
 
   const canExportPdf = canUse('export_pdf') === true
@@ -29,24 +30,24 @@ export function ExportCSV({ transactions }: ExportCSVProps) {
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className={mobile ? 'grid grid-cols-2 gap-2' : 'flex items-center gap-2'}>
         {/* Excel/CSV Export — available to all plans */}
         <Button
           variant="outline"
           size="sm"
-          className="rounded-xl"
+          className={mobile ? 'h-11 rounded-2xl border-border bg-card text-sm font-semibold text-foreground shadow-sm shadow-black/5 hover:bg-accent disabled:text-muted-foreground dark:border-[#253044] dark:bg-[#111827] dark:text-slate-100 dark:shadow-black/20 dark:hover:bg-[#162033] dark:disabled:text-slate-500' : 'rounded-xl'}
           onClick={handleExportCSV}
           disabled={transactions.length === 0}
         >
           <FileSpreadsheet className="mr-1.5 h-4 w-4" />
-          Export Excel
+          {mobile ? 'Excel' : 'Export Excel'}
         </Button>
 
         {/* PDF Export — PRO+ only */}
         <Button
           variant="outline"
           size="sm"
-          className={`rounded-xl ${!canExportPdf ? 'opacity-60' : ''}`}
+          className={mobile ? `h-11 rounded-2xl border-border bg-card text-sm font-semibold text-foreground shadow-sm shadow-black/5 hover:bg-accent disabled:text-muted-foreground dark:border-[#253044] dark:bg-[#111827] dark:text-slate-100 dark:shadow-black/20 dark:hover:bg-[#162033] dark:disabled:text-slate-500 ${!canExportPdf ? 'opacity-60' : ''}` : `rounded-xl ${!canExportPdf ? 'opacity-60' : ''}`}
           onClick={handleExportPDF}
           disabled={transactions.length === 0}
         >
@@ -55,7 +56,7 @@ export function ExportCSV({ transactions }: ExportCSVProps) {
           ) : (
             <Lock className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
           )}
-          Export PDF
+          {mobile ? 'PDF' : 'Export PDF'}
           {!canExportPdf && (
             <span className="ml-1 text-[10px] font-semibold text-amber-500 uppercase">Pro</span>
           )}

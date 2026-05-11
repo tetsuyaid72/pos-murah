@@ -230,6 +230,16 @@ html {
   opacity: 0.4;
 }
 
+/* Hide scrollbar but keep scroll behavior */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Focus ring utility */
 .focus-ring {
   outline: 2px solid transparent;

@@ -30,6 +30,7 @@ import {
   FileJson,
   FileSpreadsheet,
   X,
+  Menu,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -71,7 +72,7 @@ const TABS: { id: SettingsTab; label: string; icon: typeof User }[] = [
 // =============================================================================
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useUIStore()
+  const { theme, setTheme, setSidebarOpen } = useUIStore()
   const {
     storeName, setStoreName,
     storeAddress, setStoreAddress,
@@ -373,59 +374,533 @@ export default function SettingsPage() {
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Sticky Header ── */}
-      <div className="sticky top-0 z-20 border-b border-border/50 bg-card/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between px-5 py-4 md:px-8">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">Pengaturan</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
-              Kelola profil, toko, printer, dan tampilan
-            </p>
-          </div>
-          <Button
-            onClick={handleSave}
-            variant={saved ? 'success' : 'premium'}
-            size="sm"
-            className="rounded-xl"
-            disabled={saving}
-          >
-            {saving ? (
-              <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Menyimpan</>
-            ) : saved ? (
-              <><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Tersimpan!</>
-            ) : (
-              <><Save className="mr-1.5 h-3.5 w-3.5" />Simpan</>
-            )}
-          </Button>
-        </div>
-
-        {/* ── Tab Bar ── */}
-        <div className="flex gap-1 px-5 md:px-8 -mb-px">
-          {TABS.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer md:text-sm md:px-4',
-                  isActive
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                )}
+      <div className="min-h-screen bg-slate-50 pb-32 text-slate-950 dark:bg-slate-950 dark:text-slate-50 md:hidden md:bg-background">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                onClick={() => setSidebarOpen(true)}
               >
-                <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                {tab.label}
-              </button>
-            )
-          })}
+                <Menu className="h-5 w-5" />
+              </Button>
+              <div className="min-w-0">
+                <h1 className="truncate text-lg font-bold leading-tight tracking-tight text-slate-950 dark:text-slate-50">Pengaturan</h1>
+                <p className="line-clamp-1 text-[11px] text-slate-500 dark:text-slate-400">Kelola profil, toko, printer, dan tampilan</p>
+              </div>
+            </div>
+            <Button
+              onClick={handleSave}
+              size="sm"
+              className="h-9 shrink-0 rounded-xl bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+              disabled={saving}
+            >
+              {saving ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Menyimpan</>
+              ) : saved ? (
+                <><CheckCircle2 className="mr-2 h-4 w-4" />Tersimpan</>
+              ) : (
+                <><Save className="mr-2 h-4 w-4" />Simpan</>
+              )}
+            </Button>
+          </div>
+        </header>
+
+        <div className="sticky top-[57px] z-20 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95 md:hidden">
+          <div className="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide">
+              {TABS.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      'flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 shadow-sm transition-colors cursor-pointer dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300',
+                      isActive && 'border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500 dark:text-slate-950'
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+        <div className="space-y-3 px-4 py-3 pb-32 md:hidden">
+
+
+          {activeTab === 'general' && (
+            <div className="space-y-3">
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="mb-4 flex-row items-start gap-3 space-y-0 px-0 pb-0 pt-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-slate-950 dark:text-slate-50">Profil Pengguna</CardTitle>
+                    <CardDescription className="mt-1 text-xs text-slate-500 dark:text-slate-400">Foto dan informasi akun Anda</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 px-0 pb-0 pt-0">
+                  <AvatarUpload
+                    value={userAvatar}
+                    onChange={handleAvatarChange}
+                    fallbackInitial={userName ? userName.charAt(0).toUpperCase() : '?'}
+                    className="mb-0 gap-1.5 [&>div:first-child_div]:mx-auto [&>div:first-child_div]:mb-2 [&>div:first-child_div]:h-16 [&>div:first-child_div]:w-16 [&>div:first-child_div]:border [&>div:first-child_div]:border-slate-200 dark:[&>div:first-child_div]:border-slate-800 [&>p]:mb-3 [&>p]:text-center [&>p]:text-[11px] [&>p]:text-slate-500 dark:[&>p]:text-slate-400 [&>div:first-child_div_button]:h-5 [&>div:first-child_div_button]:w-5 [&>div:first-child_div_button_svg]:h-3 [&>div:first-child_div_button_svg]:w-3"
+                  />
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="userName" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Nama Lengkap</Label>
+                      <Input id="userName" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Nama Anda" className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="userEmail" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Email</Label>
+                      <Input id="userEmail" type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} placeholder="email@contoh.com" className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="mb-4 flex-row items-start gap-3 space-y-0 px-0 pb-0 pt-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    <Store className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-slate-950 dark:text-slate-50">Profil Toko</CardTitle>
+                    <CardDescription className="mt-1 text-xs text-slate-500 dark:text-slate-400">Informasi toko di sidebar dan struk</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3 px-0 pb-0 pt-0">
+                  <LogoUpload value={storeLogo} onChange={setStoreLogo} className="mb-0 gap-1.5 [&>div:first-child_div]:mx-auto [&>div:first-child_div]:mb-2 [&>div:first-child_div]:h-16 [&>div:first-child_div]:w-16 [&>div:first-child_div]:rounded-2xl [&>div:first-child_div]:border [&>div:first-child_div]:border-dashed [&>div:first-child_div]:border-slate-300 [&>div:first-child_div]:bg-slate-50 dark:[&>div:first-child_div]:border-slate-700 dark:[&>div:first-child_div]:bg-slate-950 [&>div:first-child_div_svg]:h-6 [&>div:first-child_div_svg]:w-6 [&>p]:mb-3 [&>p]:text-center [&>p]:text-[11px] [&>p]:text-slate-500 dark:[&>p]:text-slate-400 [&>div:first-child_div_button]:h-5 [&>div:first-child_div_button]:w-5 [&>div:first-child_div_button_svg]:h-3 [&>div:first-child_div_button_svg]:w-3" />
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="storeName" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Nama Toko</Label>
+                      <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="Nama toko Anda" className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="storePhone" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Nomor Telepon</Label>
+                      <Input id="storePhone" value={storePhone} onChange={(e) => setStorePhone(e.target.value)} placeholder="08xxxxxxxxxx" className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="storeAddress" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Alamat</Label>
+                      <Textarea id="storeAddress" value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} rows={3} placeholder="Alamat lengkap toko" className="min-h-[80px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="mb-4 flex-row items-start gap-3 space-y-0 px-0 pb-0 pt-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300">
+                    <Receipt className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-slate-950 dark:text-slate-50">Pengaturan Struk</CardTitle>
+                    <CardDescription className="mt-1 text-xs text-slate-500 dark:text-slate-400">Kustomisasi tampilan struk pembayaran</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0 pb-0 pt-0">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="receiptFooter" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Pesan di Bawah Struk</Label>
+                    <Input id="receiptFooter" value={receiptFooter} onChange={(e) => setReceiptFooter(e.target.value)} placeholder="Terima kasih telah berbelanja!" className="h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-950 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-emerald-500/30 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'printer' && (
+            <div className="space-y-4">
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10">
+                      <Bluetooth className="h-4 w-4 text-blue-500" />
+                    </div>
+                    Printer Kasir
+                  </CardTitle>
+                  <CardDescription className="text-xs">Hubungkan printer thermal Bluetooth</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 px-4 pb-4 pt-4">
+                  {!bluetoothSupported && (
+                    <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                      <div className="text-xs text-amber-800 dark:text-amber-300">
+                        <p className="font-medium">Browser tidak didukung</p>
+                        <p className="mt-0.5">Web Bluetooth hanya tersedia di Chrome dan Edge.</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+                    <div className="flex items-center gap-3">
+                      <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', isPrinterConnected ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-muted')}>
+                        {isPrinterConnected ? <BluetoothConnected className="h-4 w-4 text-emerald-500" /> : <BluetoothOff className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{isPrinterConnected ? 'Terhubung' : 'Belum Terhubung'}</p>
+                        {isPrinterConnected && printerDisplayName && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{printerDisplayName}</p>}
+                        {!isPrinterConnected && printerDeviceName && <p className="truncate text-xs text-slate-500 dark:text-slate-400">Terakhir: {printerDeviceName}</p>}
+                      </div>
+                    </div>
+                  </div>
+
+                  {printerError && (
+                    <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      <p className="text-xs text-destructive">{printerError}</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="printerPaperSizeMobile" className="text-sm font-medium">Ukuran Kertas</Label>
+                      <Select id="printerPaperSizeMobile" value={printerPaperSize} onChange={(e) => setPrinterPaperSize(e.target.value as PaperSize)} className="h-10 rounded-xl text-sm">
+                        <option value="58mm">58mm (32 karakter/baris)</option>
+                        <option value="80mm">80mm (48 karakter/baris)</option>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+                      <div>
+                        <p className="text-sm font-medium text-slate-950 dark:text-slate-50">Auto-Print</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Cetak otomatis setelah transaksi</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={autoPrint}
+                        onClick={() => setAutoPrint(!autoPrint)}
+                        className={cn(
+                          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                          autoPrint ? 'bg-primary' : 'bg-input'
+                        )}
+                      >
+                        <span className={cn(
+                          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out',
+                          autoPrint ? 'translate-x-5' : 'translate-x-0'
+                        )} />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {!isPrinterConnected ? (
+                        <Button onClick={handlePairPrinter} disabled={!bluetoothSupported || isConnecting} className="h-10 rounded-xl text-sm font-semibold">
+                          {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bluetooth className="mr-2 h-4 w-4" />}
+                          {isConnecting ? 'Menghubungkan...' : 'Hubungkan Printer'}
+                        </Button>
+                      ) : (
+                        <>
+                          <Button variant="outline" onClick={handleTestPrint} disabled={isPrintingTest} className="h-10 rounded-xl text-sm font-semibold">
+                            {isPrintingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
+                            {isPrintingTest ? 'Mencetak...' : 'Test Print'}
+                          </Button>
+                          <Button variant="outline" onClick={handleDisconnectPrinter} className="h-10 rounded-xl text-sm font-semibold text-destructive hover:text-destructive">
+                            <Unplug className="mr-2 h-4 w-4" />Putuskan
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'appearance' && (
+            <div className="space-y-4">
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-pink-50 dark:bg-pink-500/10">
+                      <Palette className="h-4 w-4 text-pink-500" />
+                    </div>
+                    Tema Tampilan
+                  </CardTitle>
+                  <CardDescription className="text-xs">Pilih tema yang nyaman untuk mata Anda</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 px-4 pb-4 pt-4">
+                  <div className="grid grid-cols-3 gap-2">
+                    {themes.map((t) => {
+                      const Icon = t.icon
+                      const isActive = theme === t.value
+                      return (
+                        <button
+                          key={t.value}
+                          onClick={() => setTheme(t.value)}
+                          className={cn(
+                            'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all duration-200 cursor-pointer',
+                            isActive
+                              ? 'border-emerald-600 bg-emerald-600/10 text-emerald-700 shadow-sm ring-1 ring-emerald-500/20 dark:border-emerald-500 dark:bg-emerald-500/15 dark:text-emerald-300'
+                              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-950/50'
+                          )}
+                        >
+                          <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', isActive ? 'bg-primary/10' : 'bg-muted')}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs font-semibold">{t.label}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">{t.desc}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
+                    <p className="text-xs font-medium text-slate-950 dark:text-slate-50">Preview</p>
+                    <div className="mt-2 flex items-center gap-2">
+                      <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">Card</div>
+                      <div className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground">Button</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'backup' && (
+            <div className="space-y-4">
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+                      <Download className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    Backup Manual
+                  </CardTitle>
+                  <CardDescription className="text-xs">Unduh backup data toko Anda</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2 px-4 pb-4 pt-4">
+                  <Button onClick={handleExportJson} disabled={exportingJson} className="h-10 w-full justify-start rounded-xl text-sm" variant="outline">
+                    {exportingJson ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <FileJson className="mr-3 h-4 w-4 text-blue-500" />}
+                    {exportingJson ? 'Mengunduh...' : 'Backup JSON'}
+                  </Button>
+                  <Button onClick={handleExportCsv} disabled={exportingCsv} className="h-10 w-full justify-start rounded-xl text-sm" variant="outline">
+                    {exportingCsv ? <Loader2 className="mr-3 h-4 w-4 animate-spin" /> : <FileSpreadsheet className="mr-3 h-4 w-4 text-emerald-500" />}
+                    {exportingCsv ? 'Mengunduh...' : 'Backup CSV'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10">
+                      <Upload className="h-4 w-4 text-blue-500" />
+                    </div>
+                    Restore Data
+                  </CardTitle>
+                  <CardDescription className="text-xs">Import data dari file backup JSON</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3 px-4 pb-4 pt-4">
+                  {importResult?.success && (
+                    <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <div className="text-xs text-emerald-800 dark:text-emerald-300">
+                        <p className="font-medium">{importResult.message}</p>
+                        <p className="mt-1">Halaman akan dimuat ulang...</p>
+                      </div>
+                    </div>
+                  )}
+                  {importError && (
+                    <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                      <p className="text-xs text-destructive">{importError}</p>
+                    </div>
+                  )}
+                  {!importPreview && !importResult?.success && (
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 text-center transition-colors cursor-pointer',
+                        dragOver ? 'border-emerald-500 bg-emerald-500/5 dark:border-emerald-500 dark:bg-emerald-500/10' : 'border-slate-300 bg-white hover:border-emerald-500/30 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-950/50'
+                      )}
+                      onClick={() => {
+                        const input = document.createElement('input')
+                        input.type = 'file'
+                        input.accept = '.json'
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0]
+                          if (file) handleFileSelect(file)
+                        }
+                        input.click()
+                      }}
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
+                        <Upload className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-slate-950 dark:text-slate-50">Pilih file backup</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Drag & drop atau klik file .json</p>
+                      </div>
+                    </div>
+                  )}
+                  {importPreview && !importResult?.success && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-950 dark:text-slate-50">Preview Data</p>
+                        <button onClick={clearImport} className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-950/50 dark:hover:text-slate-50">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: 'Kategori', value: importPreview.categories },
+                          { label: 'Produk', value: importPreview.products },
+                          { label: 'Pelanggan', value: importPreview.customers },
+                          { label: 'Transaksi', value: importPreview.transactions },
+                        ].map((item) => (
+                          <div key={item.label} className="rounded-xl bg-slate-50/80 px-3 py-2 dark:bg-slate-950/50">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-500">{item.label}</p>
+                            <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <p className="text-xs text-amber-800 dark:text-amber-300"><strong>Perhatian:</strong> Semua data saat ini akan ditimpa.</p>
+                      </div>
+                      <Button onClick={() => setShowImportConfirm(true)} disabled={importing} className="h-10 w-full rounded-xl text-sm font-semibold" variant="premium">
+                        {importing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Mengimport...</> : <><Upload className="mr-2 h-4 w-4" />Import Data</>}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'danger' && (
+            <div className="space-y-4">
+              <Card className="rounded-2xl border border-amber-200/50 bg-white p-4 shadow-sm dark:border-amber-500/20 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/10">
+                      <Trash2 className="h-4 w-4 text-amber-500" />
+                    </div>
+                    Reset Data
+                  </CardTitle>
+                  <CardDescription className="text-xs">Hapus semua produk, kategori, transaksi, dan pelanggan</CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-4">
+                  {resetDone ? (
+                    <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      Semua data telah dihapus.
+                    </div>
+                  ) : (
+                    <Button variant="outline" className="h-10 w-full rounded-xl border-destructive/50 text-sm text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setShowResetDialog(true)}>
+                      <Trash2 className="mr-2 h-4 w-4" />Reset Semua Data
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border border-red-200/50 bg-white p-4 shadow-sm dark:border-red-500/20 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                      <LogOut className="h-4 w-4 text-red-500" />
+                    </div>
+                    Keluar
+                  </CardTitle>
+                  <CardDescription className="text-xs">Keluar dari akun Anda</CardDescription>
+                </CardHeader>
+                <CardContent className="px-4 pb-4 pt-4">
+                  <Button variant="destructive" className="h-10 w-full rounded-xl text-sm" onClick={async () => { setLoggingOut(true); await logout() }} disabled={loggingOut}>
+                    {loggingOut ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Keluar...</> : <><LogOut className="mr-2 h-4 w-4" />Keluar dari Akun</>}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-500/10">
+                      <Info className="h-4 w-4 text-sky-500" />
+                    </div>
+                    Tentang Aplikasi
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 px-4 pb-4 pt-4">
+                  <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5 dark:bg-slate-950/50">
+                    <span className="text-xs text-slate-500 dark:text-slate-500">Versi</span>
+                    <span className="text-sm font-semibold text-slate-950 dark:text-slate-50">1.0.0</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5 dark:bg-slate-950/50">
+                    <span className="text-xs text-slate-500 dark:text-slate-500">Framework</span>
+                    <span className="text-sm font-semibold text-slate-950 dark:text-slate-50">Next.js 16</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl bg-slate-50/80 px-3 py-2.5 dark:bg-slate-950/50">
+                    <span className="text-xs text-slate-500 dark:text-slate-500">Lisensi</span>
+                    <span className="text-sm font-semibold text-slate-950 dark:text-slate-50">Warung Madura POS</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── Content ── */}
-      <div className="flex-1 overflow-y-auto p-5 md:p-8">
-        <div className="mx-auto max-w-5xl">
+      <div className="hidden md:flex md:h-full md:flex-col">
+        {/* ── Sticky Header ── */}
+        <div className="sticky top-0 z-20 border-b border-border/50 bg-card/80 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-5 py-4 md:px-8">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-foreground md:text-2xl">Pengaturan</h1>
+              <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
+                Kelola profil, toko, printer, dan tampilan
+              </p>
+            </div>
+            <Button
+              onClick={handleSave}
+              variant={saved ? 'success' : 'premium'}
+              size="sm"
+              className="rounded-xl"
+              disabled={saving}
+            >
+              {saving ? (
+                <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Menyimpan</>
+              ) : saved ? (
+                <><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Tersimpan!</>
+              ) : (
+                <><Save className="mr-1.5 h-3.5 w-3.5" />Simpan</>
+              )}
+            </Button>
+          </div>
+
+          {/* ── Tab Bar ── */}
+          <div className="flex gap-1 px-5 md:px-8 -mb-px">
+            {TABS.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer md:text-sm md:px-4',
+                    isActive
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ── Content ── */}
+        <div className="flex-1 overflow-y-auto p-5 md:p-8">
+          <div className="mx-auto max-w-5xl">
 
           {/* ============================================================= */}
           {/* TAB: General                                                   */}
@@ -803,9 +1278,8 @@ export default function SettingsPage() {
                       onDragLeave={handleDragLeave}
                       className={cn(
                         'flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-colors cursor-pointer',
-                        dragOver
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border/50 hover:border-primary/30 hover:bg-muted/30'
+                                                dragOver ? 'border-emerald-500 bg-emerald-500/5 dark:border-emerald-500 dark:bg-emerald-500/10' : 'border-slate-300 bg-white hover:border-emerald-500/30 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:hover:bg-slate-950/50'
+
                       )}
                       onClick={() => {
                         const input = document.createElement('input')
@@ -1028,6 +1502,7 @@ export default function SettingsPage() {
             </div>
           )}
 
+          </div>
         </div>
       </div>
 

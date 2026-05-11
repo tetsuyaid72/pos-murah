@@ -26,6 +26,8 @@ export interface TrendDataPoint {
 
 interface SalesTrendChartProps {
   trend: TrendDataPoint[]
+  compact?: boolean
+  hideHeader?: boolean
 }
 
 const MODE_TABS: { value: ChartMode; label: string }[] = [
@@ -36,7 +38,7 @@ const MODE_TABS: { value: ChartMode; label: string }[] = [
 
 const DAYS_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
-export function SalesTrendChart({ trend }: SalesTrendChartProps) {
+export function SalesTrendChart({ trend, compact = false, hideHeader = false }: SalesTrendChartProps) {
   const [mode, setMode] = useState<ChartMode>('revenue')
 
   const chartData = trend.map((point) => {
@@ -71,32 +73,34 @@ export function SalesTrendChart({ trend }: SalesTrendChartProps) {
   const gradientId = `gradient-${mode}`
 
   return (
-    <Card className="h-[220px] shrink-0 overflow-hidden rounded-2xl">
-      <CardHeader className="space-y-0 px-4 pb-2 pt-3.5">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-sm font-semibold md:text-base">Trend Penjualan</CardTitle>
+    <Card className={cn('shrink-0 overflow-hidden rounded-2xl', compact ? 'h-[170px]' : 'h-[220px]')}>
+      {!hideHeader && (
+        <CardHeader className={cn('space-y-0', compact ? 'px-3 pb-2 pt-3' : 'px-4 pb-2 pt-3.5')}>
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle className={cn('font-semibold', compact ? 'text-xs' : 'text-sm md:text-base')}>Trend Penjualan</CardTitle>
 
-          {/* Mode toggle */}
-          <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
-            {MODE_TABS.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setMode(tab.value)}
-                className={cn(
-                  'cursor-pointer rounded-lg px-3 py-1.5 text-xs font-medium leading-tight transition-all duration-200',
-                  mode === tab.value
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
+            <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
+              {MODE_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  onClick={() => setMode(tab.value)}
+                  className={cn(
+                    'cursor-pointer rounded-lg font-medium leading-tight transition-all duration-200',
+                    compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-1.5 text-xs',
+                    mode === tab.value
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="h-full px-3 pb-3 pt-0">
-        <div className="h-[154px] w-full">
+        </CardHeader>
+      )}
+      <CardContent className={cn('h-full px-3', hideHeader ? 'pb-3 pt-3' : 'pb-3 pt-0')}>
+        <div className={cn('w-full', compact ? 'h-[130px]' : 'h-[154px]')}>
           <ResponsiveContainer width="100%" height="100%">
             {mode === 'transactions' ? (
               <BarChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>

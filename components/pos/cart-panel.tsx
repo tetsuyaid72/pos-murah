@@ -10,7 +10,11 @@ import { Separator } from '@/components/ui/separator'
 import { CartItem } from './cart-item'
 import { PaymentDialog } from './payment-dialog'
 
-export function CartPanel() {
+interface CartPanelProps {
+  compactMobile?: boolean
+}
+
+export function CartPanel({ compactMobile = false }: CartPanelProps) {
   const { items, clearCart, getSubtotal, getTotal, getItemCount, discountAmount } =
     useCartStore()
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -23,13 +27,13 @@ export function CartPanel() {
     <>
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-card/50 backdrop-blur-xl">
         {/* Cart header */}
-        <div className="shrink-0 border-b border-border/50 p-4">
+        <div className={compactMobile ? 'hidden' : 'shrink-0 border-b border-border/50 p-3 md:p-4'}>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 shadow-sm dark:bg-emerald-500/10">
-                <ShoppingCart className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 shadow-sm dark:bg-emerald-500/10 md:h-9 md:w-9 md:rounded-xl">
+                <ShoppingCart className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 md:h-4 md:w-4" />
               </div>
-              <h2 className="text-lg font-semibold text-foreground">Keranjang</h2>
+              <h2 className="text-[16px] font-semibold text-foreground md:text-lg">Keranjang</h2>
               {itemCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500 px-1.5 text-[11px] font-bold text-white shadow-sm shadow-emerald-500/30">
                   {itemCount}
@@ -42,7 +46,7 @@ export function CartPanel() {
                 variant="ghost"
                 size="sm"
                 onClick={clearCart}
-                className="rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10"
+                className="h-8 rounded-lg px-2.5 text-[12px] text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 md:h-9 md:px-3 md:text-sm"
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" />
                 Hapus
@@ -52,7 +56,7 @@ export function CartPanel() {
         </div>
 
         {/* Cart items */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div className={compactMobile ? 'min-h-0 flex-1 overflow-y-auto px-4 py-4' : 'min-h-0 flex-1 overflow-y-auto p-2.5 md:p-3'}>
           {items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border/50 bg-muted/70 shadow-sm">
@@ -68,7 +72,7 @@ export function CartPanel() {
               </div>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className={compactMobile ? 'space-y-3' : 'space-y-1.5 md:space-y-2'}>
               <AnimatePresence mode="popLayout">
                 {items.map((item) => (
                   <CartItem key={item.id} item={item} />
@@ -80,16 +84,16 @@ export function CartPanel() {
 
         {/* Cart footer — totals & pay button */}
         {items.length > 0 && (
-          <div className="shrink-0 border-t border-border/50 bg-background/60 p-4 backdrop-blur-sm">
+          <div className={compactMobile ? 'shrink-0 border-t border-border/50 bg-background px-4 py-4' : 'shrink-0 border-t border-border/50 bg-background/60 p-3 backdrop-blur-sm md:p-4'}>
             {/* Subtotal */}
-            <div className="flex items-center justify-between text-sm">
+            <div className={compactMobile ? 'flex items-center justify-between text-sm' : 'flex items-center justify-between text-[13px] md:text-sm'}>
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium tabular-nums text-foreground">{formatRupiah(subtotal)}</span>
             </div>
 
             {/* Discount (if any) */}
             {discountAmount > 0 && (
-              <div className="mt-1 flex items-center justify-between text-sm text-rose-500">
+              <div className={compactMobile ? 'mt-1 flex items-center justify-between text-sm text-rose-500' : 'mt-1 flex items-center justify-between text-[13px] text-rose-500 md:text-sm'}>
                 <span>Diskon</span>
                 <span className="font-medium tabular-nums">
                   -{formatRupiah(subtotal - total)}
@@ -97,12 +101,12 @@ export function CartPanel() {
               </div>
             )}
 
-            <Separator className="my-3 bg-border/50" />
+            <Separator className="my-2.5 bg-border/50 md:my-3" />
 
             {/* Total */}
             <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-foreground">Total</span>
-              <span className="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              <span className={compactMobile ? 'text-sm text-muted-foreground' : 'text-[15px] font-bold text-foreground md:text-base'}>Total</span>
+              <span className={compactMobile ? 'text-xl font-bold tabular-nums text-foreground' : 'text-[18px] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 md:text-xl'}>
                 {formatRupiah(total)}
               </span>
             </div>
@@ -110,11 +114,11 @@ export function CartPanel() {
             {/* Pay button */}
             <Button
               size="xl"
-              variant="premium"
-              className="mt-4 h-11 w-full rounded-xl text-base font-bold"
+              variant={compactMobile ? 'default' : 'premium'}
+              className={compactMobile ? 'mt-3 h-12 w-full rounded-2xl bg-emerald-600 text-base font-bold text-white hover:bg-emerald-600 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-500' : 'mt-3 h-10 w-full rounded-xl text-[14px] font-bold md:mt-4 md:h-11 md:text-base'}
               onClick={() => setPaymentOpen(true)}
             >
-              <Sparkles className="mr-2 h-4 w-4" />
+              <Sparkles className="mr-1.5 h-3.5 w-3.5 md:mr-2 md:h-4 md:w-4" />
               BAYAR
             </Button>
           </div>

@@ -22,7 +22,7 @@ export function DemoMobileNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-border/50 bg-card/90 backdrop-blur-xl md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 text-card-foreground backdrop-blur supports-[backdrop-filter]:bg-card/80 md:hidden">
       <div className="flex items-center justify-around px-1 py-1">
         {demoMobileNavItems.map((item) => {
           const isActive = pathname === item.href
@@ -41,7 +41,7 @@ export function DemoMobileNav() {
             >
               <div className={cn(
                 'flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200',
-                isActive && 'bg-emerald-50 dark:bg-emerald-500/10'
+                isActive && 'bg-emerald-50 dark:bg-emerald-500/15'
               )}>
                 <Icon className="h-[18px] w-[18px]" />
               </div>

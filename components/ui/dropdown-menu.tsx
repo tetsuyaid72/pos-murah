@@ -17,6 +17,7 @@ interface DropdownMenuContentProps {
   children: React.ReactNode
   className?: string
   align?: 'start' | 'end'
+  sideOffset?: number
 }
 
 interface DropdownMenuItemProps {
@@ -87,6 +88,7 @@ function DropdownMenuContent({
   children,
   className,
   align = 'end',
+  sideOffset = 8,
   open,
   setOpen,
 }: DropdownMenuContentProps & DropdownMenuControlProps) {
@@ -94,8 +96,9 @@ function DropdownMenuContent({
 
   return (
     <div
+      style={{ marginTop: sideOffset }}
       className={cn(
-        'absolute top-full z-50 mt-2 min-w-44 rounded-2xl border border-border/60 bg-popover p-1.5 text-popover-foreground shadow-xl',
+        'absolute top-full z-50 min-w-44 rounded-2xl border border-border/60 bg-popover p-1.5 text-popover-foreground shadow-xl',
         align === 'end' ? 'right-0' : 'left-0',
         className
       )}

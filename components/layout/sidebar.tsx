@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import {
   ShoppingCart,
@@ -52,7 +53,7 @@ export function Sidebar() {
         {/* Backdrop */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity dark:bg-black/70"
             onClick={() => setSidebarOpen(false)}
           />
         )}
@@ -60,7 +61,7 @@ export function Sidebar() {
         {/* Mobile sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col bg-card/95 backdrop-blur-xl border-r border-border/50 transition-transform duration-300 ease-out',
+            'fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-card text-card-foreground backdrop-blur-xl transition-transform duration-300 ease-out supports-[backdrop-filter]:bg-card/95',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
@@ -78,7 +79,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-0 flex h-screen flex-col border-r border-border/50 bg-card/80 backdrop-blur-xl transition-all duration-300 ease-out',
+        'sticky top-0 flex h-screen flex-col border-r border-border bg-card text-card-foreground backdrop-blur-xl transition-all duration-300 ease-out supports-[backdrop-filter]:bg-card/90',
         sidebarCollapsed ? 'w-[68px]' : 'w-56'
       )}
     >
@@ -103,6 +104,7 @@ function SidebarContent({
   onNavigate?: () => void
 }) {
   const { theme, setTheme } = useUIStore()
+  const { resolvedTheme, setTheme: applyTheme } = useTheme()
   const { storeName, storeLogo, userName, userEmail, userAvatar } = useSettingsStore()
   const { logout, membership, user } = useAuthStore()
   const { paymentStatus } = useSubscriptionStore()
@@ -129,10 +131,12 @@ function SidebarContent({
     : 'Upgrade sekarang untuk melanjutkan penggunaan setelah trial berakhir.'
   const showTrialUpgradeCard = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
 
+  const isDark = resolvedTheme === 'dark'
+
   const toggleTheme = () => {
-    if (theme === 'light') setTheme('dark')
-    else if (theme === 'dark') setTheme('system')
-    else setTheme('light')
+    const nextTheme = isDark ? 'light' : 'dark'
+    setTheme(nextTheme)
+    applyTheme(nextTheme)
   }
 
   return (
@@ -262,14 +266,14 @@ function SidebarContent({
             'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
             collapsed && 'justify-center px-2'
           )}
-          title={collapsed ? `Tema: ${theme}` : undefined}
+          title={collapsed ? `Tema: ${isDark ? 'dark' : 'light'}` : undefined}
         >
-          {theme === 'dark' ? (
+          {isDark ? (
             <Moon className="h-[18px] w-[18px] shrink-0" />
           ) : (
             <Sun className="h-[18px] w-[18px] shrink-0" />
           )}
-          {!collapsed && <span>{theme === 'dark' ? 'Mode Gelap' : 'Mode Terang'}</span>}
+          {!collapsed && <span>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>}
         </button>
 
         {/* User profile mini */}
@@ -343,19 +347,19 @@ function TrialUpgradeCard({
 }) {
   return (
     <div className="shrink-0 px-2.5 pb-2 sm:pb-2.5">
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/30 dark:from-emerald-950/40 dark:to-teal-950/30">
+      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 dark:shadow-none">
         <div className="flex items-start gap-2.5 sm:gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 sm:h-9 sm:w-9">
             <Sparkles className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold leading-tight text-slate-900 dark:text-emerald-50">
+            <p className="truncate text-sm font-bold leading-tight text-foreground dark:text-emerald-50">
               {isExpired ? 'Trial Anda Berakhir' : 'Trial 3 Hari Aktif'}
             </p>
             <p className="mt-1 text-xs font-semibold leading-none text-emerald-700 dark:text-emerald-300">
               Sisa trial: {daysRemaining} hari
             </p>
-            <p className="mt-2 hidden text-xs leading-relaxed text-slate-600 dark:text-emerald-100/80 sm:block">
+            <p className="mt-2 hidden text-xs leading-relaxed text-muted-foreground dark:text-emerald-100/80 sm:block">
               {ctaDescription}
             </p>
           </div>
