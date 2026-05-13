@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import Image from 'next/image'
@@ -103,7 +103,7 @@ function SidebarContent({
   onCollapse?: () => void
   onNavigate?: () => void
 }) {
-  const { theme, setTheme } = useUIStore()
+  const { setTheme } = useUIStore()
   const { resolvedTheme, setTheme: applyTheme } = useTheme()
   const { storeName, storeLogo, userName, userEmail, userAvatar } = useSettingsStore()
   const { logout, membership, user } = useAuthStore()
@@ -123,7 +123,7 @@ function SidebarContent({
   const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
   const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
   const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
-  const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/upgrade'
+  const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
   const ctaLabel = paymentStatus === 'pending' ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
   const ctaLabelMobile = paymentStatus === 'pending' ? 'Status Bayar' : 'Upgrade'
   const ctaDescription = paymentStatus === 'pending'
@@ -208,7 +208,7 @@ function SidebarContent({
           )
         })}
 
-        {/* Admin section — only for SUPER_ADMIN */}
+        {/* Admin section â€” only for SUPER_ADMIN */}
         {user?.role === 'SUPER_ADMIN' && (
           <>
             <p className={cn(
@@ -380,7 +380,7 @@ function TrialUpgradeCard({
 }
 
 // =============================================================================
-// Plan Badge — dynamic label + styling based on subscription plan
+// Plan Badge â€” dynamic label + styling based on subscription plan
 // =============================================================================
 
 const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass: string; textClass: string }> = {
@@ -437,3 +437,4 @@ function PlanBadge({ plan, isTrialActive, trialDaysRemaining }: { plan: string; 
     </div>
   )
 }
+

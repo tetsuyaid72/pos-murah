@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -25,8 +25,7 @@ export function UpgradePopup() {
   const nextPlan = isBasic ? 'PRO' : 'BUSINESS'
   const nextPlanInfo = isBasic ? PLANS.PRO : PLANS.BUSINESS
   const nextPlanPrice = isBasic ? PRICING.PRO.monthly : PRICING.BUSINESS.monthly
-  const nextPlanSlug = isBasic ? 'pro' : 'business'
-  const ctaHref = isPending ? '/successpayment' : `/upgrade?plan=${nextPlanSlug}`
+  const ctaHref = isPending ? '/successpayment' : '/pricing'
   const ctaLabel = isPending ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
 
   useEffect(() => {
@@ -114,3 +113,4 @@ export function UpgradePopup() {
     </Dialog>
   )
 }
+

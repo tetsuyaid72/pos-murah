@@ -1,7 +1,7 @@
-/**
+﻿/**
  * Next.js Proxy (formerly Middleware)
  *
- * Protects dashboard routes — redirects to /login if not authenticated.
+ * Protects dashboard routes â€” redirects to /login if not authenticated.
  * Public routes (login, register, landing, API) are not protected.
  */
 
@@ -32,7 +32,7 @@ const PUBLIC_PREFIXES = [
   '/api/demo',
 ]
 
-/** Auth pages — redirect to dashboard if already logged in */
+/** Auth pages â€” redirect to dashboard if already logged in */
 const AUTH_PAGES = ['/login', '/sign-in', '/register']
 
 /** Routes that require SUPER_ADMIN role */
@@ -99,7 +99,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Check admin routes — require SUPER_ADMIN role
+  // Check admin routes â€” require SUPER_ADMIN role
   if (ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
     if (session.role !== 'SUPER_ADMIN') {
       if (pathname.startsWith('/api/')) {
@@ -108,7 +108,7 @@ export async function proxy(request: NextRequest) {
           { status: 403 }
         )
       }
-      // Redirect non-admin to home, not /dashboard (avoids /upgrade chain)
+      // Redirect non-admin to home, not /dashboard (avoids /pricing chain)
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -127,3 +127,4 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 }
+

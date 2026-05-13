@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/auth/register
  *
  * Register a new user + create their store + initialize a 3-day trial membership.
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(password)
 
     // Membership starts with a 3-day trial so user can explore the dashboard.
-    // After trial expires, AuthProvider redirects to /upgrade.
+    // After trial expires, AuthProvider redirects to /pricing.
     const trialStartAt = new Date()
     const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3-day trial
 
@@ -139,3 +139,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+

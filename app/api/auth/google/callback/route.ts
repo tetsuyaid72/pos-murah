@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/auth/google/callback
  *
  * Handles Google OAuth 2.0 callback.
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
     const storeName = `Toko ${firstName}`
 
     // Membership starts with a 3-day trial so user can explore the dashboard.
-    // After trial expires, AuthProvider redirects to /upgrade.
+    // After trial expires, AuthProvider redirects to /pricing.
     const trialStartAt = new Date()
     const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3-day trial
 
@@ -263,3 +263,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+

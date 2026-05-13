@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -123,7 +123,7 @@ export function PlanLimitModal({
 
       {/* CTA buttons */}
       <div className="mt-6 flex flex-col gap-2.5">
-        <Link href="/upgrade?plan=pro" onClick={onClose}>
+        <Link href="/pricing" onClick={onClose}>
           <Button variant="premium" size="lg" className="w-full">
             <Zap className="mr-2 h-4 w-4" />
             Lihat Paket Upgrade
@@ -193,3 +193,4 @@ export function usePlanLimitModal() {
     } as PlanLimitModalProps,
   }
 }
+

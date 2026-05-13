@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { type ReactNode } from 'react'
 import Link from 'next/link'
@@ -8,7 +8,7 @@ import type { FeatureKey } from '@/lib/features'
 import { cn } from '@/lib/utils'
 
 /**
- * Feature name → minimum required plan for display purposes.
+ * Feature name â†’ minimum required plan for display purposes.
  */
 const FEATURE_MIN_PLAN: Record<string, string> = {
   // PRO features
@@ -85,12 +85,12 @@ export function FeatureGate({
 
   const requiredPlan = FEATURE_MIN_PLAN[feature] || 'Pro'
 
-  // Hide mode — render nothing
+  // Hide mode â€” render nothing
   if (mode === 'hide') {
     return null
   }
 
-  // Blur/disable mode — render children with overlay
+  // Blur/disable mode â€” render children with overlay
   return (
     <div className={cn('relative', className)}>
       {/* Blurred/disabled content */}
@@ -117,7 +117,7 @@ export function FeatureGate({
             Upgrade ke paket {requiredPlan} untuk mengakses fitur ini
           </p>
           <Link
-            href={`/upgrade?plan=${requiredPlan.toLowerCase()}`}
+            href={`/pricing`}
             className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-4 py-2 transition-colors"
           >
             <Zap className="h-3.5 w-3.5" />
@@ -153,3 +153,4 @@ export function LockedBadge({ feature }: { feature: FeatureKey }) {
     </span>
   )
 }
+

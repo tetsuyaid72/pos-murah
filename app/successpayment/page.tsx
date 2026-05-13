@@ -69,7 +69,7 @@ function SuccessPaymentContent() {
     }
 
     if (!isLoading && isAuthenticated && paymentStatus !== 'pending') {
-      router.replace('/upgrade')
+      router.replace('/pricing')
     }
   }, [isAuthenticated, isLoading, paymentStatus, router])
 
@@ -162,9 +162,9 @@ function SuccessPaymentContent() {
                   <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               </Link>
-              <Link href="/upgrade" className="block">
+              <Link href="/pricing" className="block">
                 <Button variant="outline" size="lg" className="w-full">
-                  Lihat Halaman Upgrade
+                  Lihat Paket
                 </Button>
               </Link>
             </div>
