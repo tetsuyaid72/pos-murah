@@ -8,7 +8,7 @@ import {
   QrCode,
   BookOpen,
   CheckCircle2,
-  Printer,
+  ImageDown,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatRupiah } from '@/lib/format'
@@ -21,6 +21,7 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { thermalPrinterService } from '@/lib/printer/thermal-printer-service'
 import type { PaymentMethod, Transaction } from '@/types'
 
 const ReceiptPreview = dynamic(
@@ -179,31 +180,21 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       // Show success
       setIsSuccess(true)
 
-      // Auto-print to thermal printer if enabled and connected
+      // Auto-print is best-effort only; checkout must never fail because browser
+      // cannot hold an active Bluetooth session to a paired thermal printer.
       if (autoPrint) {
-        try {
-          const [{ getPrinter }, { buildReceipt }] = await Promise.all([
-            import('@/lib/printer/bluetooth'),
-            import('@/lib/printer/receipt-builder'),
-          ])
-
-          const printer = getPrinter()
-          if (printer.isConnected) {
-            const receiptData = buildReceipt(transaction, {
-              paperSize: printerPaperSize,
-              storeName,
-              storeAddress,
-              storePhone,
-              receiptFooter,
-              cashierName: userName,
-            })
-            printer.print(receiptData).catch(() => {
-              // Silently fail auto-print — user can still manually print
-            })
-          }
-        } catch {
-          // Silently fail — don't block the success flow
-        }
+        thermalPrinterService
+          .printThermalReceipt(transaction, {
+            paperSize: printerPaperSize,
+            storeName,
+            storeAddress,
+            storePhone,
+            receiptFooter,
+            cashierName: userName,
+          })
+          .catch(() => {
+            // Silently fail auto-print — user can still print manually from the success modal.
+          })
       }
     } catch (err) {
       console.error('Payment error:', err)
@@ -261,7 +252,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
             <SuccessView
               change={change}
               paymentMethod={paymentMethod}
-              onPrintReceipt={() => setShowReceipt(true)}
+              onSaveReceipt={() => setShowReceipt(true)}
               onDone={handleDone}
             />
           ) : (
@@ -471,12 +462,12 @@ function PaymentForm({
 function SuccessView({
   change,
   paymentMethod,
-  onPrintReceipt,
+  onSaveReceipt,
   onDone,
 }: {
   change: number
   paymentMethod: PaymentMethod
-  onPrintReceipt: () => void
+  onSaveReceipt: () => void
   onDone: () => void
 }) {
   return (
@@ -513,10 +504,10 @@ function SuccessView({
         <Button
           variant="outline"
           className="flex-1"
-          onClick={onPrintReceipt}
+          onClick={onSaveReceipt}
         >
-          <Printer className="mr-1.5 h-4 w-4" />
-          Cetak Struk
+          <ImageDown className="mr-1.5 h-4 w-4" />
+          Simpan Struk
         </Button>
         <Button
           className="flex-1"

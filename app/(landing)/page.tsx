@@ -1,19 +1,5 @@
-import { HeroSection } from '@/components/landing/hero-section'
-import { StatsSection } from '@/components/landing/stats-section'
-import { FeaturesSection } from '@/components/landing/features-section'
-import { HowItWorksSection } from '@/components/landing/how-it-works-section'
-import { PricingSection } from '@/components/landing/pricing-section'
-import { CTASection } from '@/components/landing/cta-section'
+import { SimpleLanding } from '@/components/landing/simple-landing'
 
 export default function LandingPage() {
-  return (
-    <>
-      <HeroSection />
-      <StatsSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <PricingSection />
-      <CTASection />
-    </>
-  )
+  return <SimpleLanding />
 }

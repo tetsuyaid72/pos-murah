@@ -12,6 +12,8 @@ import { verifyToken } from '@/lib/auth'
 const PUBLIC_PATHS = [
   '/',
   '/login',
+  '/sign-in',
+  '/pricing',
   '/register',
   '/forgot-password',
   '/reset-password',
@@ -31,7 +33,7 @@ const PUBLIC_PREFIXES = [
 ]
 
 /** Auth pages — redirect to dashboard if already logged in */
-const AUTH_PAGES = ['/login', '/register']
+const AUTH_PAGES = ['/login', '/sign-in', '/register']
 
 /** Routes that require SUPER_ADMIN role */
 const ADMIN_PATHS = ['/admin', '/api/admin']
