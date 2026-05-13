@@ -1,0 +1,172 @@
+'use client'
+
+import Image from 'next/image'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
+import { ArrowLeft, CheckCircle2, Store } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { ToastProvider, useToast } from '@/components/ui/toast'
+
+const plans = {
+  basic: {
+    name: 'Basic',
+    price: 'Rp 15.000',
+    description: 'Cocok untuk warung kecil yang baru mulai digital.',
+  },
+  pro: {
+    name: 'Pro',
+    price: 'Rp 25.000',
+    description: 'Pilihan terbaik untuk operasional warung yang ingin lebih rapi.',
+    badge: 'Pilihan Terbaik',
+  },
+  bisnis: {
+    name: 'Bisnis',
+    price: 'Rp 99.000',
+    description: 'Untuk usaha yang butuh fitur lebih lengkap dan siap berkembang.',
+  },
+} as const
+
+function getSelectedPlan(plan: string | null) {
+  if (plan === 'pro' || plan === 'bisnis' || plan === 'basic') {
+    return plans[plan]
+  }
+
+  return plans.basic
+}
+
+function PaymentContent() {
+  const searchParams = useSearchParams()
+  const selectedPlan = getSelectedPlan(searchParams.get('plan'))
+  const { toast } = useToast()
+
+  const handlePaidClick = () => {
+    toast('Terima kasih, pembayaran kamu akan kami cek manual.', 'success')
+  }
+
+  return (
+    <main className="relative min-h-screen overflow-x-hidden bg-[#F8FAFC] px-4 text-slate-950 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.16),rgba(248,250,252,0)_58%)]" />
+        <div className="absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-200/25 blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.035)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-screen max-w-[1200px] flex-col">
+        <header className="relative left-1/2 flex h-14 w-screen -translate-x-1/2 items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-8">
+          <Link href="/" className="flex min-w-0 items-center gap-2.5">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-[0_12px_28px_rgba(16,185,129,0.25)] sm:h-9 sm:w-9 sm:rounded-2xl">
+              <Store className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            </div>
+            <span className="truncate text-sm font-black tracking-tight text-slate-900 sm:text-base">
+              Warung Madura <span className="text-emerald-600">POS</span>
+            </span>
+          </Link>
+
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/80 px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-emerald-200 hover:bg-emerald-50/70 sm:px-5 sm:py-2.5 sm:text-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Kembali
+          </Link>
+        </header>
+
+        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
+          <Card className="w-full max-w-md rounded-[28px] border border-slate-200/80 bg-white/90 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:max-w-lg">
+            <CardHeader className="items-center p-5 pb-4 sm:p-7 sm:pb-5">
+              <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
+                QRIS Only
+              </Badge>
+              <CardTitle className="mt-3 text-2xl font-black tracking-[-0.035em] text-slate-950 sm:text-3xl">
+                Selesaikan Pembayaran
+              </CardTitle>
+              <CardDescription className="max-w-sm text-sm leading-6 text-slate-500">
+                Scan QRIS untuk mengaktifkan paket berlangganan Warung Madura POS.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-5 p-5 pt-0 sm:p-7 sm:pt-0">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <p className="text-sm font-semibold text-emerald-700">Paket {selectedPlan.name}</p>
+                  {'badge' in selectedPlan && selectedPlan.badge && (
+                    <Badge className="bg-emerald-600 text-white">{selectedPlan.badge}</Badge>
+                  )}
+                </div>
+                <p className="mt-2 text-4xl font-black tracking-[-0.05em] text-slate-950 sm:text-5xl">
+                  {selectedPlan.price}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{selectedPlan.description}</p>
+              </div>
+
+              <div className="mx-auto flex w-full max-w-[290px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:max-w-[320px] sm:p-5">
+                <Image
+                  src="/qris.png"
+                  alt="QRIS pembayaran Warung Madura POS"
+                  width={260}
+                  height={260}
+                  priority
+                  className="h-auto w-full max-w-[240px] rounded-xl object-contain sm:max-w-[260px]"
+                />
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white/75 p-4 text-left">
+                <p className="text-sm font-bold text-slate-900">Instruksi pembayaran</p>
+                <ol className="mt-3 space-y-2.5 text-sm leading-5 text-slate-600">
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>Scan QRIS menggunakan aplikasi e-wallet atau mobile banking.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>Bayar sesuai nominal paket yang dipilih.</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>Setelah membayar, klik tombol Saya Sudah Bayar.</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  onClick={handlePaidClick}
+                  className="h-11 rounded-2xl bg-emerald-600 font-bold text-white shadow-[0_14px_32px_rgba(16,185,129,0.22)] hover:bg-emerald-700"
+                >
+                  Saya Sudah Bayar
+                </Button>
+                <Link href="/pricing" className="w-full">
+                  <Button
+                    variant="outline"
+                    className="h-11 w-full rounded-2xl border-slate-200 bg-white/80 font-bold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/70"
+                  >
+                    Ganti Paket
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+    </main>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <ToastProvider>
+      <Suspense fallback={null}>
+        <PaymentContent />
+      </Suspense>
+    </ToastProvider>
+  )
+}

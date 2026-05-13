@@ -25,7 +25,7 @@ const plans = [
       'Laporan harian sederhana',
     ],
     cta: 'Pilih Basic',
-    href: '/login',
+    href: '/payment?plan=basic',
   },
   {
     name: 'Pro',
@@ -42,7 +42,7 @@ const plans = [
       'Export laporan',
     ],
     cta: 'Pilih Pro',
-    href: '/login',
+    href: '/payment?plan=pro',
     highlighted: true,
   },
   {
@@ -59,7 +59,7 @@ const plans = [
       'Fitur request khusus',
     ],
     cta: 'Pilih Bisnis',
-    href: '/login',
+    href: '/payment?plan=bisnis',
   },
 ]
 
