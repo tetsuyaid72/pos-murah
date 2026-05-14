@@ -14,8 +14,6 @@ import {
   ChevronLeft,
   Store,
   Crown,
-  Sparkles,
-  ArrowRight,
   Moon,
   Sun,
   BarChart3,
@@ -110,7 +108,7 @@ function SidebarContent({
   const { paymentStatus } = useSubscriptionStore()
 
   // Server membership is always the source of truth for plan status
-  const plan = membership?.plan || 'FREE'
+  const plan = membership?.isTrial ? 'FREE' : membership?.plan || 'FREE'
 
   // Calculate trial info for display
   const trialDaysRemaining = (() => {
@@ -124,12 +122,8 @@ function SidebarContent({
   const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
   const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
   const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
-  const ctaLabel = paymentStatus === 'pending' ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
-  const ctaLabelMobile = paymentStatus === 'pending' ? 'Status Bayar' : 'Upgrade'
-  const ctaDescription = paymentStatus === 'pending'
-    ? 'Pembayaran Anda sedang diverifikasi admin. Pantau statusnya di sini.'
-    : 'Upgrade sekarang untuk melanjutkan penggunaan setelah trial berakhir.'
-  const showTrialUpgradeCard = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
+  const ctaLabel = paymentStatus === 'pending' ? 'Status Pembayaran' : 'Upgrade Paket'
+  const showUpgradeButton = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
 
   const isDark = resolvedTheme === 'dark'
 
@@ -164,7 +158,7 @@ function SidebarContent({
             <span className="truncate text-sm font-bold tracking-tight text-foreground">
               {storeName || 'Toko Saya'}
             </span>
-            <PlanBadge plan={plan} isTrialActive={isTrialActive} trialDaysRemaining={trialDaysRemaining} />
+            <PlanBadge plan={plan} />
           </div>
         )}
       </div>
@@ -244,15 +238,11 @@ function SidebarContent({
         )}
       </nav>
 
-      {/* Trial Upgrade Card */}
-      {showTrialUpgradeCard && (
-        <TrialUpgradeCard
-          isExpired={isTrialExpired}
-          daysRemaining={trialDaysRemaining}
+      {/* Upgrade button */}
+      {showUpgradeButton && (
+        <SidebarUpgradeButton
           ctaHref={ctaHref}
           ctaLabel={ctaLabel}
-          ctaLabelMobile={ctaLabelMobile}
-          ctaDescription={ctaDescription}
           onNavigate={onNavigate}
         />
       )}
@@ -328,53 +318,25 @@ function SidebarContent({
   )
 }
 
-function TrialUpgradeCard({
-  isExpired,
-  daysRemaining,
+function SidebarUpgradeButton({
   ctaHref,
   ctaLabel,
-  ctaLabelMobile,
-  ctaDescription,
   onNavigate,
 }: {
-  isExpired: boolean
-  daysRemaining: number
   ctaHref: string
   ctaLabel: string
-  ctaLabelMobile: string
-  ctaDescription: string
   onNavigate?: () => void
 }) {
   return (
     <div className="shrink-0 px-2.5 pb-2 sm:pb-2.5">
-      <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 shadow-sm dark:border-emerald-500/25 dark:from-emerald-500/10 dark:to-teal-500/10 dark:shadow-none">
-        <div className="flex items-start gap-2.5 sm:gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 sm:h-9 sm:w-9">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold leading-tight text-foreground dark:text-emerald-50">
-              {isExpired ? 'Trial Anda Berakhir' : 'Trial 3 Hari Aktif'}
-            </p>
-            <p className="mt-1 text-xs font-semibold leading-none text-emerald-700 dark:text-emerald-300">
-              Sisa trial: {daysRemaining} hari
-            </p>
-            <p className="mt-2 hidden text-xs leading-relaxed text-muted-foreground dark:text-emerald-100/80 sm:block">
-              {ctaDescription}
-            </p>
-          </div>
-        </div>
-
-        <Link
-          href={ctaHref}
-          onClick={onNavigate}
-          className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700 sm:mt-3 sm:h-10 sm:text-sm"
-        >
-          <span className="sm:hidden">{ctaLabelMobile}</span>
-          <span className="hidden sm:inline">{ctaLabel}</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
+      <Link
+        href={ctaHref}
+        onClick={onNavigate}
+        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
+      >
+        <Crown className="h-4 w-4" />
+        {ctaLabel}
+      </Link>
     </div>
   )
 }
@@ -397,10 +359,10 @@ const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass
     textClass: 'text-blue-600 dark:text-blue-400',
   },
   BASIC: {
-    label: 'Basic Plan',
-    icon: Crown,
-    iconClass: 'text-sky-500',
-    textClass: 'text-sky-600 dark:text-sky-400',
+    label: 'Free Plan',
+    icon: Store,
+    iconClass: 'text-muted-foreground',
+    textClass: 'text-muted-foreground',
   },
   PRO: {
     label: 'Pro Plan',
@@ -422,7 +384,7 @@ const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass
   },
 }
 
-function PlanBadge({ plan, isTrialActive, trialDaysRemaining }: { plan: string; isTrialActive?: boolean; trialDaysRemaining?: number }) {
+function PlanBadge({ plan }: { plan: string }) {
   const config = PLAN_CONFIG[plan] || PLAN_CONFIG.FREE
   const Icon = config.icon
 
@@ -430,9 +392,7 @@ function PlanBadge({ plan, isTrialActive, trialDaysRemaining }: { plan: string; 
     <div className="flex items-center gap-1.5">
       <Icon className={cn('h-3 w-3 shrink-0', config.iconClass)} />
       <span className={cn('text-[11px] font-medium', config.textClass)}>
-        {isTrialActive
-          ? `Trial: ${trialDaysRemaining} hari`
-          : config.label}
+        {config.label}
       </span>
     </div>
   )

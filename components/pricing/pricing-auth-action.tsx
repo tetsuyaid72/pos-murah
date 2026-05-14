@@ -1,10 +1,12 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { LogOut } from 'lucide-react'
+import { HelpCircle, LogOut, Moon, Settings } from 'lucide-react'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/stores/auth-store'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,14 +17,16 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 export function PricingAuthAction() {
-  const { user, isAuthenticated, isLoading, fetchAuth, logout } = useAuthStore()
+  const router = useRouter()
+  const { resolvedTheme, setTheme } = useTheme()
+  const { user, membership, isAuthenticated, isLoading, fetchAuth, logout } = useAuthStore()
 
   useEffect(() => {
     fetchAuth()
   }, [fetchAuth])
 
   if (isLoading) {
-    return <div className="h-9 w-20 rounded-2xl bg-emerald-50/80" />
+    return <div className="h-8 w-24 rounded-full bg-slate-100" />
   }
 
   if (!isAuthenticated || !user) {
@@ -36,40 +40,83 @@ export function PricingAuthAction() {
     )
   }
 
-  const fallbackInitial = user.name?.charAt(0) || user.email.charAt(0) || 'U'
+  const avatarUrl =
+    user.user_metadata?.avatar_url ||
+    user.user_metadata?.picture ||
+    user.avatarUrl ||
+    null
+  const displayName =
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.name ||
+    user.email?.split('@')[0] ||
+    'User'
+  const initials = displayName
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+  const isApprovedPaid = Boolean(membership && !membership.isTrial)
+  const plan = isApprovedPaid ? membership?.plan?.toUpperCase() : 'FREE'
+  const badgeLabel = plan === 'BUSINESS' ? 'Bisnis' : plan === 'PRO' ? 'Pro' : 'Free'
+  const badgeClass =
+    plan === 'BUSINESS'
+      ? 'bg-amber-50 text-amber-700'
+      : plan === 'PRO'
+        ? 'bg-emerald-50 text-emerald-700'
+        : 'bg-[#f3f4f6] text-[#6b7280]'
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="Buka menu akun"
-          className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-emerald-100 bg-white text-sm font-bold uppercase text-emerald-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition hover:border-emerald-200 hover:shadow-[0_14px_32px_rgba(16,185,129,0.16)]"
+    <div className="flex items-center gap-2">
+      <span className={`rounded-full px-2 py-1 text-[12px] font-semibold leading-none ${badgeClass}`}>
+        {badgeLabel}
+      </span>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" aria-label="Buka menu akun" className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">
+            <Avatar className="h-8 w-8 border border-slate-200 bg-slate-100">
+              {avatarUrl && (
+                <AvatarImage src={avatarUrl} alt={displayName} referrerPolicy="no-referrer" />
+              )}
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          align="end"
+          sideOffset={10}
+          className="w-[220px] overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-1 shadow-lg"
         >
-          {user.avatarUrl ? (
-            <Image
-              src={user.avatarUrl}
-              alt={user.name || user.email}
-              width={36}
-              height={36}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            fallbackInitial
-          )}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 border-slate-200 bg-white/95 shadow-[0_18px_50px_rgba(15,23,42,0.12)] backdrop-blur">
-        <DropdownMenuLabel className="normal-case tracking-normal">
-          <span className="block truncate text-sm font-bold text-slate-900">{user.name}</span>
-          <span className="mt-0.5 block truncate text-xs font-medium text-slate-500">{user.email}</span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout} className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700">
-          <LogOut className="h-4 w-4" />
-          Logout
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuLabel className="px-3 py-3 normal-case tracking-normal">
+            <span className="block truncate text-[14px] font-bold leading-5 text-[#111827]">{displayName}</span>
+            <span className="mt-0.5 block truncate text-[13px] font-normal leading-5 text-[#6b7280]">{user.email}</span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator className="my-1 bg-[#e5e7eb]" />
+          <DropdownMenuItem onClick={() => router.push('/settings')} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+            <Settings className="h-4 w-4" />
+            Pengaturan
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push('/')} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+            <HelpCircle className="h-4 w-4" />
+            Bantuan
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]"
+          >
+            <Moon className="h-4 w-4" />
+            Dark mode
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="my-1 bg-[#e5e7eb]" />
+          <DropdownMenuItem onClick={logout} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }

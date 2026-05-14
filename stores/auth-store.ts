@@ -6,6 +6,12 @@ export interface AuthUser {
   email: string
   role: string
   avatarUrl: string | null
+  user_metadata?: {
+    avatar_url?: string | null
+    picture?: string | null
+    full_name?: string | null
+    name?: string | null
+  }
 }
 
 export interface AuthStore {
