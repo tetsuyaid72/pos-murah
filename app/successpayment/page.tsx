@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock3 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/pricing'
 import { useAuthStore } from '@/stores/auth-store'
@@ -98,27 +98,6 @@ function SuccessPaymentContent() {
               <CheckCircle2 className="h-4 w-4" />
               Pembayaran Berhasil Dikirim
             </div>
-
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-              Mohon tunggu verifikasi admin
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-7 text-slate-500 sm:text-lg">
-              Bukti pembayaran Anda sudah kami terima. Tim kami akan memverifikasi pembayaran dan mengaktifkan paket Anda maksimal dalam 1x24 jam.
-            </p>
-
-            <div className="mt-8 rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-[0_16px_40px_rgba(15,23,42,0.04)] backdrop-blur-sm">
-              <div className="flex items-start gap-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                  <Clock3 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Status saat ini: Menunggu verifikasi</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Anda tidak perlu upload ulang. Silakan tunggu konfirmasi admin. Setelah pembayaran disetujui, paket akan aktif otomatis.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
@@ -161,11 +140,6 @@ function SuccessPaymentContent() {
                   Kembali ke Dashboard
                   <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              </Link>
-              <Link href="/pricing" className="block">
-                <Button variant="outline" size="lg" className="w-full">
-                  Lihat Paket
-                </Button>
               </Link>
             </div>
 
