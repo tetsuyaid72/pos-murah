@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { HelpCircle, LogOut, Moon, Settings } from 'lucide-react'
+import { HelpCircle, LogOut, Settings } from 'lucide-react'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTheme } from '@/components/theme-provider'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggleButton } from '@/components/theme-toggle-button'
@@ -19,7 +18,6 @@ import {
 
 export function PricingAuthAction() {
   const router = useRouter()
-  const { resolvedTheme, setTheme } = useTheme()
   const { user, membership, isAuthenticated, isLoading, fetchAuth, logout } = useAuthStore()
 
   useEffect(() => {
@@ -97,31 +95,24 @@ export function PricingAuthAction() {
 
         <DropdownMenuContent
           align="end"
-          sideOffset={10}
-          className="w-[220px] overflow-hidden rounded-xl border border-[#e5e7eb] bg-white p-1 shadow-lg"
+          sideOffset={8}
+          className="z-50 w-[260px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-xl sm:w-[220px] sm:rounded-xl sm:p-1 sm:shadow-lg"
         >
-          <DropdownMenuLabel className="px-3 py-3 normal-case tracking-normal">
-            <span className="block truncate text-[14px] font-bold leading-5 text-[#111827]">{displayName}</span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal leading-5 text-[#6b7280]">{user.email}</span>
+          <DropdownMenuLabel className="px-3 py-2.5 normal-case tracking-normal sm:py-3">
+            <span className="block truncate text-sm font-semibold leading-5 text-popover-foreground">{displayName}</span>
+            <span className="mt-0.5 block truncate text-xs font-normal leading-5 text-muted-foreground sm:text-[13px]">{user.email}</span>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator className="my-1 bg-[#e5e7eb]" />
-          <DropdownMenuItem onClick={() => router.push('/settings')} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+          <DropdownMenuSeparator className="my-1 bg-border" />
+          <DropdownMenuItem onClick={() => router.push('/settings')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
             <Settings className="h-4 w-4" />
             Pengaturan
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push('/')} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+          <DropdownMenuItem onClick={() => router.push('/')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
             <HelpCircle className="h-4 w-4" />
             Bantuan
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]"
-          >
-            <Moon className="h-4 w-4" />
-            Dark mode
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="my-1 bg-[#e5e7eb]" />
-          <DropdownMenuItem onClick={logout} className="h-10 gap-2 rounded-lg px-3 text-[14px] text-[#374151] hover:bg-[#f9fafb]">
+          <DropdownMenuSeparator className="my-1 bg-border" />
+          <DropdownMenuItem onClick={logout} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
             <LogOut className="h-4 w-4" />
             Sign out
           </DropdownMenuItem>
