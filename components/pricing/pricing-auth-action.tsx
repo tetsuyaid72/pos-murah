@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ThemeToggleButton } from '@/components/theme-toggle-button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,17 +27,25 @@ export function PricingAuthAction() {
   }, [fetchAuth])
 
   if (isLoading) {
-    return <div className="h-8 w-24 rounded-full bg-slate-100" />
+    return (
+      <div className="flex items-center gap-3">
+        <ThemeToggleButton />
+        <div className="h-8 w-20 rounded-full bg-slate-100" />
+      </div>
+    )
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <Link
-        href="/sign-in"
-        className="rounded-2xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_32px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-700 sm:px-5 sm:py-2.5 sm:text-sm"
-      >
-        Log in
-      </Link>
+      <div className="flex items-center gap-3">
+        <ThemeToggleButton />
+        <Link
+          href="/login"
+          className="rounded-2xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_32px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-700 sm:px-5 sm:py-2.5 sm:text-sm"
+        >
+          Log in
+        </Link>
+      </div>
     )
   }
 
@@ -68,7 +77,8 @@ export function PricingAuthAction() {
         : 'bg-[#f3f4f6] text-[#6b7280]'
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
+      <ThemeToggleButton />
       <span className={`rounded-full px-2 py-1 text-[12px] font-semibold leading-none ${badgeClass}`}>
         {badgeLabel}
       </span>
