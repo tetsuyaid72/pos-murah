@@ -2,9 +2,9 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
-import { ArrowLeft, CheckCircle2, Store } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useRef, useState } from 'react'
+import { ArrowLeft, ImagePlus, Store, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,41 +15,126 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { ToastProvider, useToast } from '@/components/ui/toast'
+import { useSubscriptionStore } from '@/stores/subscription-store'
 
 const plans = {
-  basic: {
-    name: 'Basic',
-    price: 'Rp 15.000',
-    description: 'Cocok untuk warung kecil yang baru mulai digital.',
-  },
   pro: {
     name: 'Pro',
-    price: 'Rp 25.000',
-    description: 'Pilihan terbaik untuk operasional warung yang ingin lebih rapi.',
-    badge: 'Pilihan Terbaik',
+    price: 'Rp50.000',
+    amount: 50000,
+    apiPlan: 'PRO',
+    summaryPlan: 'pro',
+    description: 'Untuk pengguna individu yang butuh fitur utama.',
   },
   bisnis: {
     name: 'Bisnis',
-    price: 'Rp 99.000',
-    description: 'Untuk usaha yang butuh fitur lebih lengkap dan siap berkembang.',
+    price: 'Rp100.000',
+    amount: 100000,
+    apiPlan: 'BUSINESS',
+    summaryPlan: 'business',
+    description: 'Untuk usaha yang butuh fitur lebih lengkap.',
+    badge: 'Pilihan Terbaik',
   },
 } as const
 
 function getSelectedPlan(plan: string | null) {
-  if (plan === 'pro' || plan === 'bisnis' || plan === 'basic') {
-    return plans[plan]
+  if (plan === 'business' || plan === 'bisnis') {
+    return plans.bisnis
   }
 
-  return plans.basic
+  return plans.pro
 }
 
 function PaymentContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const selectedPlan = getSelectedPlan(searchParams.get('plan'))
   const { toast } = useToast()
+  const { submitPayment } = useSubscriptionStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofPreview, setProofPreview] = useState<string | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handlePaidClick = () => {
-    toast('Terima kasih, pembayaran kamu akan kami cek manual.', 'success')
+  const handleProofChange = (file: File | null) => {
+    setUploadError(null)
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setUploadError('Format file harus JPG, PNG, atau WebP.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Ukuran file maksimal 2MB.')
+      return
+    }
+    if (proofPreview) URL.revokeObjectURL(proofPreview)
+    setProofFile(file)
+    setProofPreview(URL.createObjectURL(file))
+  }
+
+  const handleRemoveProof = () => {
+    if (proofPreview) URL.revokeObjectURL(proofPreview)
+    setProofFile(null)
+    setProofPreview(null)
+    setUploadError(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const uploadProof = async () => {
+    if (!proofFile) return null
+    const formData = new FormData()
+    formData.append('file', proofFile)
+    formData.append('type', 'payment')
+
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      throw new Error(data.error || 'Upload bukti pembayaran gagal.')
+    }
+    return data.url as string
+  }
+
+  const handlePaidClick = async () => {
+    if (!proofFile) {
+      setUploadError('Wajib upload bukti pembayaran terlebih dahulu.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setUploadError(null)
+    try {
+      const proofUrl = await uploadProof()
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: 'QRIS',
+          proofUrl,
+          plan: selectedPlan.apiPlan,
+          billingPeriod: 'monthly',
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal menyimpan pembayaran.')
+      }
+
+      submitPayment({
+        plan: selectedPlan.summaryPlan,
+        method: 'qris',
+        amount: selectedPlan.amount,
+      })
+      toast('Bukti pembayaran berhasil dikirim. Admin akan memverifikasi pembayaran Anda.', 'success')
+      router.push(`/successpayment?plan=${selectedPlan.summaryPlan}&method=qris&amount=${selectedPlan.amount}`)
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Gagal mengirim bukti pembayaran.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -119,30 +204,60 @@ function PaymentContent() {
                 />
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white/75 p-4 text-left">
-                <p className="text-sm font-bold text-slate-900">Instruksi pembayaran</p>
-                <ol className="mt-3 space-y-2.5 text-sm leading-5 text-slate-600">
-                  <li className="flex gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    <span>Scan QRIS menggunakan aplikasi e-wallet atau mobile banking.</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    <span>Bayar sesuai nominal paket yang dipilih.</span>
-                  </li>
-                  <li className="flex gap-2">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    <span>Setelah membayar, klik tombol Saya Sudah Bayar.</span>
-                  </li>
-                </ol>
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-white/75 p-4 text-left">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <ImagePlus className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-900">Upload bukti pembayaran</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">Format JPG, PNG, atau WebP. Maksimal 2MB.</p>
+                  </div>
+                </div>
+
+                {proofPreview ? (
+                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <Image
+                      src={proofPreview}
+                      alt="Preview bukti pembayaran"
+                      width={420}
+                      height={260}
+                      className="max-h-64 w-full object-contain"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveProof}
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow-sm transition hover:text-red-600"
+                      aria-label="Hapus bukti pembayaran"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 px-4 py-6 text-center transition hover:border-emerald-300 hover:bg-emerald-50/50">
+                    <ImagePlus className="h-6 w-6 text-emerald-600" />
+                    <span className="mt-2 text-sm font-semibold text-slate-800">Pilih gambar bukti pembayaran</span>
+                    <span className="mt-1 text-xs text-slate-500">Klik untuk upload dari perangkat</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="sr-only"
+                      onChange={(event) => handleProofChange(event.target.files?.[0] || null)}
+                    />
+                  </label>
+                )}
+
+                {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <Button
                   onClick={handlePaidClick}
-                  className="h-11 rounded-2xl bg-emerald-600 font-bold text-white shadow-[0_14px_32px_rgba(16,185,129,0.22)] hover:bg-emerald-700"
+                  disabled={isSubmitting}
+                  className="h-11 rounded-2xl bg-emerald-600 font-bold text-white shadow-[0_14px_32px_rgba(16,185,129,0.22)] hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Saya Sudah Bayar
+                  {isSubmitting ? 'Mengirim...' : 'Saya Sudah Bayar'}
                 </Button>
                 <Link href="/pricing" className="w-full">
                   <Button
