@@ -26,7 +26,7 @@ export function PricingAuthAction() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="relative z-[9999] flex items-center gap-3">
         <ThemeToggleButton />
         <div className="h-8 w-20 rounded-full bg-slate-100" />
       </div>
@@ -35,7 +35,7 @@ export function PricingAuthAction() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="relative z-[9999] flex items-center gap-3">
         <ThemeToggleButton />
         <Link
           href="/login"
@@ -75,7 +75,7 @@ export function PricingAuthAction() {
         : 'bg-[#f3f4f6] text-[#6b7280]'
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="relative z-[9999] flex items-center gap-3">
       <ThemeToggleButton />
       <span className={`rounded-full px-2 py-1 text-[12px] font-semibold leading-none ${badgeClass}`}>
         {badgeLabel}
@@ -95,8 +95,8 @@ export function PricingAuthAction() {
 
         <DropdownMenuContent
           align="end"
-          sideOffset={8}
-          className="z-50 w-[260px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-xl sm:w-[220px] sm:rounded-xl sm:p-1 sm:shadow-lg"
+          sideOffset={12}
+          className="z-[9999] w-[260px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-xl sm:w-[220px] sm:rounded-xl sm:p-1 sm:shadow-lg"
         >
           <DropdownMenuLabel className="px-3 py-2.5 normal-case tracking-normal sm:py-3">
             <span className="block truncate text-sm font-semibold leading-5 text-popover-foreground">{displayName}</span>
