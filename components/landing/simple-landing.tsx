@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { BarChart3, Boxes, CircleDollarSign, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { LandingNavbar } from '@/components/landing/landing-navbar'
 
 const stats = ['LIVE', '1 Kasir', '100+ Produk', 'Offline Ready']
 
@@ -30,7 +31,9 @@ const featureCards = [
 
 export function SimpleLanding() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#F8FAFC] px-4 pt-24 text-slate-950 sm:px-6 lg:px-8">
+    <>
+      <LandingNavbar />
+      <section className="relative min-h-screen overflow-hidden bg-[#F8FAFC] px-4 pt-24 text-slate-950 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.14),rgba(248,250,252,0)_58%)]" />
         <div className="absolute left-1/2 top-24 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-200/20 blur-3xl" />
@@ -101,5 +104,6 @@ export function SimpleLanding() {
         </div>
       </div>
     </section>
+    </>
   )
 }
