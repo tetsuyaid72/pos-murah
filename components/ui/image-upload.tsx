@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import Image from 'next/image'
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 interface ImageUploadProps {
   value: string | null
@@ -45,6 +43,7 @@ export function ImageUpload({ value, onChange, className, compact = false }: Ima
     try {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('type', 'product')
 
       const response = await fetch('/api/upload', {
         method: 'POST',
@@ -115,11 +114,9 @@ export function ImageUpload({ value, onChange, className, compact = false }: Ima
       <div className={cn('space-y-2', className)}>
         <div className="relative inline-block">
           <div className={cn('relative overflow-hidden rounded-lg border bg-muted', compact ? 'h-24 w-24 md:h-32 md:w-32' : 'h-32 w-32')}>
-            <Image
+            <img
               src={value}
               alt="Product image"
-              width={128}
-              height={128}
               className="h-full w-full object-cover"
             />
           </div>

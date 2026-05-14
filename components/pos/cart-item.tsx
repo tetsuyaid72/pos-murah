@@ -1,12 +1,10 @@
 'use client'
 
-import Image from 'next/image'
-import { Minus, Plus, Trash2 } from 'lucide-react'
+import { Minus, Package, Plus, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { formatRupiah } from '@/lib/format'
 import { useCartStore, type CartItem as CartItemType } from '@/stores/cart-store'
 import { useProductStore } from '@/stores/product-store'
-import { getCategoryIcon } from '@/lib/category-icons'
 
 interface CartItemProps {
   item: CartItemType
@@ -17,7 +15,6 @@ export function CartItem({ item }: CartItemProps) {
   const categories = useProductStore((s) => s.categories)
 
   const category = categories.find((c) => c.id === item.categoryId)
-  const Icon = getCategoryIcon(category?.icon || null)
   const categoryColor = category?.color || '#6b7280'
 
   return (
@@ -34,15 +31,13 @@ export function CartItem({ item }: CartItemProps) {
         style={{ backgroundColor: `${categoryColor}15` }}
       >
         {item.imageUrl ? (
-          <Image
+          <img
             src={item.imageUrl}
             alt={item.productName}
-            width={32}
-            height={32}
             className="h-full w-full object-cover"
           />
         ) : (
-          <Icon className="h-4.5 w-4.5 md:h-5 md:w-5" style={{ color: categoryColor }} />
+          <Package className="h-4.5 w-4.5 md:h-5 md:w-5" style={{ color: categoryColor }} />
         )}
       </div>
 

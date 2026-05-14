@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
+import { Package } from 'lucide-react'
 import type { Product, Category } from '@/types'
 import { cn } from '@/lib/utils'
-import { getCategoryIcon } from '@/lib/category-icons'
 import { useProductStore } from '@/stores/product-store'
 
 interface ProductImageProps {
@@ -37,11 +36,9 @@ export function ProductImage({ product, size = 'md', className }: ProductImagePr
           className
         )}
       >
-        <Image
+        <img
           src={product.imageUrl!}
           alt={product.name}
-          width={sizeConfig.image}
-          height={sizeConfig.image}
           className="max-h-20 w-full object-contain transition-transform duration-200 group-hover:scale-105"
           onError={() => setImageError(true)}
         />
@@ -67,7 +64,6 @@ interface CategoryFallbackProps {
 
 function CategoryFallback({ category, size, className }: CategoryFallbackProps) {
   const sizeConfig = SIZE_MAP[size]
-  const Icon = getCategoryIcon(category?.icon || null)
   const color = category?.color || '#6b7280'
 
   return (
@@ -79,7 +75,7 @@ function CategoryFallback({ category, size, className }: CategoryFallbackProps) 
       )}
       style={{ backgroundColor: `${color}15` }}
     >
-      <Icon
+      <Package
         className={sizeConfig.icon}
         style={{ color }}
       />
