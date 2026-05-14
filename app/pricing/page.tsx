@@ -1,9 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Check, Store } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { PricingAuthAction } from '@/components/pricing/pricing-auth-action'
+import { PublicHeader } from '@/components/public-header'
 import {
   Card,
   CardContent,
@@ -60,18 +60,7 @@ export default function PricingPage() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen max-w-4xl flex-col">
-        <header className="relative left-1/2 flex h-14 w-screen -translate-x-1/2 items-center justify-between gap-3 px-4 sm:h-16 sm:px-8">
-          <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-[0_12px_28px_rgba(16,185,129,0.25)] sm:h-9 sm:w-9 sm:rounded-2xl">
-              <Store className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-            </div>
-            <span className="truncate text-sm font-black tracking-tight text-slate-900 dark:text-slate-50 sm:text-base">
-              Warung Madura <span className="text-emerald-600">POS</span>
-            </span>
-          </Link>
-
-          <PricingAuthAction />
-        </header>
+        <PublicHeader />
 
         <section id="pricing" className="flex flex-1 flex-col items-center justify-start pb-7 pt-6 text-center sm:justify-center sm:pb-8 sm:pt-0">
           <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">

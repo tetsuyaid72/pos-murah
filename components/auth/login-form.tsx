@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,8 +17,18 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function LoginForm() {
+  const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const oauthError = searchParams.get('error')
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setMounted(true), 0)
+    return () => window.clearTimeout(timeout)
+  }, [])
+
+  if (!mounted) {
+    return <div className="h-[260px] w-full max-w-[420px]" aria-hidden="true" />
+  }
 
   return (
     <motion.div
@@ -27,7 +38,7 @@ export function LoginForm() {
       transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
       <motion.h1
-        className="text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl"
+        className="text-4xl font-black tracking-[-0.045em] text-foreground sm:text-5xl"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.08 }}
@@ -35,7 +46,7 @@ export function LoginForm() {
         Masuk
       </motion.h1>
       <motion.p
-        className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 sm:text-base"
+        className="mx-auto mt-4 max-w-none whitespace-nowrap text-xs leading-6 text-muted-foreground sm:text-base"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.16 }}
@@ -46,28 +57,28 @@ export function LoginForm() {
       <AnimatePresence>
         {oauthError && (
           <motion.div
-            className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left"
+            className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left dark:border-red-500/20 dark:bg-red-500/10"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <p className="text-sm text-red-600">{oauthError}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">{oauthError}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
       <a
         href="/api/auth/google"
-        className="mx-auto mt-8 flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98]"
+        className="mx-auto mt-8 flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 text-[15px] font-semibold text-card-foreground shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98] dark:shadow-none dark:hover:border-emerald-500/40 dark:hover:bg-slate-800"
       >
         <GoogleIcon className="h-5 w-5" />
         Masuk dengan Google
       </a>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Belum punya akun?{' '}
-        <Link href="/register" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
+        <Link href="/register" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
           Daftar
         </Link>
       </p>
