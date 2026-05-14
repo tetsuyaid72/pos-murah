@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ArrowRight, BarChart3, Boxes, ClipboardList, PackageCheck, Store } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { PricingAuthAction } from '@/components/pricing/pricing-auth-action'
 
 export const metadata = {
   title: 'Warung Madura POS — Aplikasi Kasir untuk Warung & UMKM',
@@ -53,12 +54,7 @@ export default function HomePage() {
             </span>
           </div>
 
-          <Link
-            href="/sign-in"
-            className="justify-self-end rounded-2xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_32px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-700 sm:px-5 sm:py-2.5 sm:text-sm"
-          >
-            Log in
-          </Link>
+          <PricingAuthAction />
         </header>
 
         <section className="flex flex-1 flex-col items-center justify-start pb-7 pt-7 text-center sm:justify-center sm:pb-8 sm:pt-0">
