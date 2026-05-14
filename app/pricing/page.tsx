@@ -27,7 +27,7 @@ const plans = [
       'Akses selamanya',
     ],
     cta: 'Pilih Pro',
-    href: '/upgrade?plan=pro',
+    href: '/payment?plan=pro',
   },
   {
     name: 'Bisnis',
@@ -45,7 +45,7 @@ const plans = [
       'Akses selamanya',
     ],
     cta: 'Pilih Bisnis',
-    href: '/upgrade?plan=business',
+    href: '/payment?plan=bisnis',
     highlighted: true,
   },
 ]
