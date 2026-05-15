@@ -39,6 +39,8 @@ export default function ProductsPage() {
   }
 
   const filteredProducts = products.filter((product) => {
+    if (!product.isActive) return false
+
     const searchQuery = search.toLowerCase()
     const matchesSearch =
       !searchQuery ||
@@ -86,7 +88,7 @@ export default function ProductsPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-medium leading-none text-muted-foreground">Total Produk</p>
-                <p className="mt-1 text-base font-bold leading-none text-foreground">{products.length}</p>
+                <p className="mt-1 text-base font-bold leading-none text-foreground">{activeCount}</p>
               </div>
             </div>
           </div>
@@ -174,7 +176,7 @@ export default function ProductsPage() {
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">Produk</h1>
                 <div className="mt-1.5 flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">
-                    {products.length} produk terdaftar
+                    {activeCount} produk terdaftar
                   </span>
                   <Badge variant="success" className="text-[10px]">
                     {activeCount} aktif

@@ -43,7 +43,7 @@ export const useProductStore = create<ProductState & ProductActions>()((set, get
   fetchProducts: async () => {
     set({ isLoading: true, error: null })
     try {
-      const res = await fetch('/api/products?active=false')
+      const res = await fetch('/api/products')
       if (!res.ok) {
         // 401/403 means no store context — return empty instead of error
         if (res.status === 401 || res.status === 403) {

@@ -1,7 +1,7 @@
 /**
  * GET    /api/products/:id — Get single product
  * PATCH  /api/products/:id — Update product
- * DELETE /api/products/:id — Soft-delete product (isActive = false)
+ * DELETE /api/products/:id — Permanently delete product
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -90,10 +90,9 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     })
     assertOwnership(existing, existing?.storeId, storeId)
 
-    // Soft delete — set isActive to false
+    // Delete permanently so it no longer appears in registered products or plan usage.
     await db
-      .update(products)
-      .set({ isActive: false })
+      .delete(products)
       .where(and(eq(products.id, id), eq(products.storeId, storeId)))
 
     logActivityAsync({
