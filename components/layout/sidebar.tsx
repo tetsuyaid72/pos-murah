@@ -107,9 +107,6 @@ function SidebarContent({
   const { logout, membership, user } = useAuthStore()
   const { paymentStatus } = useSubscriptionStore()
 
-  // Server membership is always the source of truth for plan status
-  const plan = membership?.isTrial ? 'FREE' : membership?.plan || 'FREE'
-
   // Calculate trial info for display
   const trialDaysRemaining = (() => {
     if (!membership?.isTrial || !membership?.trialEndAt) return 0
@@ -120,6 +117,8 @@ function SidebarContent({
   })()
   const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
   const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
+  // Server membership is always the source of truth for plan status
+  const plan = isTrialExpired ? 'TRIAL_EXPIRED' : membership?.isTrial ? 'QUICK_TRIAL' : membership?.plan || 'FREE'
   const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
   const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
   const ctaLabel = paymentStatus === 'pending' ? 'Status Pembayaran' : 'Upgrade Paket'
@@ -351,6 +350,18 @@ const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass
     icon: Store,
     iconClass: 'text-muted-foreground',
     textClass: 'text-muted-foreground',
+  },
+  QUICK_TRIAL: {
+    label: 'Quick Trial',
+    icon: Store,
+    iconClass: 'text-emerald-500',
+    textClass: 'text-emerald-600 dark:text-emerald-400',
+  },
+  TRIAL_EXPIRED: {
+    label: 'Trial Berakhir',
+    icon: Store,
+    iconClass: 'text-amber-500',
+    textClass: 'text-amber-600 dark:text-amber-400',
   },
   STARTER: {
     label: 'Starter Plan',

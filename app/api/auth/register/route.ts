@@ -1,7 +1,7 @@
 ﻿/**
  * POST /api/auth/register
  *
- * Register a new user + create their store + initialize a 3-day trial membership.
+ * Register a new user + create their store + initialize a 6-hour quick trial membership.
  * After registration, user is redirected to /dashboard.
  *
  * Body: { name, email, password, storeName }
@@ -50,10 +50,9 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Membership starts with a 3-day trial so user can explore the dashboard.
-    // After trial expires, AuthProvider redirects to /pricing.
+    // Quick trial gives new users 6 hours to try the core POS flow.
     const trialStartAt = new Date()
-    const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3-day trial
+    const trialEndAt = new Date(Date.now() + 6 * 60 * 60 * 1000)
 
     // Generate IDs upfront for the transaction
     const userId = generateId()
@@ -86,7 +85,11 @@ export async function POST(request: NextRequest) {
         trialEndAt,
       })
 
-      await tx.insert(activityLogs).values({
+      await seedDemoData(tx, storeId)
+    })
+
+    try {
+      await db.insert(activityLogs).values({
         storeId,
         userId,
         action: 'user.register',
@@ -98,10 +101,9 @@ export async function POST(request: NextRequest) {
           requiresPayment: true,
         },
       })
-
-      // Seed demo categories + products so the store isn't empty
-      await seedDemoData(tx, storeId)
-    })
+    } catch (logError) {
+      console.warn('Register activity log failed:', logError)
+    }
 
     // Set session cookie
     await setSessionCookie({

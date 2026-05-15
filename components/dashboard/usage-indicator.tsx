@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -133,8 +133,10 @@ export function UsageIndicator() {
 
   if (!data) return null
 
-  const { usage, warnings, plan } = data
-  const planLabel = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+  const { usage, warnings, plan, isTrialActive } = data
+  const planLabel = isTrialActive
+    ? 'Quick Trial'
+    : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
   const upgradeHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
   const upgradeLabel =
     paymentStatus === 'pending' ? 'Lihat Status Pembayaran' : 'Upgrade untuk limit lebih besar'
@@ -202,4 +204,5 @@ export function UsageIndicator() {
     </div>
   )
 }
+
 

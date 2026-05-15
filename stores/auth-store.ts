@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string
   role: string
   avatarUrl: string | null
+  googleId?: string | null
   user_metadata?: {
     avatar_url?: string | null
     picture?: string | null

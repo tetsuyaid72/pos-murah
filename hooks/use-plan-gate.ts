@@ -66,6 +66,11 @@ export function usePlanGate() {
    */
   const gate = useCallback(
     (feature: FeatureKey): boolean => {
+      if (planLimit.trialExpired) {
+        openLimitModal('trialExpired')
+        return false
+      }
+
       const access = planLimit.canUse(feature)
       if (access === true || (typeof access === 'number' && access > 0)) {
         return true
@@ -85,12 +90,17 @@ export function usePlanGate() {
    */
   const gateLimit = useCallback(
     (type: 'products' | 'transactions' | 'customers', current: number, limit: number): boolean => {
+      if (planLimit.trialExpired) {
+        openLimitModal('trialExpired')
+        return false
+      }
+
       if (current < limit) return true
 
       openLimitModal(type, { current, limit })
       return false
     },
-    [openLimitModal]
+    [planLimit.trialExpired, openLimitModal]
   )
 
   return {

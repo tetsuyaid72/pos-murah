@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import Link from 'next/link'
 import { Plus, Search, Package, Menu, ShieldCheck, SlidersHorizontal } from 'lucide-react'
 import { useProductStore } from '@/stores/product-store'
@@ -8,6 +8,8 @@ import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductTable } from '@/components/products/product-table'
+import { PlanLimitModal } from '@/components/plan-limit-modal'
+import { usePlanGate } from '@/hooks/use-plan-gate'
 import { cn } from '@/lib/utils'
 
 export default function ProductsPage() {
@@ -18,6 +20,7 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { setSidebarOpen } = useUIStore()
+  const { getResourceLimit, gateLimit, modalProps } = usePlanGate()
 
   // Fetch from database on mount
   useEffect(() => {
@@ -27,6 +30,13 @@ export default function ProductsPage() {
 
   const activeCount = products.filter(p => p.isActive).length
   const lowStockCount = products.filter(p => p.isActive && p.stock <= p.minStock).length
+  const productLimit = getResourceLimit('max_products')
+
+  const handleAddProductClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!gateLimit('products', activeCount, productLimit)) {
+      event.preventDefault()
+    }
+  }
 
   const filteredProducts = products.filter((product) => {
     const searchQuery = search.toLowerCase()
@@ -59,7 +69,7 @@ export default function ProductsPage() {
               Produk
             </h1>
           </div>
-          <Link href="/products/new">
+          <Link href="/products/new" onClick={handleAddProductClick}>
             <Button className="h-8 rounded-full bg-emerald-500 px-3 text-[12px] font-semibold text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600">
               <Plus className="mr-1 h-3.5 w-3.5" />
               Tambah
@@ -183,7 +193,7 @@ export default function ProductsPage() {
                     Kategori
                   </Button>
                 </Link>
-                <Link href="/products/new">
+                <Link href="/products/new" onClick={handleAddProductClick}>
                   <Button variant="premium" size="sm" className="rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
                     Tambah Produk
@@ -252,6 +262,8 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
+
+      <PlanLimitModal {...modalProps} />
     </div>
   )
 }

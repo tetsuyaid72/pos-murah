@@ -17,10 +17,10 @@ export function generateId(): string {
 
 /**
  * Get avatar URL — returns the user's avatar if available,
- * otherwise generates a fallback from ui-avatars.com.
+ * otherwise generates a stable DiceBear fallback.
  */
-export function getAvatarUrl(avatarUrl: string | null | undefined, name: string): string {
+export function getAvatarUrl(avatarUrl: string | null | undefined, seed: string): string {
   if (avatarUrl) return avatarUrl
-  const encoded = encodeURIComponent(name || '?')
-  return `https://ui-avatars.com/api/?name=${encoded}&background=059669&color=fff&size=128&bold=true`
+  const encoded = encodeURIComponent(seed || 'user')
+  return `https://api.dicebear.com/9.x/notionists/svg?seed=${encoded}`
 }

@@ -20,8 +20,8 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   {
     category: 'Kuota & Limit',
     features: [
-      { name: 'Produk', basic: '50', pro: '500', business: 'Unlimited' },
-      { name: 'Transaksi/bulan', basic: '300', pro: '3.000', business: 'Unlimited' },
+      { name: 'Produk', basic: '50', pro: '150', business: 'Unlimited' },
+      { name: 'Transaksi/hari', basic: '300', pro: '250', business: 'Unlimited' },
       { name: 'Kasir', basic: '1', pro: '5', business: 'Unlimited' },
       { name: 'Pelanggan', basic: '50', pro: '500', business: 'Unlimited' },
       { name: 'Riwayat laporan', basic: '30 hari', pro: '1 tahun', business: 'Unlimited' },

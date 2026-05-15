@@ -20,10 +20,10 @@ const SIZE_CLASSES: Record<AvatarSize, string> = {
 
 /**
  * Reusable avatar component.
- * Displays user's uploaded avatar or a generated fallback from ui-avatars.com.
+ * Displays user's provider avatar or a generated DiceBear fallback.
  *
  * Props:
- * - name: user's display name (used for fallback generation)
+ * - name: user's display name or stable seed (used for fallback generation)
  * - imageUrl: avatar URL from database (nullable)
  * - size: 'sm' | 'md' | 'lg' | 'xl'
  */

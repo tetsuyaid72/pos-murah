@@ -14,6 +14,7 @@ import { TopProducts } from '@/components/dashboard/top-products'
 import { LowStockAlert } from '@/components/dashboard/low-stock-alert'
 import { UsageIndicator } from '@/components/dashboard/usage-indicator'
 import { UpgradePopup } from '@/components/dashboard/upgrade-popup'
+import { TrialExpiredBanner } from '@/components/dashboard/trial-expired-banner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -128,6 +129,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          <TrialExpiredBanner />
+
           <div className="flex items-center gap-2">
             <div className="flex h-9 flex-1 items-center rounded-2xl border border-border bg-muted p-1 shadow-sm">
               {PERIOD_OPTIONS.map((opt) => (
@@ -226,6 +229,8 @@ export default function DashboardPage() {
           <div className="shrink-0">
             <DashboardHeader period={period} onPeriodChange={handlePeriodChange} />
           </div>
+
+          <TrialExpiredBanner />
 
           {isLoading ? (
             <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

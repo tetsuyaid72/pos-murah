@@ -11,7 +11,7 @@ import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
-import { PLAN_LIMITS, FEATURE_DEFAULTS, type PlanType } from '@/lib/features'
+import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, FEATURE_DEFAULTS, type PlanType } from '@/lib/features'
 
 export async function GET() {
   try {
@@ -37,14 +37,28 @@ export async function GET() {
 
     const plan = membership.plan as PlanType
     const isTrialActive = membership.isTrial && new Date(membership.trialEndAt) > new Date()
+    const isTrialExpired = membership.isTrial && new Date(membership.trialEndAt) <= new Date()
 
-    // Get effective limits (unlimited during active trial)
-    const effectiveLimit = (key: keyof typeof PLAN_LIMITS) =>
-      isTrialActive ? 999999 : PLAN_LIMITS[key][plan]
+    const effectiveLimit = (key: keyof typeof PLAN_LIMITS) => {
+      if (isTrialActive) {
+        if (key === 'max_products') return QUICK_TRIAL_LIMITS.max_products
+        if (key === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
+        if (key === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
+      }
+
+      if (isTrialExpired) return 0
+
+      return PLAN_LIMITS[key][plan]
+    }
+
+    const percentage = (current: number, limit: number) => {
+      if (limit <= 0) return current > 0 ? 100 : 0
+      return Math.min(100, Math.round((current / limit) * 100))
+    }
 
     // Count current usage in parallel
     const now = new Date()
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
     const [productsResult, transactionsResult, customersResult] = await Promise.all([
       db
@@ -57,7 +71,7 @@ export async function GET() {
         .where(
           and(
             eq(transactions.storeId, storeId),
-            gte(transactions.createdAt, startOfMonth)
+            gte(transactions.createdAt, startOfDay)
           )
         ),
       db
@@ -70,18 +84,18 @@ export async function GET() {
       products: {
         current: productsResult[0]?.count ?? 0,
         limit: effectiveLimit('max_products'),
-        percentage: Math.min(100, Math.round(((productsResult[0]?.count ?? 0) / effectiveLimit('max_products')) * 100)),
+        percentage: percentage(productsResult[0]?.count ?? 0, effectiveLimit('max_products')),
       },
       transactions: {
         current: transactionsResult[0]?.count ?? 0,
         limit: effectiveLimit('max_transactions_monthly'),
-        percentage: Math.min(100, Math.round(((transactionsResult[0]?.count ?? 0) / effectiveLimit('max_transactions_monthly')) * 100)),
-        periodLabel: 'bulan ini',
+        percentage: percentage(transactionsResult[0]?.count ?? 0, effectiveLimit('max_transactions_monthly')),
+        periodLabel: 'hari ini',
       },
       customers: {
         current: customersResult[0]?.count ?? 0,
         limit: effectiveLimit('max_customers'),
-        percentage: Math.min(100, Math.round(((customersResult[0]?.count ?? 0) / effectiveLimit('max_customers')) * 100)),
+        percentage: percentage(customersResult[0]?.count ?? 0, effectiveLimit('max_customers')),
       },
       cashiers: {
         limit: effectiveLimit('max_cashiers'),
@@ -107,6 +121,8 @@ export async function GET() {
     for (const key of featureKeys) {
       if (isTrialActive) {
         featureAccess[key] = true
+      } else if (isTrialExpired) {
+        featureAccess[key] = false
       } else {
         const config = FEATURE_DEFAULTS[key]
         featureAccess[key] = config?.[plan] === true
@@ -115,19 +131,24 @@ export async function GET() {
 
     // Near-limit warnings (>= 80% usage)
     const warnings: string[] = []
-    if (usage.products.percentage >= 80) {
-      warnings.push(`Produk hampir penuh (${usage.products.current}/${usage.products.limit})`)
-    }
-    if (usage.transactions.percentage >= 80) {
-      warnings.push(`Transaksi bulan ini hampir penuh (${usage.transactions.current}/${usage.transactions.limit})`)
-    }
-    if (usage.customers.percentage >= 80) {
-      warnings.push(`Pelanggan hampir penuh (${usage.customers.current}/${usage.customers.limit})`)
+    if (isTrialExpired) {
+      warnings.push('Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan.')
+    } else {
+      if (usage.products.percentage >= 80) {
+        warnings.push(`Produk hampir penuh (${usage.products.current}/${usage.products.limit})`)
+      }
+      if (usage.transactions.percentage >= 80) {
+        warnings.push(`Transaksi hari ini hampir penuh (${usage.transactions.current}/${usage.transactions.limit})`)
+      }
+      if (usage.customers.percentage >= 80) {
+        warnings.push(`Pelanggan hampir penuh (${usage.customers.current}/${usage.customers.limit})`)
+      }
     }
 
     return NextResponse.json({
       plan,
       isTrialActive,
+      isTrialExpired,
       usage,
       featureAccess,
       warnings,

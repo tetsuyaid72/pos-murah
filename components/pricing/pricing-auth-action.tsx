@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ThemeToggleButton } from '@/components/theme-toggle-button'
+import { getUserAvatar } from '@/lib/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,23 +48,13 @@ export function PricingAuthAction() {
     )
   }
 
-  const avatarUrl =
-    user.user_metadata?.avatar_url ||
-    user.user_metadata?.picture ||
-    user.avatarUrl ||
-    null
+  const avatarUrl = getUserAvatar(user)
   const displayName =
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
     user.name ||
     user.email?.split('@')[0] ||
     'User'
-  const initials = displayName
-    .split(' ')
-    .map((word) => word[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
   const isApprovedPaid = Boolean(membership && !membership.isTrial)
   const plan = isApprovedPaid ? membership?.plan?.toUpperCase() : 'FREE'
   const badgeLabel = plan === 'BUSINESS' ? 'Bisnis' : plan === 'PRO' ? 'Pro' : 'Free'
@@ -88,7 +79,7 @@ export function PricingAuthAction() {
               {avatarUrl && (
                 <AvatarImage src={avatarUrl} alt={displayName} referrerPolicy="no-referrer" />
               )}
-              <AvatarFallback>{initials}</AvatarFallback>
+              <AvatarFallback />
             </Avatar>
           </button>
         </DropdownMenuTrigger>
@@ -103,7 +94,7 @@ export function PricingAuthAction() {
             <span className="mt-0.5 block truncate text-xs font-normal leading-5 text-muted-foreground sm:text-[13px]">{user.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-1 bg-border" />
-          <DropdownMenuItem onClick={() => router.push('/settings')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
+          <DropdownMenuItem onClick={() => router.push('/account-settings')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
             <Settings className="h-4 w-4" />
             Pengaturan
           </DropdownMenuItem>

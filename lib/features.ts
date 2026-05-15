@@ -11,19 +11,25 @@
 
 export type PlanType = 'BASIC' | 'PRO' | 'BUSINESS' | 'ENTERPRISE'
 
+export const QUICK_TRIAL_LIMITS = {
+  max_products: 15,
+  max_transactions_monthly: 5,
+  max_customers: 5,
+} as const
+
 /**
  * Numeric plan limits (for countable resources).
  */
 export const PLAN_LIMITS = {
   max_products: {
     BASIC: 50,
-    PRO: 500,
+    PRO: 150,
     BUSINESS: 999999,
     ENTERPRISE: 999999,
   },
   max_transactions_monthly: {
     BASIC: 300,
-    PRO: 3000,
+    PRO: 250,
     BUSINESS: 999999,
     ENTERPRISE: 999999,
   },
@@ -63,8 +69,8 @@ export const FEATURE_DEFAULTS: Record<string, Record<PlanType, boolean | number>
   // =========================================================================
   // LIMITS (numeric)
   // =========================================================================
-  max_products: { BASIC: 50, PRO: 500, BUSINESS: 999999, ENTERPRISE: 999999 },
-  max_transactions_monthly: { BASIC: 300, PRO: 3000, BUSINESS: 999999, ENTERPRISE: 999999 },
+  max_products: { BASIC: 50, PRO: 150, BUSINESS: 999999, ENTERPRISE: 999999 },
+  max_transactions_monthly: { BASIC: 300, PRO: 250, BUSINESS: 999999, ENTERPRISE: 999999 },
   max_cashiers: { BASIC: 1, PRO: 5, BUSINESS: 999999, ENTERPRISE: 999999 },
   max_customers: { BASIC: 50, PRO: 500, BUSINESS: 999999, ENTERPRISE: 999999 },
   report_history_days: { BASIC: 30, PRO: 365, BUSINESS: 999999, ENTERPRISE: 999999 },
@@ -155,14 +161,19 @@ export function canAccess(
   membership: MembershipInfo,
   feature: FeatureKey
 ): boolean | number {
-  // During active trial, everything is enabled (BUSINESS-level access)
+  // During active trial, features are enabled, but countable resources keep quick-trial limits.
   if (membership.isTrial) {
     const trialEnd = new Date(membership.trialEndAt)
     if (trialEnd > new Date()) {
+      if (feature === 'max_products') return QUICK_TRIAL_LIMITS.max_products
+      if (feature === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
+      if (feature === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
       const defaultValue = FEATURE_DEFAULTS[feature]?.BUSINESS
-      if (typeof defaultValue === 'number') return 999999
+      if (typeof defaultValue === 'number') return defaultValue
       return true
     }
+
+    return false
   }
 
   // Check per-store override first
@@ -185,12 +196,15 @@ export function getLimit(
   membership: MembershipInfo,
   limitKey: LimitKey
 ): number {
-  // During active trial, unlimited
   if (membership.isTrial) {
     const trialEnd = new Date(membership.trialEndAt)
     if (trialEnd > new Date()) {
-      return 999999
+      if (limitKey === 'max_products') return QUICK_TRIAL_LIMITS.max_products
+      if (limitKey === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
+      if (limitKey === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
     }
+
+    return 0
   }
 
   return PLAN_LIMITS[limitKey][membership.plan]

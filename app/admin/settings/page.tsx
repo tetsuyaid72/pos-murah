@@ -188,7 +188,7 @@ export default function AdminSettingsPage() {
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Promo User Baru</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Yearly</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Products</th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Tx/Month</th>
+                  <th className="px-3 py-2 text-right font-medium text-muted-foreground">Tx/Day</th>
                   <th className="px-3 py-2 text-right font-medium text-muted-foreground">Cashiers</th>
                 </tr>
               </thead>

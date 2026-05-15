@@ -47,6 +47,7 @@ export async function GET() {
         email: user.email,
         role: user.role,
         avatarUrl: user.avatarUrl,
+        googleId: user.googleId,
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
       },

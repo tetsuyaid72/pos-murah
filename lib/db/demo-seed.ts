@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Demo Seed Data
  *
  * Inserts default categories and sample products for a newly registered store.
@@ -70,7 +70,7 @@ const DEMO_PRODUCTS: DemoProduct[] = [
 ]
 
 // =============================================================================
-// Seed function — call inside an async Drizzle PostgreSQL transaction
+// Seed function ΓÇö call inside an async Drizzle PostgreSQL transaction
 // =============================================================================
 
 /**

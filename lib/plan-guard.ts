@@ -12,7 +12,7 @@
 import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
-import { PLAN_LIMITS, type PlanType, type LimitKey } from '@/lib/features'
+import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, type PlanType, type LimitKey } from '@/lib/features'
 
 interface PlanCheckResult {
   allowed: boolean
@@ -44,6 +44,11 @@ function checkTrialActive(membership: { isTrial: boolean; trialEndAt: Date }): b
   return new Date(membership.trialEndAt) > new Date()
 }
 
+function checkTrialExpired(membership: { isTrial: boolean; trialEndAt: Date }): boolean {
+  if (!membership.isTrial) return false
+  return new Date(membership.trialEndAt) <= new Date()
+}
+
 /**
  * Get the effective limit for a store based on their plan and trial status.
  */
@@ -52,8 +57,12 @@ function getEffectiveLimit(
   limitKey: LimitKey
 ): number {
   if (checkTrialActive(membership)) {
-    return 999999
+    if (limitKey === 'max_products') return QUICK_TRIAL_LIMITS.max_products
+    if (limitKey === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
+    if (limitKey === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
   }
+
+  if (checkTrialExpired(membership)) return 0
 
   const plan = membership.plan as PlanType
   return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].BASIC
@@ -123,7 +132,7 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
 }
 
 /**
- * Check if a store can create more transactions this month.
+ * Check if a store can create more transactions today.
  */
 export async function checkTransactionLimit(storeId: string): Promise<PlanCheckResult> {
   const membership = await getMembership(storeId)
@@ -143,7 +152,7 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   const limit = getEffectiveLimit(membership, 'max_transactions_monthly')
 
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
   const [result] = await db
     .select({ count: count() })
@@ -151,7 +160,7 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
     .where(
       and(
         eq(transactions.storeId, storeId),
-        gte(transactions.createdAt, startOfMonth)
+        gte(transactions.createdAt, startOfDay)
       )
     )
 
@@ -163,7 +172,7 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
       allowed: false,
       limit,
       current,
-      message: `Batas transaksi bulanan tercapai (${current}/${limit}). ${getUpgradeSuggestion(plan)}`,
+      message: `Batas transaksi harian tercapai (${current}/${limit}). ${getUpgradeSuggestion(plan)}`,
       plan,
       isTrialActive,
     }
@@ -249,6 +258,14 @@ export async function checkFeatureAccess(
     return { allowed: true, message: '', plan: membership.plan as PlanType }
   }
 
+  if (checkTrialExpired(membership)) {
+    return {
+      allowed: false,
+      message: 'Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan menggunakan fitur POS.',
+      plan: membership.plan as PlanType,
+    }
+  }
+
   const { FEATURE_DEFAULTS } = await import('@/lib/features')
   const featureConfig = FEATURE_DEFAULTS[feature]
   const plan = membership.plan as PlanType
@@ -309,6 +326,14 @@ export async function checkStrictFeatureAccess(
       allowed: false,
       message: 'Membership tidak ditemukan.',
       plan: 'BASIC',
+    }
+  }
+
+  if (checkTrialExpired(membership)) {
+    return {
+      allowed: false,
+      message: 'Quick Trial Anda telah berakhir.',
+      plan: membership.plan as PlanType,
     }
   }
 

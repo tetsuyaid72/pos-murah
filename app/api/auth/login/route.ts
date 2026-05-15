@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       const storeId = generateId()
       const membershipId = generateId()
       const trialStartAt = new Date()
-      const trialEndAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+      const trialEndAt = new Date(Date.now() + 6 * 60 * 60 * 1000)
 
       await db.transaction(async (tx) => {
         await tx.insert(stores).values({

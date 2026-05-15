@@ -1,7 +1,8 @@
-﻿'use client'
+'use client'
 
+import { FormEvent, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -16,51 +17,87 @@ function GoogleIcon({ className }: { className?: string }) {
 }
 
 export function RegisterForm() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [storeName, setStoreName] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const router = useRouter()
   const searchParams = useSearchParams()
   const oauthError = searchParams.get('error')
 
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, storeName }),
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setError(data.error || 'Gagal mendaftar. Periksa data Anda.')
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setError('Tidak dapat terhubung ke server. Coba lagi.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <motion.div
-      className="w-full max-w-[420px] text-center"
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
-    >
-      <motion.h1
-        className="text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.08 }}
-      >
+    <motion.div className="w-full max-w-[420px] text-center" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}>
+      <motion.h1 className="text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
         Daftar
       </motion.h1>
-      <motion.p
-        className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 sm:text-base"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.16 }}
-      >
-        Gunakan akun Google untuk masuk atau daftar otomatis
+      <motion.p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 sm:text-base" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}>
+        Buat akun dengan email dan password, atau lanjutkan dengan Google.
       </motion.p>
 
       <AnimatePresence>
-        {oauthError && (
-          <motion.div
-            className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <p className="text-sm text-red-600">{oauthError}</p>
+        {(oauthError || error) && (
+          <motion.div className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <p className="text-sm text-red-600">{error || oauthError}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <a
-        href="/api/auth/google"
-        className="mx-auto mt-8 flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98]"
-      >
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4 text-left">
+        <label className="block text-sm font-semibold text-slate-800">
+          Nama
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nama Anda" required />
+        </label>
+        <label className="block text-sm font-semibold text-slate-800">
+          Email
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@email.com" required />
+        </label>
+        <label className="block text-sm font-semibold text-slate-800">
+          Password
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimal 6 karakter" minLength={6} required />
+        </label>
+        <label className="block text-sm font-semibold text-slate-800">
+          Nama Toko
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" value={storeName} onChange={(event) => setStoreName(event.target.value)} placeholder="Warung Anda" required />
+        </label>
+        <button className="flex h-13 w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 text-[15px] font-bold text-white shadow-[0_16px_38px_rgba(16,185,129,0.22)] transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Memproses...' : 'Daftar dengan Email'}
+        </button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+        <span className="h-px flex-1 bg-slate-200" /> atau <span className="h-px flex-1 bg-slate-200" />
+      </div>
+
+      <a href="/api/auth/google" className="mx-auto flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98]">
         <GoogleIcon className="h-5 w-5" />
         Masuk dengan Google
       </a>

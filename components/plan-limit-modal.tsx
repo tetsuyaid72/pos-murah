@@ -2,15 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Dialog, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
+import { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Zap, Lock } from 'lucide-react'
+import { Zap } from 'lucide-react'
 
 interface PlanLimitModalProps {
   open: boolean
   onClose: () => void
   /** Type of limit reached */
-  type: 'products' | 'transactions' | 'customers' | 'feature'
+  type: 'products' | 'transactions' | 'customers' | 'feature' | 'trialExpired'
   /** Current usage count (for countable limits) */
   current?: number
   /** Maximum allowed (for countable limits) */
@@ -26,8 +26,8 @@ const LIMIT_MESSAGES = {
     cta: 'Upgrade paket untuk menambah limit produk',
   },
   transactions: {
-    title: 'Batas Transaksi Bulanan Tercapai',
-    description: 'Anda telah mencapai batas maksimal transaksi bulan ini.',
+    title: 'Batas Transaksi Harian Tercapai',
+    description: 'Anda telah mencapai batas maksimal transaksi hari ini.',
     cta: 'Upgrade paket untuk menambah limit transaksi',
   },
   customers: {
@@ -39,6 +39,11 @@ const LIMIT_MESSAGES = {
     title: 'Fitur Premium',
     description: 'Fitur ini memerlukan paket yang lebih tinggi.',
     cta: 'Upgrade paket untuk akses fitur ini',
+  },
+  trialExpired: {
+    title: 'Quick Trial Berakhir',
+    description: 'Upgrade paket untuk melanjutkan menggunakan fitur POS.',
+    cta: 'Upgrade paket untuk melanjutkan',
   },
 }
 
@@ -67,22 +72,16 @@ export function PlanLimitModal({
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogHeader>
-        <DialogTitle>
-          <span className="flex items-center gap-2">
-            {type === 'feature' ? (
-              <Lock className="h-5 w-5 text-amber-500" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-amber-500" />
-            )}
+      <DialogHeader className="justify-center">
+        <DialogTitle className="w-full text-center">
+          <span className="flex w-full items-center justify-center text-center">
             {config.title}
           </span>
         </DialogTitle>
-        <DialogClose onClose={onClose} />
       </DialogHeader>
 
       <div className="mt-2">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground">
           {type === 'feature' && featureName
             ? `Fitur "${featureName}" hanya tersedia di paket Pro.`
             : config.description}
@@ -107,18 +106,6 @@ export function PlanLimitModal({
             </div>
           </div>
         )}
-
-        {/* Upgrade benefits */}
-        <div className="mt-5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
-            Upgrade Paket
-          </p>
-          <p className="text-sm text-muted-foreground">{config.cta}</p>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-lg font-bold text-foreground">Mulai Rp 49.900</span>
-            <span className="text-xs text-muted-foreground">/ bulan</span>
-          </div>
-        </div>
       </div>
 
       {/* CTA buttons */}
