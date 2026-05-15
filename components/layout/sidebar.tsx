@@ -1,7 +1,6 @@
 ﻿'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useTheme } from '@/components/theme-provider'
 import { usePathname } from 'next/navigation'
 import {
@@ -137,14 +136,20 @@ function SidebarContent({
       {/* Logo / Brand */}
       <div className={cn('flex items-center gap-2.5 px-4 py-4', collapsed && 'justify-center px-2')}>
         {/* Store logo or default icon */}
-        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20">
+        <div
+          className={cn(
+            'relative h-9 w-9 shrink-0 overflow-hidden rounded-full',
+            storeLogo
+              ? 'border border-border bg-white dark:bg-slate-900'
+              : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20'
+          )}
+        >
           {storeLogo ? (
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={storeLogo}
-              alt={storeName}
-              fill
-              className="object-cover"
-              sizes="36px"
+              alt={storeName || 'Logo toko'}
+              className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">

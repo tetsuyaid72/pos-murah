@@ -18,7 +18,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { fetchAuth, user, store, membership, isAuthenticated, isLoading } = useAuthStore()
-  const { setUserName, setUserEmail, setUserAvatar, setStoreName } = useSettingsStore()
+  const {
+    setUserName,
+    setUserEmail,
+    setUserAvatar,
+    setStoreName,
+    setStoreAddress,
+    setStorePhone,
+    setStoreLogo,
+  } = useSettingsStore()
   const { syncFromServer } = useSubscriptionStore()
 
   // Fetch auth state on mount
@@ -38,8 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthenticated && store) {
       setStoreName(store.name)
+      setStoreAddress(store.address || '')
+      setStorePhone(store.phone || '')
+      setStoreLogo(store.logoUrl || null)
     }
-  }, [isAuthenticated, store, setStoreName])
+  }, [isAuthenticated, store, setStoreName, setStoreAddress, setStorePhone, setStoreLogo])
 
   // Sync server membership â†’ subscription store (server is source of truth)
   useEffect(() => {

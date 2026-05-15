@@ -144,11 +144,23 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
-      await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: userName, avatarUrl: userAvatar }),
-      })
+      await Promise.all([
+        fetch('/api/auth/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: userName, avatarUrl: userAvatar }),
+        }),
+        fetch('/api/store/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: storeName,
+            address: storeAddress || null,
+            phone: storePhone || null,
+            logoUrl: storeLogo,
+          }),
+        }),
+      ])
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch {
@@ -476,7 +488,7 @@ export default function SettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3 px-0 pb-0 pt-0">
-                  <LogoUpload value={storeLogo} onChange={setStoreLogo} className="mb-0 gap-1.5 [&>div:first-child_div]:mx-auto [&>div:first-child_div]:mb-2 [&>div:first-child_div]:h-16 [&>div:first-child_div]:w-16 [&>div:first-child_div]:rounded-2xl [&>div:first-child_div]:border [&>div:first-child_div]:border-dashed [&>div:first-child_div]:border-slate-300 [&>div:first-child_div]:bg-slate-50 dark:[&>div:first-child_div]:border-slate-700 dark:[&>div:first-child_div]:bg-slate-950 [&>div:first-child_div_svg]:h-6 [&>div:first-child_div_svg]:w-6 [&>p]:mb-3 [&>p]:text-center [&>p]:text-[11px] [&>p]:text-slate-500 dark:[&>p]:text-slate-400 [&>div:first-child_div_button]:h-5 [&>div:first-child_div_button]:w-5 [&>div:first-child_div_button_svg]:h-3 [&>div:first-child_div_button_svg]:w-3" />
+                  <LogoUpload value={storeLogo} onChange={setStoreLogo} className="mb-0 gap-1.5 [&>div:first-child_div]:mx-auto [&>div:first-child_div]:mb-2 [&>div:first-child_div]:h-16 [&>div:first-child_div]:w-16 [&>p]:mb-3 [&>p]:text-center [&>p]:text-[11px] [&>p]:text-slate-500 dark:[&>p]:text-slate-400 [&>div:first-child_div_button]:h-5 [&>div:first-child_div_button]:w-5 [&>div:first-child_div_button_svg]:h-3 [&>div:first-child_div_button_svg]:w-3" />
                   <div className="space-y-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="storeName" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">Nama Toko</Label>
