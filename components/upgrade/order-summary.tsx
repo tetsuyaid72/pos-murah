@@ -2,7 +2,7 @@
 
 import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
-type SelectedPlan = 'basic' | 'pro' | 'business'
+type SelectedPlan = 'pro' | 'business'
 
 interface OrderSummaryProps {
   selectedPlan: SelectedPlan
@@ -10,7 +10,7 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ selectedPlan, isNewUserPromoEligible = false }: OrderSummaryProps) {
-  const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
+  const pricingKey = selectedPlan.toUpperCase() as 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
   const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
   const formattedPrice = formatPrice(displayPricing.finalPrice)

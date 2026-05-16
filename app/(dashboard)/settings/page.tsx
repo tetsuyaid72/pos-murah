@@ -10,11 +10,6 @@ import {
   Monitor,
   User,
   CheckCircle2,
-  Bluetooth,
-  BluetoothConnected,
-  BluetoothOff,
-  TestTube2,
-  Unplug,
   Loader2,
   AlertCircle,
   LogOut,
@@ -35,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
@@ -44,14 +39,10 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { AvatarUpload } from '@/components/settings/avatar-upload'
 import { LogoUpload } from '@/components/settings/logo-upload'
+import { PrinterSetupGuide } from '@/components/settings/printer-setup-guide'
 import { PlanLimitModal, usePlanLimitModal } from '@/components/plan-limit-modal'
 import { cn } from '@/lib/utils'
-import {
-  getPrinter,
-  isBluetoothSupported,
-} from '@/lib/printer/bluetooth'
-import { buildTestReceipt } from '@/lib/printer/receipt-builder'
-import type { PaperSize } from '@/lib/printer/escpos'
+
 
 // =============================================================================
 // Tab definitions
@@ -79,12 +70,9 @@ export default function SettingsPage() {
     storePhone, setStorePhone,
     storeLogo, setStoreLogo,
     receiptFooter, setReceiptFooter,
-    userName, setUserName,
+        userName, setUserName,
     userEmail, setUserEmail,
     userAvatar, setUserAvatar,
-    printerPaperSize, setPrinterPaperSize,
-    printerDeviceName, setPrinterDevice,
-    autoPrint, setAutoPrint,
   } = useSettingsStore()
   const { logout, membership } = useAuthStore()
 
@@ -96,11 +84,7 @@ export default function SettingsPage() {
   const [resetting, setResetting] = useState(false)
   const [resetDone, setResetDone] = useState(false)
 
-  // Printer state
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [isPrintingTest, setIsPrintingTest] = useState(false)
-  const [printerError, setPrinterError] = useState<string | null>(null)
-  const [connectedName, setConnectedName] = useState<string | null>(null)
+  
 
   // Plan limit modal
   const { openLimitModal, limitModalProps } = usePlanLimitModal()
@@ -109,7 +93,7 @@ export default function SettingsPage() {
   const hasBackupAccess = (() => {
     if (!membership) return false
     const plan = membership.plan?.toUpperCase()
-    return plan === 'PRO' || plan === 'ENTERPRISE'
+    return plan === 'PRO' || plan === 'BUSINESS'
   })()
 
   // Backup state
@@ -135,10 +119,7 @@ export default function SettingsPage() {
   const [showImportConfirm, setShowImportConfirm] = useState(false)
   const [dragOver, setDragOver] = useState(false)
 
-  const bluetoothPrinter = getPrinter()
-  const isPrinterConnected = bluetoothPrinter.isConnected
-  const bluetoothSupported = isBluetoothSupported()
-  const printerDisplayName = connectedName || printerDeviceName
+  
 
   // Handlers
   const handleSave = async () => {
@@ -182,40 +163,7 @@ export default function SettingsPage() {
     } catch { /* local state still updated */ }
   }, [setUserAvatar])
 
-  const handlePairPrinter = useCallback(async () => {
-    setPrinterError(null)
-    setIsConnecting(true)
-    try {
-      const device = await bluetoothPrinter.requestDevice()
-      if (!device) { setIsConnecting(false); return }
-      await bluetoothPrinter.connect()
-      setPrinterDevice(device.id, device.name)
-      setConnectedName(device.name)
-    } catch (err) {
-      setPrinterError(err instanceof Error ? err.message : 'Gagal menghubungkan printer.')
-    } finally {
-      setIsConnecting(false)
-    }
-  }, [bluetoothPrinter, setPrinterDevice])
-
-  const handleDisconnectPrinter = useCallback(() => {
-    bluetoothPrinter.disconnect()
-    setConnectedName(null)
-    setPrinterError(null)
-  }, [bluetoothPrinter])
-
-  const handleTestPrint = useCallback(async () => {
-    setPrinterError(null)
-    setIsPrintingTest(true)
-    try {
-      const data = buildTestReceipt({ paperSize: printerPaperSize, storeName })
-      await bluetoothPrinter.print(data)
-    } catch (err) {
-      setPrinterError(err instanceof Error ? err.message : 'Gagal mencetak test page.')
-    } finally {
-      setIsPrintingTest(false)
-    }
-  }, [bluetoothPrinter, printerPaperSize, storeName])
+  
 
   // Backup handlers
   const handleExportJson = useCallback(async () => {
@@ -528,99 +476,7 @@ export default function SettingsPage() {
 
           {activeTab === 'printer' && (
             <div className="space-y-4">
-              <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <CardHeader className="space-y-1 px-4 pb-0 pt-4">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10">
-                      <Bluetooth className="h-4 w-4 text-blue-500" />
-                    </div>
-                    Printer Kasir
-                  </CardTitle>
-                  <CardDescription className="text-xs">Hubungkan printer thermal Bluetooth</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3 px-4 pb-4 pt-4">
-                  {!bluetoothSupported && (
-                    <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                      <div className="text-xs text-amber-800 dark:text-amber-300">
-                        <p className="font-medium">Browser tidak didukung</p>
-                        <p className="mt-0.5">Web Bluetooth hanya tersedia di Chrome dan Edge.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
-                    <div className="flex items-center gap-3">
-                      <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl', isPrinterConnected ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-muted')}>
-                        {isPrinterConnected ? <BluetoothConnected className="h-4 w-4 text-emerald-500" /> : <BluetoothOff className="h-4 w-4 text-slate-500 dark:text-slate-400" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-950 dark:text-slate-50">{isPrinterConnected ? 'Terhubung' : 'Belum Terhubung'}</p>
-                        {isPrinterConnected && printerDisplayName && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{printerDisplayName}</p>}
-                        {!isPrinterConnected && printerDeviceName && <p className="truncate text-xs text-slate-500 dark:text-slate-400">Terakhir: {printerDeviceName}</p>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {printerError && (
-                    <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                      <p className="text-xs text-destructive">{printerError}</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="printerPaperSizeMobile" className="text-sm font-medium">Ukuran Kertas</Label>
-                      <Select id="printerPaperSizeMobile" value={printerPaperSize} onChange={(e) => setPrinterPaperSize(e.target.value as PaperSize)} className="h-10 rounded-xl text-sm">
-                        <option value="58mm">58mm (32 karakter/baris)</option>
-                        <option value="80mm">80mm (48 karakter/baris)</option>
-                      </Select>
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-950/50">
-                      <div>
-                        <p className="text-sm font-medium text-slate-950 dark:text-slate-50">Auto-Print</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">Cetak otomatis setelah transaksi</p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={autoPrint}
-                        onClick={() => setAutoPrint(!autoPrint)}
-                        className={cn(
-                          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                          autoPrint ? 'bg-primary' : 'bg-input'
-                        )}
-                      >
-                        <span className={cn(
-                          'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out',
-                          autoPrint ? 'translate-x-5' : 'translate-x-0'
-                        )} />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2">
-                      {!isPrinterConnected ? (
-                        <Button onClick={handlePairPrinter} disabled={!bluetoothSupported || isConnecting} className="h-10 rounded-xl text-sm font-semibold">
-                          {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bluetooth className="mr-2 h-4 w-4" />}
-                          {isConnecting ? 'Menghubungkan...' : 'Hubungkan Printer'}
-                        </Button>
-                      ) : (
-                        <>
-                          <Button variant="outline" onClick={handleTestPrint} disabled={isPrintingTest} className="h-10 rounded-xl text-sm font-semibold">
-                            {isPrintingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
-                            {isPrintingTest ? 'Mencetak...' : 'Test Print'}
-                          </Button>
-                          <Button variant="outline" onClick={handleDisconnectPrinter} className="h-10 rounded-xl text-sm font-semibold text-destructive hover:text-destructive">
-                            <Unplug className="mr-2 h-4 w-4" />Putuskan
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <PrinterSetupGuide />
             </div>
           )}
 
@@ -1009,130 +865,8 @@ export default function SettingsPage() {
           {/* TAB: Printer                                                   */}
           {/* ============================================================= */}
           {activeTab === 'printer' && (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-
-              {/* ── Connection ── */}
-              <Card className="transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-500/10">
-                      <Bluetooth className="h-4 w-4 text-blue-500" />
-                    </div>
-                    Koneksi Printer
-                  </CardTitle>
-                  <CardDescription>Hubungkan printer thermal Bluetooth</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {!bluetoothSupported && (
-                    <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                      <div className="text-sm text-amber-800 dark:text-amber-300">
-                        <p className="font-medium">Browser tidak didukung</p>
-                        <p className="mt-0.5 text-xs">Web Bluetooth hanya tersedia di Chrome dan Edge.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Status */}
-                  <div className="flex items-center gap-3 rounded-xl border p-4">
-                    <div className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-full',
-                      isPrinterConnected ? 'bg-emerald-50 dark:bg-emerald-500/10' : 'bg-muted'
-                    )}>
-                      {isPrinterConnected
-                        ? <BluetoothConnected className="h-5 w-5 text-emerald-500" />
-                        : <BluetoothOff className="h-5 w-5 text-muted-foreground" />
-                      }
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{isPrinterConnected ? 'Terhubung' : 'Tidak Terhubung'}</p>
-                      {isPrinterConnected && printerDisplayName && (
-                        <p className="text-xs text-muted-foreground">{printerDisplayName}</p>
-                      )}
-                      {!isPrinterConnected && printerDeviceName && (
-                        <p className="text-xs text-muted-foreground">Terakhir: {printerDeviceName}</p>
-                      )}
-                    </div>
-                    <div className={cn('h-2.5 w-2.5 rounded-full', isPrinterConnected ? 'bg-emerald-500' : 'bg-muted-foreground/30')} />
-                  </div>
-
-                  {printerError && (
-                    <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-                      <p className="text-xs text-destructive">{printerError}</p>
-                    </div>
-                  )}
-
-                  {/* Buttons */}
-                  <div className="flex gap-2">
-                    {!isPrinterConnected ? (
-                      <Button onClick={handlePairPrinter} disabled={!bluetoothSupported || isConnecting} className="flex-1">
-                        {isConnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bluetooth className="mr-2 h-4 w-4" />}
-                        {isConnecting ? 'Menghubungkan...' : 'Hubungkan Printer'}
-                      </Button>
-                    ) : (
-                      <>
-                        <Button variant="outline" onClick={handleTestPrint} disabled={isPrintingTest} className="flex-1">
-                          {isPrintingTest ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <TestTube2 className="mr-2 h-4 w-4" />}
-                          {isPrintingTest ? 'Mencetak...' : 'Test Print'}
-                        </Button>
-                        <Button variant="outline" onClick={handleDisconnectPrinter} className="text-destructive hover:text-destructive">
-                          <Unplug className="mr-2 h-4 w-4" />Putuskan
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* ── Printer Settings ── */}
-              <Card className="transition-shadow hover:shadow-md">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 dark:bg-violet-500/10">
-                      <Printer className="h-4 w-4 text-violet-500" />
-                    </div>
-                    Pengaturan Cetak
-                  </CardTitle>
-                  <CardDescription>Ukuran kertas dan opsi cetak otomatis</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="printerPaperSize">Ukuran Kertas</Label>
-                    <Select id="printerPaperSize" value={printerPaperSize} onChange={(e) => setPrinterPaperSize(e.target.value as PaperSize)}>
-                      <option value="58mm">58mm (32 karakter/baris)</option>
-                      <option value="80mm">80mm (48 karakter/baris)</option>
-                    </Select>
-                  </div>
-
-                  {/* Auto-print toggle */}
-                  <div className="flex items-center justify-between rounded-xl border p-4">
-                    <div>
-                      <p className="text-sm font-medium">Auto-Print</p>
-                      <p className="text-xs text-muted-foreground">Cetak struk otomatis setelah transaksi</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={autoPrint}
-                      onClick={() => setAutoPrint(!autoPrint)}
-                      className={cn(
-                        'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                        autoPrint ? 'bg-primary' : 'bg-input'
-                      )}
-                    >
-                      <span className={cn(
-                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-lg ring-0 transition duration-200 ease-in-out',
-                        autoPrint ? 'translate-x-5' : 'translate-x-0'
-                      )} />
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    Mendukung printer thermal Bluetooth 58mm dan 80mm (Xprinter, GOOJPRT, Zjiang, dll).
-                  </p>
-                </CardContent>
-              </Card>
+                        <div className="grid grid-cols-1 gap-6">
+              <PrinterSetupGuide />
             </div>
           )}
 

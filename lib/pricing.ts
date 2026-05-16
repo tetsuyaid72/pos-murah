@@ -2,7 +2,7 @@
  * Pricing Constants — Warung Madura POS
  *
  * Centralized pricing configuration for all plans and billing periods.
- * Full paid model: BASIC / PRO / BUSINESS (no free tier).
+ * Paid plans: PRO / BUSINESS. FREE is used only for trial/free account state.
  *
  * Harga dalam Rupiah (integer, tanpa desimal).
  */
@@ -10,7 +10,7 @@
 import type { PlanType } from '@/lib/features'
 
 export type BillingPeriod = 'monthly' | 'yearly'
-export type PaidPlanType = Exclude<PlanType, 'ENTERPRISE'>
+export type PaidPlanType = Exclude<PlanType, 'FREE'>
 export type NewUserPromoInput = {
   user?: { createdAt?: string | Date | null } | null
   membership?: { isTrial?: boolean | null } | null
@@ -57,10 +57,6 @@ export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
  * Pricing per plan (in Rupiah).
  */
 export const PRICING: Record<PaidPlanType, PlanPricing> = {
-  BASIC: {
-    monthly: 19_900,
-    yearly: 189_000,
-  },
   PRO: {
     monthly: 49_900,
     yearly: 479_000,
@@ -140,28 +136,6 @@ export function isEligibleForNewUserPromo(input: NewUserPromoInput): boolean {
  * Complete plan information for display purposes.
  */
 export const PLANS: Record<PaidPlanType, PlanInfo> = {
-  BASIC: {
-    name: 'Basic',
-    slug: 'basic',
-    description: 'Untuk warung kecil yang baru mulai jualan digital.',
-    pricing: PRICING.BASIC,
-    popular: false,
-    features: [
-      '50 produk',
-      '300 transaksi/hari',
-      '1 kasir',
-      'Laporan penjualan',
-      'Cetak struk',
-    ],
-    limits: {
-      products: 50,
-      transactionsMonthly: 300,
-      cashiers: 1,
-      customers: 50,
-      reportHistoryDays: 30,
-      storageMb: 100,
-    },
-  },
   PRO: {
     name: 'Pro',
     slug: 'pro',
@@ -211,8 +185,7 @@ export const PLANS: Record<PaidPlanType, PlanInfo> = {
 /**
  * Get the price for a specific plan and billing period.
  */
-export function getPlanPrice(plan: PlanType, period: BillingPeriod): number {
-  if (plan === 'ENTERPRISE') return 0 // Custom pricing
+export function getPlanPrice(plan: PaidPlanType, period: BillingPeriod): number {
   return PRICING[plan][period]
 }
 
@@ -246,12 +219,11 @@ export function getDisplayPricing(
 /**
  * Get the next upgrade plan suggestion.
  */
-export function getNextPlan(currentPlan: PlanType): PlanType | null {
+export function getNextPlan(currentPlan: PlanType): PaidPlanType | null {
   switch (currentPlan) {
-    case 'BASIC': return 'PRO'
+    case 'FREE': return 'PRO'
     case 'PRO': return 'BUSINESS'
     case 'BUSINESS': return null
-    case 'ENTERPRISE': return null
-    default: return 'BASIC'
+    default: return 'PRO'
   }
 }

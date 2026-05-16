@@ -1,10 +1,10 @@
 'use client'
 
-import { Check, Sparkles, Zap, ShieldCheck } from 'lucide-react'
+import { Check, Zap, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
-type SelectedPlan = 'basic' | 'pro' | 'business'
+type SelectedPlan = 'pro' | 'business'
 
 interface PricingCardsProps {
   selectedPlan: SelectedPlan
@@ -13,18 +13,17 @@ interface PricingCardsProps {
 }
 
 const PLAN_ICONS = {
-  basic: Sparkles,
   pro: Zap,
   business: ShieldCheck,
 } as const
 
-const PLAN_KEYS = ['basic', 'pro', 'business'] as const
+const PLAN_KEYS = ['pro', 'business'] as const
 
 export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligible = false }: PricingCardsProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {PLAN_KEYS.map((planKey) => {
-        const pricingKey = planKey.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
+        const pricingKey = planKey.toUpperCase() as 'PRO' | 'BUSINESS'
         const planInfo = PLANS[pricingKey]
         const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
         const isSelected = selectedPlan === planKey

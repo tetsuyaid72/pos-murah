@@ -78,15 +78,15 @@ interface StatsData {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  BASIC: '#3b82f6',
+  FREE: '#3b82f6',
   PRO: '#10b981',
   BUSINESS: '#f59e0b',
-  ENTERPRISE: '#8b5cf6',
 }
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<StatsData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [now, setNow] = useState(0)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -99,6 +99,7 @@ export default function AdminDashboardPage() {
       } catch {
         // Fallback
       } finally {
+        setNow(Date.now())
         setIsLoading(false)
       }
     }
@@ -303,7 +304,7 @@ export default function AdminDashboardPage() {
             <div className="space-y-2">
               {data?.trialsExpiringSoon?.map((trial, i) => {
                 const daysLeft = Math.ceil(
-                  (new Date(trial.trialEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                  (new Date(trial.trialEndAt).getTime() - now) / (1000 * 60 * 60 * 24)
                 )
                 return (
                   <div key={i} className="flex items-center justify-between py-2 border-b border-border/30 last:border-0">

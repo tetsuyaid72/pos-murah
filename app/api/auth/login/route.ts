@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         await tx.insert(memberships).values({
           id: membershipId,
           storeId,
-          plan: 'BASIC',
+          plan: 'FREE',
           isTrial: true,
           trialStartAt,
           trialEndAt,

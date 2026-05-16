@@ -15,7 +15,7 @@ import { eq, and, gte, lte, desc, count, sum, sql, isNull } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { transactions, transactionItems, products, memberships } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
-import { PLAN_LIMITS, type PlanType } from '@/lib/features'
+import { PLAN_LIMITS, normalizePlanType } from '@/lib/features'
 
 type DashboardRange = 'today' | '7days' | '30days'
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       .where(eq(memberships.storeId, storeId))
       .limit(1)
 
-    const plan = (membership?.plan || 'BASIC') as PlanType
+    const plan = normalizePlanType(membership?.plan)
     const isTrialActive = membership?.isTrial && new Date(membership.trialEndAt) > new Date()
     const maxHistoryDays = isTrialActive ? 999999 : PLAN_LIMITS.report_history_days[plan]
 

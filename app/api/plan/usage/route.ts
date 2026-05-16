@@ -11,7 +11,7 @@ import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
-import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, FEATURE_DEFAULTS, type PlanType } from '@/lib/features'
+import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, FEATURE_DEFAULTS, normalizePlanType } from '@/lib/features'
 
 export async function GET() {
   try {
@@ -35,7 +35,7 @@ export async function GET() {
       )
     }
 
-    const plan = membership.plan as PlanType
+    const plan = normalizePlanType(membership.plan)
     const isTrialActive = membership.isTrial && new Date(membership.trialEndAt) > new Date()
     const isTrialExpired = membership.isTrial && new Date(membership.trialEndAt) <= new Date()
 
@@ -125,7 +125,7 @@ export async function GET() {
         featureAccess[key] = false
       } else {
         const config = FEATURE_DEFAULTS[key]
-        featureAccess[key] = config?.[plan] === true
+        featureAccess[key] = plan === 'BUSINESS' || config?.[plan] === true
       }
     }
 

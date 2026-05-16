@@ -9,11 +9,13 @@ import {
   BluetoothOff,
   Loader2,
   ImageDown,
+  Printer,
 } from 'lucide-react'
 import { formatRupiah, formatDateTime } from '@/lib/format'
 import { useSettingsStore } from '@/stores/settings-store'
 import { Button } from '@/components/ui/button'
 import { isBluetoothSupported } from '@/lib/printer/bluetooth'
+import { thermalPrinterService } from '@/lib/printer/thermal-printer-service'
 import { PrinterSetup } from '@/components/pos/printer-setup'
 import type { Transaction } from '@/types'
 
@@ -110,13 +112,6 @@ function createReceiptCanvas(
     | { type: 'separator' }
     | { type: 'space'; height: number }
   > = []
-
-  const pushWrappedLeft = (text: string, font = BODY_FONT) => {
-    measureCtx.font = font
-    for (const line of wrapCanvasText(measureCtx, text, CONTENT_WIDTH)) {
-      lines.push({ type: 'text-left', text: line, font })
-    }
-  }
 
   const pushWrappedCenter = (text: string, font = BODY_FONT) => {
     measureCtx.font = font
@@ -362,6 +357,7 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
 
   const [showPrinterSetup, setShowPrinterSetup] = useState(false)
   const [isSavingImage, setIsSavingImage] = useState(false)
+  const [isPrinting, setIsPrinting] = useState(false)
   const [printError, setPrintError] = useState<string | null>(null)
 
   const saveReceiptImage = useCallback(async () => {
@@ -387,6 +383,30 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
       setIsSavingImage(false)
     }
   }, [transaction, storeName, storeAddress, storePhone, receiptFooter, userName])
+
+  const printThermalReceipt = useCallback(async () => {
+    setPrintError(null)
+    setIsPrinting(true)
+
+    try {
+      const result = await thermalPrinterService.printThermalReceipt(transaction, {
+        paperSize: printerPaperSize,
+        storeName,
+        storeAddress,
+        storePhone,
+        receiptFooter,
+        cashierName: userName,
+      })
+
+      if (!result.ok) {
+        setPrintError(result.message)
+      }
+    } catch {
+      setPrintError('Gagal mencetak struk. Pastikan Thermal-Bridge terpasang, Bluetooth aktif, dan ulangi pairing printer RPP02N.')
+    } finally {
+      setIsPrinting(false)
+    }
+  }, [transaction, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
 
   const totalDiscount =
     transaction.discountType === 'percentage'
@@ -623,6 +643,19 @@ export function ReceiptPreview({ transaction, onClose }: ReceiptPreviewProps) {
               <Button
                 className="w-full"
                 variant="default"
+                onClick={printThermalReceipt}
+                disabled={isPrinting}
+              >
+                {isPrinting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Printer className="mr-2 h-4 w-4" />
+                )}
+                {isPrinting ? 'Mencetak...' : 'Cetak Struk'}
+              </Button>
+              <Button
+                className="w-full"
+                variant="outline"
                 onClick={saveReceiptImage}
                 disabled={isSavingImage}
               >

@@ -8,6 +8,7 @@ import {
   isTrialActive,
   isTrialExpired,
   getTrialDaysRemaining,
+  normalizePlanType,
   type PlanType,
   type FeatureKey,
   type LimitKey,
@@ -49,7 +50,7 @@ export function usePlanLimit(): PlanLimitResult {
     if (!membership) {
       // No membership data yet (loading or not authenticated)
       return {
-        plan: 'FREE' as PlanType,
+        plan: 'FREE',
         isTrial: false,
         trialExpired: false,
         trialDaysRemaining: 0,
@@ -61,7 +62,7 @@ export function usePlanLimit(): PlanLimitResult {
     }
 
     const membershipInfo: MembershipInfo = {
-      plan: membership.plan as PlanType,
+      plan: normalizePlanType(membership.plan),
       isTrial: membership.isTrial,
       trialEndAt: membership.trialEndAt || new Date().toISOString(),
     }
@@ -70,11 +71,12 @@ export function usePlanLimit(): PlanLimitResult {
     const trialExp = isTrialExpired(membershipInfo)
     const daysRemaining = getTrialDaysRemaining(membershipInfo)
 
-    // User is limited if they're on BASIC plan and trial has expired
-    const isLimited = membership.plan === 'BASIC' && !trialActive
+    // Free users are limited after the trial period.
+    const normalizedPlan = normalizePlanType(membership.plan)
+    const isLimited = normalizedPlan === 'FREE' && !trialActive
 
     return {
-      plan: membership.plan as PlanType,
+      plan: normalizedPlan,
       isTrial: trialActive,
       trialExpired: trialExp,
       trialDaysRemaining: daysRemaining,

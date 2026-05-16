@@ -2,14 +2,21 @@
  * Feature Flag System — Warung Madura POS
  *
  * Controls which features are available based on the store's plan.
- * Full paid model: BASIC / PRO / BUSINESS (no free tier).
+ * Full paid model: FREE / PRO / BUSINESS (no free tier).
  *
  * Usage:
  *   import { canAccess, PLAN_LIMITS } from '@/lib/features'
  *   if (canAccess(membership, 'export_excel')) { ... }
  */
 
-export type PlanType = 'BASIC' | 'PRO' | 'BUSINESS' | 'ENTERPRISE'
+export type PlanType = 'FREE' | 'PRO' | 'BUSINESS'
+
+export function normalizePlanType(plan: string | null | undefined): PlanType {
+  const normalized = String(plan || 'FREE').toUpperCase()
+  if (normalized === 'PRO') return 'PRO'
+  if (normalized === 'BUSINESS') return 'BUSINESS'
+  return 'FREE'
+}
 
 export const QUICK_TRIAL_LIMITS = {
   max_products: 15,
@@ -22,40 +29,34 @@ export const QUICK_TRIAL_LIMITS = {
  */
 export const PLAN_LIMITS = {
   max_products: {
-    BASIC: 50,
+    FREE: 50,
     PRO: 150,
     BUSINESS: 999999,
-    ENTERPRISE: 999999,
   },
   max_transactions_monthly: {
-    BASIC: 300,
+    FREE: 300,
     PRO: 250,
     BUSINESS: 999999,
-    ENTERPRISE: 999999,
   },
   max_cashiers: {
-    BASIC: 1,
+    FREE: 1,
     PRO: 5,
     BUSINESS: 999999,
-    ENTERPRISE: 999999,
   },
   max_customers: {
-    BASIC: 50,
+    FREE: 50,
     PRO: 500,
     BUSINESS: 999999,
-    ENTERPRISE: 999999,
   },
   report_history_days: {
-    BASIC: 30,
+    FREE: 30,
     PRO: 365,
     BUSINESS: 999999,
-    ENTERPRISE: 999999,
   },
   storage_mb: {
-    BASIC: 100,
+    FREE: 100,
     PRO: 1024,
     BUSINESS: 10240,
-    ENTERPRISE: 999999,
   },
 } as const satisfies Record<string, Record<PlanType, number>>
 
@@ -69,73 +70,73 @@ export const FEATURE_DEFAULTS: Record<string, Record<PlanType, boolean | number>
   // =========================================================================
   // LIMITS (numeric)
   // =========================================================================
-  max_products: { BASIC: 50, PRO: 150, BUSINESS: 999999, ENTERPRISE: 999999 },
-  max_transactions_monthly: { BASIC: 300, PRO: 250, BUSINESS: 999999, ENTERPRISE: 999999 },
-  max_cashiers: { BASIC: 1, PRO: 5, BUSINESS: 999999, ENTERPRISE: 999999 },
-  max_customers: { BASIC: 50, PRO: 500, BUSINESS: 999999, ENTERPRISE: 999999 },
-  report_history_days: { BASIC: 30, PRO: 365, BUSINESS: 999999, ENTERPRISE: 999999 },
-  storage_mb: { BASIC: 100, PRO: 1024, BUSINESS: 10240, ENTERPRISE: 999999 },
+  max_products: { FREE: 50, PRO: 150, BUSINESS: 999999 },
+  max_transactions_monthly: { FREE: 300, PRO: 250, BUSINESS: 999999 },
+  max_cashiers: { FREE: 1, PRO: 5, BUSINESS: 999999 },
+  max_customers: { FREE: 50, PRO: 500, BUSINESS: 999999 },
+  report_history_days: { FREE: 30, PRO: 365, BUSINESS: 999999 },
+  storage_mb: { FREE: 100, PRO: 1024, BUSINESS: 10240 },
 
   // =========================================================================
   // POS / KASIR
   // =========================================================================
-  thermal_printer: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  barcode_scanner: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  custom_receipt_logo: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  auto_promo: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  voucher_coupon: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  multi_payment_split: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  thermal_printer: { FREE: true, PRO: true, BUSINESS: true },
+  barcode_scanner: { FREE: true, PRO: true, BUSINESS: true },
+  custom_receipt_logo: { FREE: true, PRO: true, BUSINESS: true },
+  auto_promo: { FREE: false, PRO: true, BUSINESS: true },
+  voucher_coupon: { FREE: false, PRO: true, BUSINESS: true },
+  multi_payment_split: { FREE: false, PRO: false, BUSINESS: true },
 
   // =========================================================================
   // PRODUK
   // =========================================================================
-  bulk_import: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  product_variant: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  batch_price_update: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  bulk_import: { FREE: false, PRO: true, BUSINESS: true },
+  product_variant: { FREE: false, PRO: true, BUSINESS: true },
+  batch_price_update: { FREE: false, PRO: false, BUSINESS: true },
 
   // =========================================================================
   // PELANGGAN & HUTANG
   // =========================================================================
-  customer_management: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  debt_tracking: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  debt_reminder_manual: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  wa_debt_reminder: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  loyalty_points: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  customer_management: { FREE: true, PRO: true, BUSINESS: true },
+  debt_tracking: { FREE: true, PRO: true, BUSINESS: true },
+  debt_reminder_manual: { FREE: true, PRO: true, BUSINESS: true },
+  wa_debt_reminder: { FREE: false, PRO: true, BUSINESS: true },
+  loyalty_points: { FREE: false, PRO: false, BUSINESS: true },
 
   // =========================================================================
   // LAPORAN & ANALYTICS
   // =========================================================================
-  basic_dashboard: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  profit_report: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  period_comparison: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  per_cashier_report: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  per_category_report: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  per_customer_report: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  advanced_reports: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  stock_prediction: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  peak_hour_analysis: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  export_excel: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  export_pdf: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  email_report: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  dashboard_summary: { FREE: true, PRO: true, BUSINESS: true },
+  profit_report: { FREE: true, PRO: true, BUSINESS: true },
+  period_comparison: { FREE: false, PRO: true, BUSINESS: true },
+  per_cashier_report: { FREE: false, PRO: true, BUSINESS: true },
+  per_category_report: { FREE: false, PRO: true, BUSINESS: true },
+  per_customer_report: { FREE: false, PRO: false, BUSINESS: true },
+  advanced_reports: { FREE: false, PRO: true, BUSINESS: true },
+  stock_prediction: { FREE: false, PRO: false, BUSINESS: true },
+  peak_hour_analysis: { FREE: false, PRO: false, BUSINESS: true },
+  export_excel: { FREE: true, PRO: true, BUSINESS: true },
+  export_pdf: { FREE: false, PRO: true, BUSINESS: true },
+  email_report: { FREE: false, PRO: false, BUSINESS: true },
 
   // =========================================================================
   // OPERASIONAL
   // =========================================================================
-  shift_management: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  cash_flow: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  expense_tracking: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  multi_outlet: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  stock_transfer: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  multi_staff_role: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  shift_management: { FREE: false, PRO: true, BUSINESS: true },
+  cash_flow: { FREE: true, PRO: true, BUSINESS: true },
+  expense_tracking: { FREE: true, PRO: true, BUSINESS: true },
+  multi_outlet: { FREE: false, PRO: false, BUSINESS: true },
+  stock_transfer: { FREE: false, PRO: false, BUSINESS: true },
+  multi_staff_role: { FREE: false, PRO: false, BUSINESS: true },
 
   // =========================================================================
   // INTEGRASI & TEKNIS
   // =========================================================================
-  backup_restore: { BASIC: true, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  auto_backup: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  wa_notification: { BASIC: false, PRO: true, BUSINESS: true, ENTERPRISE: true },
-  api_access: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
-  webhook: { BASIC: false, PRO: false, BUSINESS: true, ENTERPRISE: true },
+  backup_restore: { FREE: true, PRO: true, BUSINESS: true },
+  auto_backup: { FREE: false, PRO: true, BUSINESS: true },
+  wa_notification: { FREE: false, PRO: true, BUSINESS: true },
+  api_access: { FREE: false, PRO: false, BUSINESS: true },
+  webhook: { FREE: false, PRO: false, BUSINESS: true },
 }
 
 /** All feature keys */
@@ -181,11 +182,18 @@ export function canAccess(
     return membership.features[feature]
   }
 
+  // Business users get full feature access by default.
+  const normalizedPlan = normalizePlanType(membership.plan)
+  if (normalizedPlan === 'BUSINESS') {
+    const defaultValue = FEATURE_DEFAULTS[feature]?.[normalizedPlan]
+    return typeof defaultValue === 'number' ? defaultValue : true
+  }
+
   // Fall back to plan defaults
   const planDefaults = FEATURE_DEFAULTS[feature]
   if (!planDefaults) return false
 
-  return planDefaults[membership.plan] ?? false
+  return planDefaults[normalizedPlan] ?? false
 }
 
 /**
@@ -207,7 +215,7 @@ export function getLimit(
     return 0
   }
 
-  return PLAN_LIMITS[limitKey][membership.plan]
+  return PLAN_LIMITS[limitKey][normalizePlanType(membership.plan)]
 }
 
 /**
@@ -238,3 +246,4 @@ export function getTrialDaysRemaining(membership: MembershipInfo): number {
   const diff = trialEnd.getTime() - now.getTime()
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
+

@@ -221,7 +221,7 @@ export async function GET(request: NextRequest) {
       await tx.insert(memberships).values({
         id: membershipId,
         storeId,
-        plan: 'BASIC',
+        plan: 'FREE',
         isTrial: true,
         trialStartAt,
         trialEndAt,
@@ -236,7 +236,7 @@ export async function GET(request: NextRequest) {
         metadata: {
           method: 'google',
           storeName,
-          plan: 'BASIC',
+          plan: 'FREE',
           requiresPayment: true,
         },
       })

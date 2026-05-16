@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, membership, syncFromServer])
 
-  // Expired trials can still see the dashboard, payment flow, and basic settings.
+  // Expired trials can still see the dashboard, payment flow, and essential settings.
   useEffect(() => {
     if (isLoading || !isAuthenticated || !membership || user?.role === 'SUPER_ADMIN') return
 

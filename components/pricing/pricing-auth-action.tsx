@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { HelpCircle, LogOut, Settings } from 'lucide-react'
+import { HelpCircle, LayoutDashboard, LogOut, Settings } from 'lucide-react'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
@@ -94,6 +94,10 @@ export function PricingAuthAction() {
             <span className="mt-0.5 block truncate text-xs font-normal leading-5 text-muted-foreground sm:text-[13px]">{user.email}</span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator className="my-1 bg-border" />
+          <DropdownMenuItem onClick={() => router.push('/dashboard')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => router.push('/account-settings')} className="h-9 gap-2 rounded-xl px-3 text-sm text-popover-foreground hover:bg-muted sm:h-10 sm:rounded-lg">
             <Settings className="h-4 w-4" />
             Pengaturan

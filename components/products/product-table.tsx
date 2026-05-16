@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Edit, Trash2, Power, PowerOff, TrendingUp, MoreHorizontal, Pencil, EyeOff, Eye } from 'lucide-react'
 import { formatRupiah } from '@/lib/format'
@@ -27,7 +27,14 @@ export function ProductTable({ products: productItems }: ProductTableProps) {
   const { products, categories, deleteProduct, toggleActive } = useProductStore()
   const visibleProducts = productItems ?? products
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+
+  const visibleIds = useMemo(() => visibleProducts.map((product) => product.id), [visibleProducts])
+  const selectedVisibleIds = selectedIds.filter((id) => visibleIds.includes(id))
+  const hasSelected = selectedVisibleIds.length > 0
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleIds.length === visibleIds.length
 
   const getCategoryName = (categoryId: string | null) => {
     if (!categoryId) return '-'
@@ -48,12 +55,43 @@ export function ProductTable({ products: productItems }: ProductTableProps) {
     if (!deleteTarget) return
     setIsDeleting(true)
     await deleteProduct(deleteTarget.id)
+    setSelectedIds((current) => current.filter((id) => id !== deleteTarget.id))
     setDeleteTarget(null)
     setIsDeleting(false)
   }
 
   const handleToggleActive = async (product: Product) => {
     await toggleActive(product.id, !product.isActive)
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((current) =>
+      current.includes(id)
+        ? current.filter((selectedId) => selectedId !== id)
+        : [...current, id]
+    )
+  }
+
+  const toggleSelectAllVisible = () => {
+    setSelectedIds((current) => {
+      if (allVisibleSelected) {
+        return current.filter((id) => !visibleIds.includes(id))
+      }
+
+      return Array.from(new Set([...current, ...visibleIds]))
+    })
+  }
+
+  const handleBulkDelete = async () => {
+    if (!hasSelected) return
+    setIsBulkDeleting(true)
+    try {
+      const results = await Promise.all(selectedVisibleIds.map((id) => deleteProduct(id)))
+      const deletedIds = selectedVisibleIds.filter((_, index) => results[index])
+      setSelectedIds((current) => current.filter((id) => !deletedIds.includes(id)))
+    } finally {
+      setIsBulkDeleting(false)
+    }
   }
 
   if (visibleProducts.length === 0) {
@@ -72,16 +110,53 @@ export function ProductTable({ products: productItems }: ProductTableProps) {
 
   return (
     <>
+      {hasSelected && (
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
+          <p className="text-xs font-semibold sm:text-sm">
+            {selectedVisibleIds.length} produk dipilih
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds((current) => current.filter((id) => !visibleIds.includes(id)))}
+              className="h-8 rounded-xl px-3 text-xs text-rose-700 hover:bg-rose-100 dark:text-rose-300 dark:hover:bg-rose-500/10"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleBulkDelete}
+              disabled={isBulkDeleting}
+              className="h-8 rounded-xl px-3 text-xs"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {isBulkDeleting ? 'Menghapus...' : 'Hapus Dipilih'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* ===== MOBILE: Ultra-compact inventory row list ===== */}
       <div className="block space-y-2 md:hidden">
         {visibleProducts.map((product) => (
           <div
             key={product.id}
             className={cn(
-              'relative grid min-h-[88px] grid-cols-[44px_1fr_84px_42px] items-center gap-2 rounded-xl border border-border bg-card text-card-foreground px-2.5 py-2 pr-9 shadow-sm min-[390px]:grid-cols-[48px_1fr_92px_46px]',
+              'relative grid min-h-[88px] grid-cols-[28px_44px_1fr_84px_42px] items-center gap-2 rounded-xl border border-border bg-card text-card-foreground px-2.5 py-2 pr-9 shadow-sm min-[390px]:grid-cols-[28px_48px_1fr_92px_46px]',
+              selectedIds.includes(product.id) && 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-500/30 dark:bg-emerald-500/5',
               !product.isActive && 'opacity-60'
             )}
           >
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(product.id)}
+              onChange={() => toggleSelect(product.id)}
+              aria-label={`Pilih ${product.name}`}
+              className="h-4 w-4 rounded border-border accent-emerald-600"
+            />
+
             {/* Product image */}
             <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg bg-muted/20 min-[390px]:h-12 min-[390px]:w-12">
               <ProductImage product={product} size="sm" className="h-9 w-9 rounded-lg object-contain min-[390px]:h-10 min-[390px]:w-10" />
@@ -179,6 +254,15 @@ export function ProductTable({ products: productItems }: ProductTableProps) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-muted/30">
+                <th className="w-12 px-5 py-3.5 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAllVisible}
+                    aria-label="Pilih semua produk"
+                    className="h-4 w-4 rounded border-border accent-emerald-600"
+                  />
+                </th>
                 <th className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Produk
                 </th>
@@ -209,6 +293,15 @@ export function ProductTable({ products: productItems }: ProductTableProps) {
                     index === visibleProducts.length - 1 && 'border-b-0'
                   )}
                 >
+                  <td className="px-5 py-3.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(product.id)}
+                      onChange={() => toggleSelect(product.id)}
+                      aria-label={`Pilih ${product.name}`}
+                      className="h-4 w-4 rounded border-border accent-emerald-600"
+                    />
+                  </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
                       <ProductImage product={product} size="sm" className="rounded-xl" />

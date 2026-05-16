@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 
 const PLAN_LABELS = {
-  basic: 'Basic',
+  free: 'Free',
   pro: 'Pro',
   business: 'Business',
 } as const

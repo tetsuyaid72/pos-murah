@@ -1,31 +1,33 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
-import { useTheme } from '@/components/theme-provider'
 import { usePathname } from 'next/navigation'
+import { useTheme } from '@/components/theme-provider'
 import {
-  ShoppingCart,
+  BarChart3,
+  ChevronLeft,
+  Crown,
   LayoutDashboard,
+  LogOut,
+  Moon,
   Package,
   Receipt,
-  Users,
   Settings,
-  ChevronLeft,
-  Store,
-  Crown,
-  Moon,
-  Sun,
-  BarChart3,
-  LogOut,
   ShieldCheck,
+  ShoppingCart,
+  Store,
+  Sun,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui-store'
 import { useSettingsStore } from '@/stores/settings-store'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuthStore, type AuthMembership } from '@/stores/auth-store'
 import { useSubscriptionStore } from '@/stores/subscription-store'
-
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { buttonVariants, Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { UserAvatar } from '@/components/ui/user-avatar'
 
 const navItems = [
@@ -40,44 +42,30 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen, isMobile } =
-    useUIStore()
+  const { sidebarCollapsed, setSidebarCollapsed, sidebarOpen, setSidebarOpen, isMobile } = useUIStore()
 
-  // On mobile, sidebar is an overlay
   if (isMobile) {
     return (
-      <>
-        {/* Backdrop */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity dark:bg-black/70"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Mobile sidebar */}
-        <aside
-          className={cn(
-            'fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col border-r border-border bg-card text-card-foreground backdrop-blur-xl transition-transform duration-300 ease-out supports-[backdrop-filter]:bg-card/95',
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          )}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent
+          side="left"
+          className="w-[288px] max-w-[86vw] overflow-hidden border-r border-slate-200 bg-white p-0 text-slate-950 shadow-2xl dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 sm:max-w-[288px]"
         >
           <SidebarContent
             pathname={pathname}
             collapsed={false}
             onNavigate={() => setSidebarOpen(false)}
           />
-        </aside>
-      </>
+        </SheetContent>
+      </Sheet>
     )
   }
 
-  // Desktop sidebar
   return (
     <aside
       className={cn(
-        'sticky top-0 flex h-screen flex-col border-r border-border bg-card text-card-foreground backdrop-blur-xl transition-all duration-300 ease-out supports-[backdrop-filter]:bg-card/90',
-        sidebarCollapsed ? 'w-[68px]' : 'w-56'
+        'sticky top-0 hidden h-screen shrink-0 border-r border-slate-200 bg-white text-slate-950 shadow-sm transition-all duration-300 ease-out dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 md:flex',
+        sidebarCollapsed ? 'w-20' : 'w-[280px]'
       )}
     >
       <SidebarContent
@@ -106,23 +94,9 @@ function SidebarContent({
   const { logout, membership, user } = useAuthStore()
   const { paymentStatus } = useSubscriptionStore()
 
-  // Calculate trial info for display
-  const trialDaysRemaining = (() => {
-    if (!membership?.isTrial || !membership?.trialEndAt) return 0
-    const trialEnd = new Date(membership.trialEndAt)
-    const now = new Date()
-    const diff = trialEnd.getTime() - now.getTime()
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
-  })()
-  const isTrialActive = membership?.isTrial && trialDaysRemaining > 0
-  const isTrialExpired = Boolean(membership?.isTrial && membership.trialEndAt && trialDaysRemaining <= 0)
-  // Server membership is always the source of truth for plan status
-  const plan = isTrialExpired ? 'TRIAL_EXPIRED' : membership?.isTrial ? 'QUICK_TRIAL' : membership?.plan || 'FREE'
-  const isPaidActive = Boolean(membership && !membership.isTrial && paymentStatus === 'approved')
+  const plan = getDisplayPlan(membership)
+  const isPaidPlan = Boolean(membership && !membership.isTrial && ['PRO', 'BUSINESS'].includes(String(membership.plan).toUpperCase()))
   const ctaHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
-  const ctaLabel = paymentStatus === 'pending' ? 'Status Pembayaran' : 'Upgrade Paket'
-  const showUpgradeButton = !collapsed && !isPaidActive && Boolean(isTrialActive || isTrialExpired)
-
   const isDark = resolvedTheme === 'dark'
 
   const toggleTheme = () => {
@@ -132,189 +106,291 @@ function SidebarContent({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Logo / Brand */}
-      <div className={cn('flex items-center gap-2.5 px-4 py-4', collapsed && 'justify-center px-2')}>
-        {/* Store logo or default icon */}
-        <div
-          className={cn(
-            'relative h-9 w-9 shrink-0 overflow-hidden rounded-full',
-            storeLogo
-              ? 'border border-border bg-white dark:bg-slate-900'
-              : 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-500/20'
-          )}
-        >
+    <div className="flex h-full min-h-0 w-full flex-col bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.08),transparent_34%),linear-gradient(180deg,rgba(248,250,252,0.96),rgba(255,255,255,1))] dark:bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_32%),linear-gradient(180deg,rgba(15,23,42,1),rgba(2,6,23,1))]">
+      <StoreHeader
+        collapsed={collapsed}
+        storeName={storeName}
+        storeLogo={storeLogo}
+        plan={plan}
+      />
+
+      <Separator className="mx-4 w-auto bg-slate-200/80 dark:bg-slate-800" />
+
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+        {!collapsed && (
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+            Navigasi
+          </p>
+        )}
+        <div className="space-y-1.5">
+          {navItems.map((item) => (
+            <SidebarNavItem
+              key={item.href}
+              item={item}
+              active={pathname === item.href || pathname.startsWith(`${item.href}/`)}
+              collapsed={collapsed}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+
+        {user?.role === 'SUPER_ADMIN' && (
+          <div className="mt-4 space-y-1.5">
+            {!collapsed && (
+              <p className="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                Admin
+              </p>
+            )}
+            <SidebarNavItem
+              item={{ href: '/admin', label: 'Admin Panel', icon: ShieldCheck }}
+              active={pathname === '/admin' || pathname.startsWith('/admin/')}
+              collapsed={collapsed}
+              onNavigate={onNavigate}
+            />
+          </div>
+        )}
+      </nav>
+
+      <div className="shrink-0 px-3 pb-3">
+        <PlanCard collapsed={collapsed} plan={plan} isPaidPlan={isPaidPlan} ctaHref={ctaHref} onNavigate={onNavigate} />
+        <FooterActions
+          collapsed={collapsed}
+          isDark={isDark}
+          userName={userName}
+          userEmail={userEmail}
+          userAvatar={userAvatar}
+          onToggleTheme={toggleTheme}
+          onLogout={logout}
+          onCollapse={onCollapse}
+        />
+      </div>
+    </div>
+  )
+}
+
+type NavItem = (typeof navItems)[number]
+
+function SidebarNavItem({
+  item,
+  active,
+  collapsed,
+  onNavigate,
+}: {
+  item: NavItem
+  active: boolean
+  collapsed: boolean
+  onNavigate?: () => void
+}) {
+  const Icon = item.icon
+
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      title={collapsed ? item.label : undefined}
+      className={cn(
+        'group relative flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-all duration-200',
+        active
+          ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/15'
+          : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
+        collapsed && 'justify-center px-2'
+      )}
+    >
+      {active && (
+        <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
+      )}
+      <Icon
+        className={cn(
+          'h-[18px] w-[18px] shrink-0 transition-colors',
+          active ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 group-hover:text-slate-700 dark:text-slate-500 dark:group-hover:text-slate-200'
+        )}
+      />
+      {!collapsed && <span className="truncate">{item.label}</span>}
+    </Link>
+  )
+}
+
+function StoreHeader({
+  collapsed,
+  storeName,
+  storeLogo,
+  plan,
+}: {
+  collapsed: boolean
+  storeName: string
+  storeLogo: string | null
+  plan: PlanDisplay
+}) {
+  return (
+    <div className={cn('px-4 py-4', collapsed && 'px-3')}>
+      <div className={cn('flex items-center gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70', collapsed && 'justify-center rounded-2xl p-2')}>
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-emerald-600 text-white shadow-sm dark:border-slate-700">
           {storeLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={storeLogo}
-              alt={storeName || 'Logo toko'}
-              className="h-full w-full object-cover"
-            />
+            <img src={storeLogo} alt={storeName || 'Logo toko'} className="h-full w-full object-cover" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Store className="h-4.5 w-4.5" />
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-700">
+              <Store className="h-5 w-5" />
             </div>
           )}
         </div>
         {!collapsed && (
-          <div className="flex flex-col min-w-0">
-            <span className="truncate text-sm font-bold tracking-tight text-foreground">
-              {storeName || 'Toko Saya'}
-            </span>
-            <PlanBadge plan={plan} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold tracking-tight text-slate-950 dark:text-slate-50">
+              {storeName || 'Warung Madura'}
+            </p>
+            <Badge className={cn('mt-1 h-5 border-0 px-2 text-[10px] font-bold', plan.badgeClass)}>
+              {plan.label}
+            </Badge>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PlanCard({
+  collapsed,
+  plan,
+  isPaidPlan,
+  ctaHref,
+  onNavigate,
+}: {
+  collapsed: boolean
+  plan: PlanDisplay
+  isPaidPlan: boolean
+  ctaHref: string
+  onNavigate?: () => void
+}) {
+  if (collapsed) {
+    return (
+      <Link
+        href={isPaidPlan ? '/settings' : ctaHref}
+        onClick={onNavigate}
+        title={isPaidPlan ? plan.label : 'Upgrade'}
+        className="mb-3 flex h-11 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
+      >
+        <Crown className="h-5 w-5" />
+      </Link>
+    )
+  }
+
+  if (isPaidPlan) {
+    return (
+      <div className="mb-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 p-3 shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
+            <Crown className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{plan.label}</p>
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">Paket aktif</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-3 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/20">
+          <Crown className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-slate-950 dark:text-slate-50">Upgrade Paket</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            Upgrade paket untuk buka semua fitur
+          </p>
+        </div>
+      </div>
+      <Link
+        href={ctaHref}
+        onClick={onNavigate}
+        className={cn(buttonVariants({ size: 'sm' }), 'mt-3 h-9 w-full rounded-2xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700')}
+      >
+        Upgrade
+      </Link>
+    </div>
+  )
+}
+
+function FooterActions({
+  collapsed,
+  isDark,
+  userName,
+  userEmail,
+  userAvatar,
+  onToggleTheme,
+  onLogout,
+  onCollapse,
+}: {
+  collapsed: boolean
+  isDark: boolean
+  userName: string
+  userEmail: string
+  userAvatar: string | null
+  onToggleTheme: () => void
+  onLogout: () => void
+  onCollapse?: () => void
+}) {
+  return (
+    <div className="rounded-3xl border border-slate-200 bg-white/80 p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+      <button
+        type="button"
+        onClick={onToggleTheme}
+        className={cn(
+          'flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+          collapsed && 'justify-center px-2'
+        )}
+        title={collapsed ? `Tema: ${isDark ? 'dark' : 'light'}` : undefined}
+      >
+        {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+        {!collapsed && <span>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>}
+      </button>
+
+      <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
+
+      <div className={cn('flex items-center gap-3 rounded-2xl px-3 py-2', collapsed && 'justify-center px-2')}>
+        <UserAvatar name={userName} imageUrl={userAvatar} size="md" />
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-slate-950 dark:text-slate-50">{userName || 'Pengguna'}</p>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{userEmail || '-'}</p>
           </div>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2.5 py-1.5">
-        <p className={cn(
-          'mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
-          collapsed && 'sr-only'
-        )}>
-          Menu
-        </p>
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-          const Icon = item.icon
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                'group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium leading-tight transition-all duration-200',
-                isActive
-                  ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
-                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                collapsed && 'justify-center px-2'
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              {/* Active indicator pill */}
-              {isActive && (
-                <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
-              )}
-              <Icon className={cn(
-                'h-4 w-4 shrink-0 transition-colors',
-                isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground group-hover:text-foreground'
-              )} />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          )
-        })}
-
-        {/* Admin section â€” only for SUPER_ADMIN */}
-        {user?.role === 'SUPER_ADMIN' && (
-          <>
-            <p className={cn(
-              'mt-4 mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70',
-              collapsed && 'sr-only'
-            )}>
-              Admin
-            </p>
-            <Link
-              href="/admin"
-              onClick={onNavigate}
-              className={cn(
-                'group relative flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium leading-tight transition-all duration-200',
-                pathname.startsWith('/admin')
-                  ? 'bg-emerald-50 text-emerald-700 shadow-sm dark:bg-emerald-500/10 dark:text-emerald-400'
-                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground',
-                collapsed && 'justify-center px-2'
-              )}
-              title={collapsed ? 'Admin Panel' : undefined}
-            >
-              {pathname.startsWith('/admin') && (
-                <div className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-emerald-500" />
-              )}
-              <ShieldCheck className={cn(
-                'h-4 w-4 shrink-0 transition-colors',
-                pathname.startsWith('/admin')
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-muted-foreground group-hover:text-foreground'
-              )} />
-              {!collapsed && <span>Admin Panel</span>}
-            </Link>
-          </>
-        )}
-      </nav>
-
-      {/* Upgrade button */}
-      {showUpgradeButton && (
-        <SidebarUpgradeButton
-          ctaHref={ctaHref}
-          ctaLabel={ctaLabel}
-          onNavigate={onNavigate}
-        />
-      )}
-
-      {/* Bottom section */}
-      <div className={cn('border-t border-border/50 p-2.5', collapsed && 'px-2')}>
-        {/* Dark mode toggle */}
-        <button
-          onClick={toggleTheme}
+      <div className={cn('mt-2 grid gap-2', collapsed ? 'grid-cols-1' : 'grid-cols-2')}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onLogout}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground cursor-pointer',
-            collapsed && 'justify-center px-2'
-          )}
-          title={collapsed ? `Tema: ${isDark ? 'dark' : 'light'}` : undefined}
-        >
-          {isDark ? (
-            <Moon className="h-[18px] w-[18px] shrink-0" />
-          ) : (
-            <Sun className="h-[18px] w-[18px] shrink-0" />
-          )}
-          {!collapsed && <span>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>}
-        </button>
-
-        {/* User profile mini */}
-        <div className={cn(
-          'mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2',
-          collapsed && 'justify-center px-2'
-        )}>
-          <UserAvatar name={userName} imageUrl={userAvatar} size="md" />
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">{userName || 'Pengguna'}</p>
-              <p className="truncate text-[11px] text-muted-foreground">{userEmail || '-'}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Logout button */}
-        <button
-          onClick={logout}
-          className={cn(
-            'mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer',
-            collapsed && 'justify-center px-2'
+            'h-10 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300',
+            collapsed && 'px-2'
           )}
           title={collapsed ? 'Keluar' : undefined}
         >
-          <LogOut className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && <span>Keluar</span>}
-        </button>
+          <LogOut className="h-4 w-4" />
+          {!collapsed && <span className="ml-2">Keluar</span>}
+        </Button>
 
-        {/* Collapse toggle (desktop only) */}
         {onCollapse && (
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={onCollapse}
             className={cn(
-              'mt-1 w-full rounded-xl text-muted-foreground hover:text-foreground',
-              collapsed ? 'justify-center' : 'justify-start'
+              'h-10 rounded-2xl text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+              collapsed && 'px-2'
             )}
+            title={collapsed ? 'Buka Sidebar' : undefined}
           >
-            <ChevronLeft
-              className={cn(
-                'h-4 w-4 transition-transform duration-300',
-                collapsed && 'rotate-180'
-              )}
-            />
-            {!collapsed && <span className="ml-2 text-xs">Tutup Sidebar</span>}
+            <ChevronLeft className={cn('h-4 w-4 transition-transform duration-300', collapsed && 'rotate-180')} />
+            {!collapsed && <span className="ml-2">Tutup</span>}
           </Button>
         )}
       </div>
@@ -322,95 +398,54 @@ function SidebarContent({
   )
 }
 
-function SidebarUpgradeButton({
-  ctaHref,
-  ctaLabel,
-  onNavigate,
-}: {
-  ctaHref: string
-  ctaLabel: string
-  onNavigate?: () => void
-}) {
-  return (
-    <div className="shrink-0 px-2.5 pb-2 sm:pb-2.5">
-      <Link
-        href={ctaHref}
-        onClick={onNavigate}
-        className="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 text-sm font-bold text-white shadow-sm shadow-emerald-600/20 transition-colors hover:bg-emerald-700"
-      >
-        <Crown className="h-4 w-4" />
-        {ctaLabel}
-      </Link>
-    </div>
-  )
+type PlanDisplay = {
+  key: string
+  label: string
+  badgeClass: string
 }
 
-// =============================================================================
-// Plan Badge â€” dynamic label + styling based on subscription plan
-// =============================================================================
+function getDisplayPlan(membership: AuthMembership | null): PlanDisplay {
+  if (!membership) return PLAN_DISPLAY.FREE
 
-const PLAN_CONFIG: Record<string, { label: string; icon: typeof Crown; iconClass: string; textClass: string }> = {
+  if (membership.isTrial) {
+    const trialEnd = membership.trialEndAt ? new Date(membership.trialEndAt) : null
+    if (trialEnd && trialEnd <= new Date()) return PLAN_DISPLAY.TRIAL_EXPIRED
+    return PLAN_DISPLAY.QUICK_TRIAL
+  }
+
+  const key = String(membership.plan || 'FREE').toUpperCase()
+  return PLAN_DISPLAY[key] || PLAN_DISPLAY.FREE
+}
+
+const PLAN_DISPLAY: Record<string, PlanDisplay> = {
   FREE: {
-    label: 'Free Plan',
-    icon: Store,
-    iconClass: 'text-muted-foreground',
-    textClass: 'text-muted-foreground',
+    key: 'FREE',
+    label: 'Free',
+    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
   },
   QUICK_TRIAL: {
+    key: 'QUICK_TRIAL',
     label: 'Quick Trial',
-    icon: Store,
-    iconClass: 'text-emerald-500',
-    textClass: 'text-emerald-600 dark:text-emerald-400',
+    badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   },
   TRIAL_EXPIRED: {
+    key: 'TRIAL_EXPIRED',
     label: 'Trial Berakhir',
-    icon: Store,
-    iconClass: 'text-amber-500',
-    textClass: 'text-amber-600 dark:text-amber-400',
+    badgeClass: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
   },
-  STARTER: {
-    label: 'Starter Plan',
-    icon: Crown,
-    iconClass: 'text-blue-500',
-    textClass: 'text-blue-600 dark:text-blue-400',
-  },
-  BASIC: {
-    label: 'Free Plan',
-    icon: Store,
-    iconClass: 'text-muted-foreground',
-    textClass: 'text-muted-foreground',
+  FREE: {
+    key: 'FREE',
+    label: 'Free',
+    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
   },
   PRO: {
-    label: 'Pro Plan',
-    icon: Crown,
-    iconClass: 'text-emerald-500',
-    textClass: 'text-emerald-600 dark:text-emerald-400',
+    key: 'PRO',
+    label: 'Pro',
+    badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   },
   BUSINESS: {
-    label: 'Business Plan',
-    icon: Crown,
-    iconClass: 'text-violet-500',
-    textClass: 'text-violet-600 dark:text-violet-400',
-  },
-  ENTERPRISE: {
-    label: 'Enterprise',
-    icon: Crown,
-    iconClass: 'text-amber-500',
-    textClass: 'text-amber-600 dark:text-amber-400',
+    key: 'BUSINESS',
+    label: 'Bisnis',
+    badgeClass: 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300',
   },
 }
-
-function PlanBadge({ plan }: { plan: string }) {
-  const config = PLAN_CONFIG[plan] || PLAN_CONFIG.FREE
-  const Icon = config.icon
-
-  return (
-    <div className="flex items-center gap-1.5">
-      <Icon className={cn('h-3 w-3 shrink-0', config.iconClass)} />
-      <span className={cn('text-[11px] font-medium', config.textClass)}>
-        {config.label}
-      </span>
-    </div>
-  )
-}
-

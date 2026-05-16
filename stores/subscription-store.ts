@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { BillingPeriod } from '@/lib/pricing'
 
-export type Plan = 'basic' | 'pro' | 'business'
+export type Plan = 'free' | 'pro' | 'business'
 export type PaymentStatus = 'none' | 'pending' | 'approved'
 
 interface PendingPaymentSummary {
@@ -28,7 +28,7 @@ interface SubscriptionActions {
    * Sync local subscription state with server membership.
    * Server is always the source of truth for plan status.
    *
-   * @param serverPlan - The plan from server (e.g. 'BASIC', 'PRO', 'BUSINESS')
+   * @param serverPlan - The plan from server (e.g. 'FREE', 'PRO', 'BUSINESS')
    * @param isTrial - Whether the membership is still in trial mode (not yet paid)
    * @param trialEndAt - Trial end date (if trial is expired and isTrial=true, user hasn't paid)
    */
@@ -37,17 +37,16 @@ interface SubscriptionActions {
 
 function normalizePlan(serverPlan: string): Plan | null {
   switch (serverPlan.toUpperCase()) {
-    case 'BASIC': return 'basic'
+    case 'FREE': return 'free'
     case 'PRO': return 'pro'
     case 'BUSINESS': return 'business'
-    case 'ENTERPRISE': return 'business' // Map enterprise to business for UI
     default: return null
   }
 }
 
 function getPlanRank(plan: Plan | null): number {
   switch (plan) {
-    case 'basic': return 1
+    case 'free': return 1
     case 'pro': return 2
     case 'business': return 3
     default: return 0

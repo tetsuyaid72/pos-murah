@@ -2,7 +2,7 @@
  * Server-Side Plan Enforcement — Warung Madura POS
  *
  * Checks plan limits before allowing resource creation.
- * Full paid model: BASIC / PRO / BUSINESS (no free tier).
+ * Full paid model: FREE / PRO / BUSINESS (no free tier).
  *
  * Usage:
  *   const check = await checkProductLimit(storeId)
@@ -12,7 +12,7 @@
 import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
-import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, type PlanType, type LimitKey } from '@/lib/features'
+import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, normalizePlanType, type PlanType, type LimitKey } from '@/lib/features'
 
 interface PlanCheckResult {
   allowed: boolean
@@ -64,8 +64,8 @@ function getEffectiveLimit(
 
   if (checkTrialExpired(membership)) return 0
 
-  const plan = membership.plan as PlanType
-  return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].BASIC
+  const plan = normalizePlanType(membership.plan)
+  return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].FREE
 }
 
 /**
@@ -73,7 +73,7 @@ function getEffectiveLimit(
  */
 function getUpgradeSuggestion(currentPlan: PlanType): string {
   switch (currentPlan) {
-    case 'BASIC':
+    case 'FREE':
       return 'Upgrade ke Pro (Rp 49.900/bulan) untuk limit lebih besar.'
     case 'PRO':
       return 'Upgrade ke Business (Rp 99.900/bulan) untuk akses unlimited.'
@@ -91,10 +91,10 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
   if (!membership) {
     return {
       allowed: false,
-      limit: PLAN_LIMITS.max_products.BASIC,
+      limit: PLAN_LIMITS.max_products.FREE,
       current: 0,
       message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
-      plan: 'BASIC',
+      plan: 'FREE',
       isTrialActive: false,
     }
   }
@@ -110,7 +110,7 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
   const current = result?.count ?? 0
 
   if (current >= limit) {
-    const plan = membership.plan as PlanType
+    const plan = normalizePlanType(membership.plan)
     return {
       allowed: false,
       limit,
@@ -126,7 +126,7 @@ export async function checkProductLimit(storeId: string): Promise<PlanCheckResul
     limit,
     current,
     message: '',
-    plan: membership.plan as PlanType,
+    plan: normalizePlanType(membership.plan),
     isTrialActive,
   }
 }
@@ -140,10 +140,10 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   if (!membership) {
     return {
       allowed: false,
-      limit: PLAN_LIMITS.max_transactions_monthly.BASIC,
+      limit: PLAN_LIMITS.max_transactions_monthly.FREE,
       current: 0,
       message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
-      plan: 'BASIC',
+      plan: 'FREE',
       isTrialActive: false,
     }
   }
@@ -167,7 +167,7 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
   const current = result?.count ?? 0
 
   if (current >= limit) {
-    const plan = membership.plan as PlanType
+    const plan = normalizePlanType(membership.plan)
     return {
       allowed: false,
       limit,
@@ -183,7 +183,7 @@ export async function checkTransactionLimit(storeId: string): Promise<PlanCheckR
     limit,
     current,
     message: '',
-    plan: membership.plan as PlanType,
+    plan: normalizePlanType(membership.plan),
     isTrialActive,
   }
 }
@@ -197,10 +197,10 @@ export async function checkCustomerLimit(storeId: string): Promise<PlanCheckResu
   if (!membership) {
     return {
       allowed: false,
-      limit: PLAN_LIMITS.max_customers.BASIC,
+      limit: PLAN_LIMITS.max_customers.FREE,
       current: 0,
       message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
-      plan: 'BASIC',
+      plan: 'FREE',
       isTrialActive: false,
     }
   }
@@ -216,7 +216,7 @@ export async function checkCustomerLimit(storeId: string): Promise<PlanCheckResu
   const current = result?.count ?? 0
 
   if (current >= limit) {
-    const plan = membership.plan as PlanType
+    const plan = normalizePlanType(membership.plan)
     return {
       allowed: false,
       limit,
@@ -232,7 +232,7 @@ export async function checkCustomerLimit(storeId: string): Promise<PlanCheckResu
     limit,
     current,
     message: '',
-    plan: membership.plan as PlanType,
+    plan: normalizePlanType(membership.plan),
     isTrialActive,
   }
 }
@@ -250,26 +250,26 @@ export async function checkFeatureAccess(
     return {
       allowed: false,
       message: 'Membership tidak ditemukan. Silakan berlangganan terlebih dahulu.',
-      plan: 'BASIC',
+      plan: 'FREE',
     }
   }
 
   if (checkTrialActive(membership)) {
-    return { allowed: true, message: '', plan: membership.plan as PlanType }
+    return { allowed: true, message: '', plan: normalizePlanType(membership.plan) }
   }
 
   if (checkTrialExpired(membership)) {
     return {
       allowed: false,
       message: 'Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan menggunakan fitur POS.',
-      plan: membership.plan as PlanType,
+      plan: normalizePlanType(membership.plan),
     }
   }
 
   const { FEATURE_DEFAULTS } = await import('@/lib/features')
   const featureConfig = FEATURE_DEFAULTS[feature]
-  const plan = membership.plan as PlanType
-  const allowed = featureConfig?.[plan] === true
+  const plan = normalizePlanType(membership.plan)
+  const allowed = plan === 'BUSINESS' || featureConfig?.[plan] === true
 
   if (!allowed) {
     const featureNames: Record<string, string> = {
@@ -325,7 +325,7 @@ export async function checkStrictFeatureAccess(
     return {
       allowed: false,
       message: 'Membership tidak ditemukan.',
-      plan: 'BASIC',
+      plan: 'FREE',
     }
   }
 
@@ -333,14 +333,14 @@ export async function checkStrictFeatureAccess(
     return {
       allowed: false,
       message: 'Quick Trial Anda telah berakhir.',
-      plan: membership.plan as PlanType,
+      plan: normalizePlanType(membership.plan),
     }
   }
 
   const { FEATURE_DEFAULTS } = await import('@/lib/features')
   const featureConfig = FEATURE_DEFAULTS[feature]
-  const plan = membership.plan as PlanType
-  const allowed = featureConfig?.[plan] === true
+  const plan = normalizePlanType(membership.plan)
+  const allowed = plan === 'BUSINESS' || featureConfig?.[plan] === true
 
   if (!allowed) {
     return {

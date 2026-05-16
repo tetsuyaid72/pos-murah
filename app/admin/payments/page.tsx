@@ -19,7 +19,7 @@ import { formatRupiah } from '@/lib/format'
 interface Payment {
   id: string
   amount: number
-  plan: 'BASIC' | 'PRO' | 'BUSINESS' | 'ENTERPRISE'
+  plan: 'PRO' | 'BUSINESS'
   billingPeriod: 'monthly' | 'yearly'
   originalPrice: number
   discountPercent: number

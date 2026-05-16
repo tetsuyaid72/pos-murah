@@ -77,49 +77,49 @@ async function main() {
       key: 'max_products',
       name: 'Batas Jumlah Produk',
       description: 'Jumlah maksimal produk yang bisa ditambahkan',
-      planDefaults: { FREE: 999999, STARTER: 100, PRO: 999999, ENTERPRISE: 999999 },
+      planDefaults: { FREE: 999999, STARTER: 100, PRO: 999999 },
     },
     {
       key: 'export_excel',
       name: 'Export Excel',
       description: 'Export data ke format Excel',
-      planDefaults: { FREE: true, STARTER: true, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: true, PRO: true },
     },
     {
       key: 'export_pdf',
       name: 'Export PDF',
       description: 'Export laporan ke format PDF',
-      planDefaults: { FREE: true, STARTER: false, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: false, PRO: true },
     },
     {
       key: 'multi_outlet',
       name: 'Multi Outlet',
       description: 'Kelola lebih dari satu toko',
-      planDefaults: { FREE: false, STARTER: false, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: false, STARTER: false, PRO: true },
     },
     {
       key: 'thermal_printer',
       name: 'Printer Thermal',
       description: 'Cetak struk ke printer thermal Bluetooth',
-      planDefaults: { FREE: true, STARTER: true, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: true, PRO: true },
     },
     {
       key: 'advanced_reports',
       name: 'Laporan Lanjutan',
       description: 'Akses laporan analitik lanjutan',
-      planDefaults: { FREE: true, STARTER: false, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: false, PRO: true },
     },
     {
       key: 'customer_management',
       name: 'Manajemen Pelanggan',
       description: 'Kelola data pelanggan',
-      planDefaults: { FREE: true, STARTER: true, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: true, PRO: true },
     },
     {
       key: 'debt_tracking',
       name: 'Pencatatan Hutang',
       description: 'Catat dan kelola hutang pelanggan',
-      planDefaults: { FREE: true, STARTER: true, PRO: true, ENTERPRISE: true },
+      planDefaults: { FREE: true, STARTER: true, PRO: true },
     },
   ]
 
@@ -162,3 +162,4 @@ main()
   .finally(async () => {
     await pool.end()
   })
+

@@ -97,7 +97,7 @@ export default function AccountSettingsPage() {
   )
   const planLabel = membership?.isTrial
     ? isTrialExpired ? 'Trial Berakhir' : 'Quick Trial'
-    : membership?.plan || usage?.plan || 'Basic'
+    : membership?.plan || usage?.plan || 'Free'
 
   if (isLoading) {
     return (

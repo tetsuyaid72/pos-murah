@@ -30,7 +30,7 @@ const FEATURE_CATEGORIES: Record<string, string[]> = {
   'POS / Kasir': ['thermal_printer', 'barcode_scanner', 'custom_receipt_logo', 'auto_promo', 'voucher_coupon', 'multi_payment_split'],
   'Produk': ['bulk_import', 'product_variant', 'batch_price_update'],
   'Pelanggan & Hutang': ['customer_management', 'debt_tracking', 'debt_reminder_manual', 'wa_debt_reminder', 'loyalty_points'],
-  'Laporan & Analytics': ['basic_dashboard', 'profit_report', 'period_comparison', 'per_cashier_report', 'per_category_report', 'per_customer_report', 'advanced_reports', 'stock_prediction', 'peak_hour_analysis', 'export_excel', 'export_pdf', 'email_report'],
+  'Laporan & Analytics': ['dashboard_summary', 'profit_report', 'period_comparison', 'per_cashier_report', 'per_category_report', 'per_customer_report', 'advanced_reports', 'stock_prediction', 'peak_hour_analysis', 'export_excel', 'export_pdf', 'email_report'],
   'Operasional': ['shift_management', 'cash_flow', 'expense_tracking', 'multi_outlet', 'stock_transfer', 'multi_staff_role'],
   'Integrasi & Teknis': ['backup_restore', 'auto_backup', 'wa_notification', 'api_access', 'webhook'],
 }
@@ -193,12 +193,11 @@ export default function AdminSettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(Object.entries(PLANS) as [string, typeof PLANS.BASIC][]).map(([key, plan]) => (
+                {(Object.entries(PLANS) as [string, typeof PLANS.PRO][]).map(([key, plan]) => (
                   <tr key={key} className="border-b border-border/30">
                     <td className="px-3 py-2">
                       <span className={cn(
                         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium',
-                        key === 'BASIC' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' :
                         key === 'PRO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' :
                         'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
                       )}>
@@ -247,7 +246,7 @@ export default function AdminSettingsPage() {
                   <thead>
                     <tr className="border-b border-border/30">
                       <th className="px-2 py-1.5 text-left font-medium text-muted-foreground">Feature</th>
-                      <th className="px-2 py-1.5 text-center font-medium text-muted-foreground">Basic</th>
+                      <th className="px-2 py-1.5 text-center font-medium text-muted-foreground">Free</th>
                       <th className="px-2 py-1.5 text-center font-medium text-muted-foreground">Pro</th>
                       <th className="px-2 py-1.5 text-center font-medium text-muted-foreground">Business</th>
                     </tr>
@@ -260,7 +259,7 @@ export default function AdminSettingsPage() {
                         <tr key={key} className="border-b border-border/20">
                           <td className="px-2 py-1.5 text-muted-foreground">{key.replace(/_/g, ' ')}</td>
                           <td className="px-2 py-1.5 text-center">
-                            {renderFeatureValue(defaults.BASIC)}
+                            {renderFeatureValue(defaults.FREE)}
                           </td>
                           <td className="px-2 py-1.5 text-center">
                             {renderFeatureValue(defaults.PRO)}

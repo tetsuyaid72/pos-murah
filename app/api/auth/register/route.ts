@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       await tx.insert(memberships).values({
         id: membershipId,
         storeId,
-        plan: 'BASIC',
+        plan: 'FREE',
         isTrial: true,
         trialStartAt,
         trialEndAt,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         entityId: userId,
         metadata: {
           storeName: storeName.trim(),
-          plan: 'BASIC',
+          plan: 'FREE',
           requiresPayment: true,
         },
       })
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
           name: storeName.trim(),
         },
         membership: {
-          plan: 'BASIC',
+          plan: 'FREE',
           isTrial: true,
           trialEndAt,
         },

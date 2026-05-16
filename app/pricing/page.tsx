@@ -70,7 +70,7 @@ export default function PricingPage() {
             Pilih Paket
           </h1>
           <p className="mt-3 max-w-[320px] text-sm leading-6 text-slate-600 dark:text-slate-400 sm:mt-4 sm:max-w-2xl sm:text-base sm:leading-7">
-            Cukup pilih Pro atau Bisnis. Tidak ada paket Basic.
+            Cukup pilih Pro atau Bisnis sesuai kebutuhan toko Anda.
           </p>
 
           <div className="mt-7 grid w-full gap-4 sm:max-w-sm md:max-w-3xl md:grid-cols-2">

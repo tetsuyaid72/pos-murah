@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getDisplayPricing } from '@/lib/pricing'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 
-type SelectedPlan = 'basic' | 'pro' | 'business'
+type SelectedPlan = 'pro' | 'business'
 
 const BANK_INFO = {
   bank: 'BCA',
@@ -51,7 +51,7 @@ export function UpgradePaymentPanel({
   const router = useRouter()
   const { submitPayment } = useSubscriptionStore()
 
-  const pricingKey = selectedPlan.toUpperCase() as 'BASIC' | 'PRO' | 'BUSINESS'
+  const pricingKey = selectedPlan.toUpperCase() as 'PRO' | 'BUSINESS'
   const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
   const promoPricing = displayPricing.promo
   const formattedPrice = formatPrice(displayPricing.finalPrice)

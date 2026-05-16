@@ -32,9 +32,11 @@ export async function PATCH(
 
     const updateData: Record<string, unknown> = {}
 
-    // Change plan
-    if (plan && ['BASIC', 'PRO', 'BUSINESS', 'ENTERPRISE'].includes(plan)) {
+    // Change plan from admin means activate the selected plan immediately.
+    // Without this, expired trials stay blocked because isTrial remains true.
+    if (plan && ['FREE', 'PRO', 'BUSINESS'].includes(plan)) {
       updateData.plan = plan
+      updateData.isTrial = false
     }
 
     // Extend trial
@@ -57,9 +59,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Tidak ada data yang diubah' }, { status: 400 })
     }
 
-    await db.update(memberships).set(updateData).where(eq(memberships.id, id))
+    const [membership] = await db
+      .update(memberships)
+      .set(updateData)
+      .where(eq(memberships.id, id))
+      .returning()
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, membership })
   } catch (error) {
     console.error('Admin update membership error:', error)
     return NextResponse.json({ error: 'Gagal mengupdate membership' }, { status: 500 })

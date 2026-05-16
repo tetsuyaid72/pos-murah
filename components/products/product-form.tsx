@@ -150,7 +150,7 @@ export function ProductForm({ product }: ProductFormProps) {
           </CardContent>
         </Card>
 
-        {/* Basic Info */}
+        {/* Product Info */}
         <Card>
           <CardHeader className="px-4 py-3 md:px-6 md:py-6">
             <CardTitle className="text-[14px] md:text-base">Informasi Dasar</CardTitle>

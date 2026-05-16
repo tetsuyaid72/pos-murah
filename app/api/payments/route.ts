@@ -100,8 +100,7 @@ export async function POST(request: Request) {
 }
 
 function parsePlan(plan: unknown): PaidPlanType {
-  if (plan === 'BASIC' || plan === 'PRO' || plan === 'BUSINESS') return plan
-  if (plan === 'basic') return 'BASIC'
+  if (plan === 'PRO' || plan === 'BUSINESS') return plan
   if (plan === 'pro') return 'PRO'
   if (plan === 'business') return 'BUSINESS'
   return 'PRO'

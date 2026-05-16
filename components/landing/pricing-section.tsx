@@ -21,8 +21,7 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="mx-auto mt-8 grid max-w-sm gap-5 sm:mt-12 sm:max-w-none md:grid-cols-3 lg:gap-6">
-          <PricingCard plan={PLANS.BASIC} planKey="BASIC" href="/register?plan=basic" cta="Mulai Basic" />
+        <div className="mx-auto mt-8 grid max-w-sm gap-5 sm:mt-12 sm:max-w-3xl md:grid-cols-2 lg:gap-6">
           <PricingCard plan={PLANS.PRO} planKey="PRO" href="/register?plan=pro" cta="Mulai Pro" popular />
           <PricingCard plan={PLANS.BUSINESS} planKey="BUSINESS" href="/register?plan=business" cta="Mulai Business" />
         </div>
@@ -41,7 +40,7 @@ export function PricingSection() {
 }
 
 interface PricingCardProps {
-  plan: typeof PLANS.BASIC
+  plan: typeof PLANS.PRO
   planKey: keyof typeof PRICING
   href: string
   cta: string

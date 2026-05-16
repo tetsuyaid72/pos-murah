@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
   Crown,
   Loader2,
   X,
-  Calendar,
   ArrowUpCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -35,10 +33,9 @@ interface Pagination {
 }
 
 const PLAN_BADGE: Record<string, string> = {
-  BASIC: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+  FREE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
   PRO: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
   BUSINESS: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-  ENTERPRISE: 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
 }
 
 export default function AdminMembershipsPage() {
@@ -51,6 +48,7 @@ export default function AdminMembershipsPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [editingMembership, setEditingMembership] = useState<Membership | null>(null)
   const [editPlan, setEditPlan] = useState('')
+  const [now] = useState(() => Date.now())
 
   const fetchMemberships = useCallback(async (page = 1) => {
     setIsLoading(true)
@@ -94,7 +92,18 @@ export default function AdminMembershipsPage() {
         body: JSON.stringify({ plan: editPlan }),
       })
       if (!res.ok) throw new Error('Failed')
-      setToast({ message: `Plan diubah ke ${editPlan}`, type: 'success' })
+      const data = await res.json()
+      setMemberships((current) => current.map((membership) => (
+        membership.id === editingMembership.id
+          ? {
+              ...membership,
+              plan: data.membership?.plan || editPlan,
+              isTrial: data.membership?.isTrial ?? false,
+              trialEndAt: data.membership?.trialEndAt || membership.trialEndAt,
+            }
+          : membership
+      )))
+      setToast({ message: `Plan diaktifkan ke ${editPlan}`, type: 'success' })
       setEditingMembership(null)
       fetchMemberships(pagination.page)
     } catch {
@@ -142,7 +151,7 @@ export default function AdminMembershipsPage() {
 
   const getTrialStatus = (m: Membership) => {
     if (!m.isTrial) return { label: 'Paid', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' }
-    const daysLeft = Math.ceil((new Date(m.trialEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    const daysLeft = Math.ceil((new Date(m.trialEndAt).getTime() - now) / (1000 * 60 * 60 * 24))
     if (daysLeft <= 0) return { label: 'Expired', color: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' }
     return { label: `${daysLeft}d left`, color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' }
   }
@@ -170,10 +179,10 @@ export default function AdminMembershipsPage() {
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="">Semua Plan</option>
-          <option value="BASIC">Basic</option>
+          <option value="FREE">Free</option>
           <option value="PRO">Pro</option>
           <option value="BUSINESS">Business</option>
-          <option value="ENTERPRISE">Enterprise</option>
+          
         </select>
         <select
           value={trialFilter}
@@ -445,10 +454,10 @@ export default function AdminMembershipsPage() {
                   onChange={(e) => setEditPlan(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                 >
-                  <option value="BASIC">Basic</option>
+                  <option value="FREE">FREE</option>
                   <option value="PRO">Pro</option>
                   <option value="BUSINESS">Business</option>
-                  <option value="ENTERPRISE">Enterprise</option>
+                  
                 </select>
               </div>
               <div className="flex justify-end gap-2 pt-2">

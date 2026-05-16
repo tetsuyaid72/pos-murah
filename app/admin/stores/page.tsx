@@ -37,10 +37,9 @@ interface Pagination {
 }
 
 const PLAN_BADGE: Record<string, string> = {
-  BASIC: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
+  FREE: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400',
   PRO: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
   BUSINESS: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-  ENTERPRISE: 'bg-purple-100 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400',
 }
 
 export default function AdminStoresPage() {
@@ -137,7 +136,7 @@ export default function AdminStoresPage() {
           className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
         >
           <option value="">Semua Plan</option>
-          <option value="BASIC">Basic</option>
+          <option value="FREE">FREE</option>
           <option value="PRO">Pro</option>
           <option value="BUSINESS">Business</option>
         </select>

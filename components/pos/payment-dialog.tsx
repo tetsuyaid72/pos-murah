@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, startTransition } from 'react'
+import { createPortal } from 'react-dom'
 import dynamic from 'next/dynamic'
 import {
   X,
@@ -9,6 +10,7 @@ import {
   BookOpen,
   CheckCircle2,
   ImageDown,
+  Printer,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatRupiah } from '@/lib/format'
@@ -62,6 +64,8 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [lastTransaction, setLastTransaction] = useState<Transaction | null>(null)
   const [showReceipt, setShowReceipt] = useState(false)
+  const [isPrintingReceipt, setIsPrintingReceipt] = useState(false)
+  const [printMessage, setPrintMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const total = getTotal()
   const subtotal = getSubtotal()
@@ -81,6 +85,8 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
     setIsProcessing(false)
     setLastTransaction(null)
     setShowReceipt(false)
+    setIsPrintingReceipt(false)
+    setPrintMessage(null)
   }, [])
 
   const handleClose = useCallback(() => {
@@ -220,6 +226,31 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open, isSuccess, isProcessing, canPay, handlePayment, handleClose])
 
+  const handlePrintReceipt = useCallback(async () => {
+    if (!lastTransaction || isPrintingReceipt) return
+    setIsPrintingReceipt(true)
+    setPrintMessage(null)
+
+    try {
+      const result = await thermalPrinterService.printThermalReceipt(lastTransaction, {
+        paperSize: printerPaperSize,
+        storeName,
+        storeAddress,
+        storePhone,
+        receiptFooter,
+        cashierName: userName,
+      })
+      setPrintMessage({ type: result.ok ? 'success' : 'error', text: result.message })
+    } catch {
+      setPrintMessage({
+        type: 'error',
+        text: 'Gagal mencetak struk. Pastikan Thermal-Bridge terpasang, Bluetooth aktif, dan ulangi pairing printer RPP02N.',
+      })
+    } finally {
+      setIsPrintingReceipt(false)
+    }
+  }, [lastTransaction, isPrintingReceipt, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
+
   const handleDone = useCallback(() => {
     clearCart()
     resetDialogState()
@@ -230,10 +261,10 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
     setAmountPaid(total.toString())
   }
 
-  if (!open) return null
+  if (!open || typeof document === 'undefined') return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -242,10 +273,10 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 
       {/* Dialog */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="relative z-10 w-full max-w-md rounded-2xl border bg-card p-6 shadow-2xl mx-4"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="relative z-10 max-h-[92vh] w-full max-w-md overflow-y-auto rounded-2xl border bg-card p-6 shadow-2xl"
       >
         <AnimatePresence mode="wait">
           {isSuccess ? (
@@ -253,7 +284,10 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
               change={change}
               paymentMethod={paymentMethod}
               onSaveReceipt={() => setShowReceipt(true)}
+              onPrintReceipt={handlePrintReceipt}
               onDone={handleDone}
+              isPrintingReceipt={isPrintingReceipt}
+              printMessage={printMessage}
             />
           ) : (
             <PaymentForm
@@ -281,7 +315,8 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
           onClose={() => setShowReceipt(false)}
         />
       )}
-    </div>
+    </div>,
+    document.body
   )
 }
 
@@ -463,12 +498,18 @@ function SuccessView({
   change,
   paymentMethod,
   onSaveReceipt,
+  onPrintReceipt,
   onDone,
+  isPrintingReceipt,
+  printMessage,
 }: {
   change: number
   paymentMethod: PaymentMethod
   onSaveReceipt: () => void
+  onPrintReceipt: () => void
   onDone: () => void
+  isPrintingReceipt: boolean
+  printMessage: { type: 'success' | 'error'; text: string } | null
 }) {
   return (
     <motion.div
@@ -499,18 +540,38 @@ function SuccessView({
         </div>
       )}
 
+      {printMessage && (
+        <div className={cn(
+          'mt-4 w-full rounded-xl px-3 py-2 text-xs font-medium',
+          printMessage.type === 'success'
+            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+            : 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+        )}>
+          {printMessage.text}
+        </div>
+      )}
+
       {/* Receipt & Done buttons */}
-      <div className="mt-5 flex w-full gap-2">
+      <div className="mt-5 grid w-full grid-cols-3 gap-2">
         <Button
           variant="outline"
-          className="flex-1"
+          className="w-full"
           onClick={onSaveReceipt}
         >
           <ImageDown className="mr-1.5 h-4 w-4" />
-          Simpan Struk
+          Simpan
         </Button>
         <Button
-          className="flex-1"
+          variant="outline"
+          className="w-full"
+          onClick={onPrintReceipt}
+          disabled={isPrintingReceipt}
+        >
+          <Printer className="mr-1.5 h-4 w-4" />
+          {isPrintingReceipt ? 'Cetak...' : 'Cetak'}
+        </Button>
+        <Button
+          className="w-full"
           onClick={onDone}
         >
           Selesai

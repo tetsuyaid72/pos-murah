@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     // Build conditions
     const conditions = []
 
-    if (planFilter && ['BASIC', 'PRO', 'BUSINESS', 'ENTERPRISE'].includes(planFilter)) {
-      conditions.push(eq(memberships.plan, planFilter as 'BASIC' | 'PRO' | 'BUSINESS' | 'ENTERPRISE'))
+    if (planFilter && ['FREE', 'PRO', 'BUSINESS'].includes(planFilter)) {
+      conditions.push(eq(memberships.plan, planFilter as 'FREE' | 'PRO' | 'BUSINESS'))
     }
 
     if (trialFilter === 'active') {

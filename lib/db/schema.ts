@@ -51,7 +51,7 @@ export const stores = pgTable('stores', {
 export const memberships = pgTable('memberships', {
   id: text('id').primaryKey().$defaultFn(() => generateId()),
   storeId: text('store_id').notNull().unique().references(() => stores.id, { onDelete: 'cascade' }),
-  plan: text('plan', { enum: ['BASIC', 'PRO', 'BUSINESS', 'ENTERPRISE'] }).notNull().default('BASIC'),
+  plan: text('plan', { enum: ['FREE', 'PRO', 'BUSINESS'] }).notNull().default('FREE'),
   isTrial: boolean('is_trial').notNull().default(true),
   trialStartAt: timestamp('trial_start_at').notNull().defaultNow(),
   trialEndAt: timestamp('trial_end_at').notNull(),
@@ -190,7 +190,7 @@ export const payments = pgTable('payments', {
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   amount: integer('amount').notNull().default(49900),
-  plan: text('plan', { enum: ['BASIC', 'PRO', 'BUSINESS', 'ENTERPRISE'] }).notNull().default('PRO'),
+  plan: text('plan', { enum: ['PRO', 'BUSINESS'] }).notNull().default('PRO'),
   billingPeriod: text('billing_period', { enum: ['monthly', 'yearly'] }).notNull().default('monthly'),
   originalPrice: integer('original_price').notNull().default(49900),
   discountPercent: integer('discount_percent').notNull().default(0),

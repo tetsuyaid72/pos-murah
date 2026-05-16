@@ -17,14 +17,14 @@ export function UpgradePopup() {
   const { plan, paymentStatus } = useSubscriptionStore()
 
   // Determine what to upsell based on current plan
-  const isBasic = plan === 'basic'
+  const isFree = plan === 'free'
   const isPro = plan === 'pro'
   const isPending = paymentStatus === 'pending'
-  const shouldShow = (isBasic || isPro) && paymentStatus === 'approved'
+  const shouldShow = (isFree || isPro) && paymentStatus === 'approved'
 
-  const nextPlan = isBasic ? 'PRO' : 'BUSINESS'
-  const nextPlanInfo = isBasic ? PLANS.PRO : PLANS.BUSINESS
-  const nextPlanPrice = isBasic ? PRICING.PRO.monthly : PRICING.BUSINESS.monthly
+  const nextPlan = isFree ? 'PRO' : 'BUSINESS'
+  const nextPlanInfo = isFree ? PLANS.PRO : PLANS.BUSINESS
+  const nextPlanPrice = isFree ? PRICING.PRO.monthly : PRICING.BUSINESS.monthly
   const ctaHref = isPending ? '/successpayment' : '/pricing'
   const ctaLabel = isPending ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
 
@@ -56,7 +56,7 @@ export function UpgradePopup() {
       <DialogHeader>
         <DialogTitle>
           <span className="flex items-center gap-2">
-            {isBasic ? (
+            {isFree ? (
               <Zap className="h-5 w-5 text-emerald-500" />
             ) : (
               <ShieldCheck className="h-5 w-5 text-emerald-500" />
@@ -68,7 +68,7 @@ export function UpgradePopup() {
       </DialogHeader>
 
       <p className="text-sm text-muted-foreground mb-5">
-        {isBasic
+        {isFree
           ? 'Kelola tim dan promo otomatis untuk meningkatkan penjualan.'
           : 'Buka multi-cabang dan akses unlimited untuk bisnis yang berkembang.'}
       </p>
