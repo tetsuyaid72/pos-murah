@@ -152,7 +152,9 @@ function SidebarContent({
       </nav>
 
       <div className="shrink-0 px-3 pb-3">
-        <PlanCard collapsed={collapsed} plan={plan} isPaidPlan={isPaidPlan} ctaHref={ctaHref} onNavigate={onNavigate} />
+        {!isPaidPlan && (
+          <PlanCard collapsed={collapsed} ctaHref={ctaHref} onNavigate={onNavigate} />
+        )}
         <FooterActions
           collapsed={collapsed}
           isDark={isDark}
@@ -251,23 +253,19 @@ function StoreHeader({
 
 function PlanCard({
   collapsed,
-  plan,
-  isPaidPlan,
   ctaHref,
   onNavigate,
 }: {
   collapsed: boolean
-  plan: PlanDisplay
-  isPaidPlan: boolean
   ctaHref: string
   onNavigate?: () => void
 }) {
   if (collapsed) {
     return (
       <Link
-        href={isPaidPlan ? '/settings' : ctaHref}
+        href={ctaHref}
         onClick={onNavigate}
-        title={isPaidPlan ? plan.label : 'Upgrade'}
+        title="Upgrade"
         className="mb-3 flex h-11 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300"
       >
         <Crown className="h-5 w-5" />
@@ -275,21 +273,6 @@ function PlanCard({
     )
   }
 
-  if (isPaidPlan) {
-    return (
-      <div className="mb-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 p-3 shadow-sm dark:border-emerald-500/20 dark:bg-emerald-500/10">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
-            <Crown className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">{plan.label}</p>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">Paket aktif</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="mb-3 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10">
