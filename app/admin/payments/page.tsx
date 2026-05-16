@@ -20,7 +20,7 @@ interface Payment {
   id: string
   amount: number
   plan: 'PRO' | 'BUSINESS'
-  billingPeriod: 'monthly' | 'yearly'
+  billingPeriod: 'lifetime'
   originalPrice: number
   discountPercent: number
   discountAmount: number
@@ -273,7 +273,7 @@ export default function AdminPaymentsPage() {
                           <div className="space-y-0.5">
                             <p>{formatRupiah(payment.finalAmount ?? payment.amount)}</p>
                             <p className="text-[10px] font-normal text-muted-foreground">
-                              {payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Tahunan'}
+                              {payment.plan} · Akses selamanya
                             </p>
                             {payment.promoType && (
                               <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -350,7 +350,7 @@ export default function AdminPaymentsPage() {
                       <span>{formatRupiah(payment.finalAmount ?? payment.amount)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Tahunan'}</span>
+                      <span>{payment.plan} · Akses selamanya</span>
                       {payment.promoType && <span className="font-semibold text-emerald-600 dark:text-emerald-400">{payment.promoType}</span>}
                     </div>
                     {payment.promoType && (

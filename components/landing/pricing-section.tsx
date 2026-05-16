@@ -48,7 +48,7 @@ interface PricingCardProps {
 }
 
 function PricingCard({ plan, planKey, href, cta, popular = false }: PricingCardProps) {
-  const displayPricing = getDisplayPricing(planKey, 'monthly', true)
+  const displayPricing = getDisplayPricing(planKey, 'lifetime', true)
 
   return (
     <div
@@ -82,7 +82,7 @@ function PricingCard({ plan, planKey, href, cta, popular = false }: PricingCardP
             <span className="text-4xl font-bold tracking-tight text-emerald-700">
               {formatPrice(displayPricing.finalPrice)}
             </span>
-            <span className="pb-1 text-sm text-slate-500">/bulan</span>
+            <span className="pb-1 text-sm text-slate-500">akses selamanya</span>
           </div>
         </div>
       </div>

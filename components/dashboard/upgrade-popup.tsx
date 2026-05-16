@@ -24,7 +24,7 @@ export function UpgradePopup() {
 
   const nextPlan = isFree ? 'PRO' : 'BUSINESS'
   const nextPlanInfo = isFree ? PLANS.PRO : PLANS.BUSINESS
-  const nextPlanPrice = isFree ? PRICING.PRO.monthly : PRICING.BUSINESS.monthly
+  const nextPlanPrice = isFree ? PRICING.PRO.lifetime : PRICING.BUSINESS.lifetime
   const ctaHref = isPending ? '/successpayment' : '/pricing'
   const ctaLabel = isPending ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
 
@@ -89,7 +89,7 @@ export function UpgradePopup() {
       <div className="rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4 mb-6">
         <div className="flex items-baseline gap-1">
           <span className="text-2xl font-bold text-foreground">{formatPrice(nextPlanPrice)}</span>
-          <span className="text-sm text-muted-foreground">/ bulan</span>
+          <span className="text-sm text-muted-foreground">akses selamanya</span>
         </div>
       </div>
 

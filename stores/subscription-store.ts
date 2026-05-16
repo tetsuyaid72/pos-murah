@@ -57,7 +57,7 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
   persist(
     (set, get) => ({
       plan: null,
-      billingPeriod: 'monthly',
+      billingPeriod: 'lifetime',
       paymentStatus: 'none',
       paymentDate: null,
       pendingPaymentSummary: null,
@@ -146,7 +146,7 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
       resetSubscription: () => {
         set({
           plan: null,
-          billingPeriod: 'monthly',
+          billingPeriod: 'lifetime',
           paymentStatus: 'none',
           paymentDate: null,
           pendingPaymentSummary: null,

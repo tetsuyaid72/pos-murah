@@ -115,7 +115,7 @@ function PaymentContent() {
           method: 'QRIS',
           proofUrl,
           plan: selectedPlan.apiPlan,
-          billingPeriod: 'monthly',
+          billingPeriod: 'lifetime',
         }),
       })
       const data = await res.json().catch(() => ({}))

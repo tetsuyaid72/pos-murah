@@ -74,9 +74,9 @@ function getEffectiveLimit(
 function getUpgradeSuggestion(currentPlan: PlanType): string {
   switch (currentPlan) {
     case 'FREE':
-      return 'Upgrade ke Pro (Rp 49.900/bulan) untuk limit lebih besar.'
+      return 'Upgrade ke Pro (Rp 50.000, akses selamanya) untuk limit lebih besar.'
     case 'PRO':
-      return 'Upgrade ke Business (Rp 99.900/bulan) untuk akses unlimited.'
+      return 'Upgrade ke Business (Rp 100.000, akses selamanya) untuk akses unlimited.'
     default:
       return 'Hubungi admin untuk menambah limit.'
   }

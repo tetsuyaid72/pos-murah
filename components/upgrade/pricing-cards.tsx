@@ -25,7 +25,7 @@ export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligibl
       {PLAN_KEYS.map((planKey) => {
         const pricingKey = planKey.toUpperCase() as 'PRO' | 'BUSINESS'
         const planInfo = PLANS[pricingKey]
-        const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
+        const displayPricing = getDisplayPricing(pricingKey, 'lifetime', isNewUserPromoEligible)
         const isSelected = selectedPlan === planKey
         const isPopular = planInfo.popular
         const Icon = PLAN_ICONS[planKey]
@@ -82,13 +82,13 @@ export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligibl
                   'text-2xl font-bold',
                   isNewUserPromoEligible ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
                 )}>
-                  {formatPrice(displayPricing.monthlyEquivalent)}
+                  {formatPrice(displayPricing.lifetimePrice)}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">/bulan</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">akses selamanya</span>
               </div>
               {isNewUserPromoEligible && (
                 <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  Sekarang {formatPrice(displayPricing.finalPrice)} /bulan
+                  Sekarang {formatPrice(displayPricing.finalPrice)} akses selamanya
                 </p>
               )}
             </div>

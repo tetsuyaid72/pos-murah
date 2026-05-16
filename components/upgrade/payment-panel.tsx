@@ -52,7 +52,7 @@ export function UpgradePaymentPanel({
   const { submitPayment } = useSubscriptionStore()
 
   const pricingKey = selectedPlan.toUpperCase() as 'PRO' | 'BUSINESS'
-  const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
+  const displayPricing = getDisplayPricing(pricingKey, 'lifetime', isNewUserPromoEligible)
   const promoPricing = displayPricing.promo
   const formattedPrice = formatPrice(displayPricing.finalPrice)
 
@@ -170,7 +170,7 @@ export function UpgradePaymentPanel({
             method: activeTab === 'qris' ? 'QRIS' : 'BANK_TRANSFER',
             proofUrl: uploadedUrl,
             plan: selectedPlan.toUpperCase(),
-            billingPeriod: 'monthly',
+            billingPeriod: 'lifetime',
             amount: promoPricing.finalAmount,
             originalPrice: promoPricing.originalPrice,
             discountPercent: promoPricing.discountPercent,

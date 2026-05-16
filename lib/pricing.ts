@@ -1,7 +1,7 @@
 /**
  * Pricing Constants — Warung Madura POS
  *
- * Centralized pricing configuration for all plans and billing periods.
+ * Centralized pricing configuration for one-time lifetime access plans.
  * Paid plans: PRO / BUSINESS. FREE is used only for trial/free account state.
  *
  * Harga dalam Rupiah (integer, tanpa desimal).
@@ -9,7 +9,7 @@
 
 import type { PlanType } from '@/lib/features'
 
-export type BillingPeriod = 'monthly' | 'yearly'
+export type BillingPeriod = 'lifetime'
 export type PaidPlanType = Exclude<PlanType, 'FREE'>
 export type NewUserPromoInput = {
   user?: { createdAt?: string | Date | null } | null
@@ -19,8 +19,7 @@ export type NewUserPromoInput = {
 }
 
 export interface PlanPricing {
-  monthly: number
-  yearly: number
+  lifetime: number
 }
 
 export interface PromoPricing {
@@ -50,7 +49,7 @@ export interface PlanInfo {
   }
 }
 
-export const NEW_USER_DISCOUNT_PERCENT = 60
+export const NEW_USER_DISCOUNT_PERCENT = 0
 export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
 
 /**
@@ -58,22 +57,11 @@ export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
  */
 export const PRICING: Record<PaidPlanType, PlanPricing> = {
   PRO: {
-    monthly: 49_900,
-    yearly: 479_000,
+    lifetime: 50_000,
   },
   BUSINESS: {
-    monthly: 99_900,
-    yearly: 949_000,
+    lifetime: 100_000,
   },
-}
-
-/**
- * Get the savings percentage for yearly billing.
- */
-export function getYearlySavingsPercent(plan: keyof typeof PRICING): number {
-  const { monthly, yearly } = PRICING[plan]
-  const monthlyTotal = monthly * 12
-  return Math.round(((monthlyTotal - yearly) / monthlyTotal) * 100)
 }
 
 /**
@@ -119,17 +107,8 @@ export function getPromoPricing(
 }
 
 export function isEligibleForNewUserPromo(input: NewUserPromoInput): boolean {
-  const payments = input.payments ?? []
-  const memberships = input.memberships ?? []
-  const hasApprovedPayment = payments.some((payment) => payment.status === 'APPROVED')
-  const hasPaidMembership = memberships.some((membership) => membership.isTrial === false)
-
-  if (hasApprovedPayment || hasPaidMembership) return false
-  if (input.membership?.isTrial === false) return false
-  if (input.membership?.isTrial) return true
-  if (input.user?.createdAt) return true
-
-  return !payments.length && !memberships.length
+  void input
+  return false
 }
 
 /**
@@ -183,18 +162,10 @@ export const PLANS: Record<PaidPlanType, PlanInfo> = {
 }
 
 /**
- * Get the price for a specific plan and billing period.
+ * Get the one-time lifetime price for a specific plan.
  */
 export function getPlanPrice(plan: PaidPlanType, period: BillingPeriod): number {
   return PRICING[plan][period]
-}
-
-/**
- * Get monthly equivalent price (for yearly, divide by 12).
- */
-export function getMonthlyEquivalent(plan: keyof typeof PRICING, period: BillingPeriod): number {
-  if (period === 'monthly') return PRICING[plan].monthly
-  return Math.round(PRICING[plan].yearly / 12)
 }
 
 export function getDisplayPricing(
@@ -204,14 +175,11 @@ export function getDisplayPricing(
 ) {
   const normalPrice = getPlanPrice(plan, period)
   const promo = getPromoPricing(normalPrice, isPromoEligible)
-  const monthlyEquivalent = period === 'yearly'
-    ? Math.round(promo.finalAmount / 12)
-    : promo.finalAmount
 
   return {
     normalPrice,
     finalPrice: promo.finalAmount,
-    monthlyEquivalent,
+    lifetimePrice: promo.finalAmount,
     promo,
   }
 }

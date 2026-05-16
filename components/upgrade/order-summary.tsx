@@ -12,7 +12,7 @@ interface OrderSummaryProps {
 export function OrderSummary({ selectedPlan, isNewUserPromoEligible = false }: OrderSummaryProps) {
   const pricingKey = selectedPlan.toUpperCase() as 'PRO' | 'BUSINESS'
   const planInfo = PLANS[pricingKey]
-  const displayPricing = getDisplayPricing(pricingKey, 'monthly', isNewUserPromoEligible)
+  const displayPricing = getDisplayPricing(pricingKey, 'lifetime', isNewUserPromoEligible)
   const formattedPrice = formatPrice(displayPricing.finalPrice)
 
   return (
@@ -29,7 +29,7 @@ export function OrderSummary({ selectedPlan, isNewUserPromoEligible = false }: O
         <div className="flex items-center justify-between">
           <span className="text-sm text-slate-600 dark:text-slate-300">Periode</span>
           <span className="text-sm font-medium text-slate-900 dark:text-white">
-            Bulanan
+            Akses selamanya
           </span>
         </div>
         {isNewUserPromoEligible && (
@@ -63,7 +63,7 @@ export function OrderSummary({ selectedPlan, isNewUserPromoEligible = false }: O
             </span>
           </div>
           <p className="mt-0.5 text-right text-xs text-slate-500 dark:text-slate-400">
-            / bulan
+            akses selamanya
           </p>
         </div>
       </div>

@@ -107,7 +107,8 @@ function parsePlan(plan: unknown): PaidPlanType {
 }
 
 function parseBillingPeriod(period: unknown): BillingPeriod {
-  return period === 'yearly' ? 'yearly' : 'monthly'
+  void period
+  return 'lifetime'
 }
 
 export async function GET() {

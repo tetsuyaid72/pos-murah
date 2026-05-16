@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   },
   description: 'Sistem Point of Sale modern untuk UMKM — kelola transaksi, stok, dan laporan dengan mudah.',
   applicationName: 'Warung Madura POS',
+  icons: {
+    icon: '/app-icon.svg',
+    shortcut: '/app-icon.svg',
+    apple: '/app-icon.svg',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
