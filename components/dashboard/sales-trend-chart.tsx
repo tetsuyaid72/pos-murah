@@ -38,16 +38,21 @@ const MODE_TABS: { value: ChartMode; label: string }[] = [
 
 const DAYS_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
+function getPointLabel(point: TrendDataPoint, pointCount: number) {
+  if (point.date.includes('T')) {
+    const d = new Date(point.date)
+    return `${d.getHours().toString().padStart(2, '0')}:00`
+  }
+
+  const d = new Date(`${point.date}T00:00:00`)
+  return pointCount <= 7 ? DAYS_SHORT[d.getDay()] : `${d.getDate()}/${d.getMonth() + 1}`
+}
+
 export function SalesTrendChart({ trend, compact = false, hideHeader = false }: SalesTrendChartProps) {
   const [mode, setMode] = useState<ChartMode>('revenue')
   const chartData = trend.map((point) => {
-    const d = new Date(point.date + 'T00:00:00')
-    const label = trend.length <= 7
-      ? DAYS_SHORT[d.getDay()]
-      : `${d.getDate()}/${d.getMonth() + 1}`
-
     return {
-      label,
+      label: getPointLabel(point, trend.length),
       date: point.date,
       revenue: point.revenue,
       transactions: point.transactions,

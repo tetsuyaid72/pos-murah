@@ -19,6 +19,34 @@ import { PLAN_LIMITS, normalizePlanType } from '@/lib/features'
 
 type DashboardRange = 'today' | '7days' | '30days'
 
+function pad(value: number) {
+  return value.toString().padStart(2, '0')
+}
+
+function toLocalDateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+function toLocalHourKey(date: Date) {
+  return `${toLocalDateKey(date)}T${pad(date.getHours())}:00:00`
+}
+
+function toTrendKey(value: Date | string | null | undefined, hourly = false) {
+  if (!value) return ''
+  if (value instanceof Date) return hourly ? toLocalHourKey(value) : toLocalDateKey(value)
+
+  const rawValue = String(value)
+  const isoDateTimeMatch = rawValue.match(/^\d{4}-\d{2}-\d{2}[ T]\d{2}/)
+  if (hourly && isoDateTimeMatch) return `${isoDateTimeMatch[0].replace(' ', 'T')}:00:00`
+
+  const isoDateMatch = rawValue.match(/^\d{4}-\d{2}-\d{2}/)
+  if (!hourly && isoDateMatch) return isoDateMatch[0]
+
+  const parsedDate = new Date(rawValue)
+  if (Number.isNaN(parsedDate.getTime())) return rawValue
+  return hourly ? toLocalHourKey(parsedDate) : toLocalDateKey(parsedDate)
+}
+
 function getDateRange(range: DashboardRange) {
   const now = new Date()
 
@@ -79,17 +107,6 @@ export async function GET(request: NextRequest) {
     if (from < earliestAllowed) {
       from.setTime(earliestAllowed.getTime())
     }
-
-    // =========================================================================
-    // DEBUG: Log date range
-    // =========================================================================
-    console.log('[Dashboard API] ===========================')
-    console.log('[Dashboard API] storeId:', storeId)
-    console.log('[Dashboard API] range:', range)
-    console.log('[Dashboard API] from:', from.toISOString())
-    console.log('[Dashboard API] to:', to.toISOString())
-    console.log('[Dashboard API] prevFrom:', prevFrom.toISOString())
-    console.log('[Dashboard API] prevTo:', prevTo.toISOString())
 
     // =========================================================================
     // 1. KPI: Current period — Revenue + Transaction count
@@ -189,9 +206,14 @@ export async function GET(request: NextRequest) {
     //    PostgreSQL: createdAt is a proper timestamp column.
     //    Use DATE() cast to group by calendar date.
     // =========================================================================
+    const isHourlyTrend = range === 'today'
+    const trendBucket = isHourlyTrend
+      ? sql<string>`date_trunc('hour', ${transactions.createdAt})`
+      : sql<string>`DATE(${transactions.createdAt})`
+
     const trendRevenue = await db
       .select({
-        date: sql<string>`DATE(${transactions.createdAt})`.as('trend_date'),
+        date: trendBucket.as('trend_date'),
         revenue: sql<number>`coalesce(sum(${transactions.totalAmount}), 0)`,
         count: count(),
       })
@@ -205,12 +227,12 @@ export async function GET(request: NextRequest) {
           lte(transactions.createdAt, to),
         )
       )
-      .groupBy(sql`DATE(${transactions.createdAt})`)
-      .orderBy(sql`DATE(${transactions.createdAt})`)
+      .groupBy(trendBucket)
+      .orderBy(trendBucket)
 
     const trendProfit = await db
       .select({
-        date: sql<string>`DATE(${transactions.createdAt})`.as('trend_date'),
+        date: trendBucket.as('trend_date'),
         profit: sql<number>`coalesce(sum(
           (${transactionItems.unitPrice} - ${transactionItems.costPrice}) * ${transactionItems.quantity} - ${transactionItems.discountAmount}
         ), 0)`,
@@ -226,33 +248,35 @@ export async function GET(request: NextRequest) {
           lte(transactions.createdAt, to),
         )
       )
-      .groupBy(sql`DATE(${transactions.createdAt})`)
-      .orderBy(sql`DATE(${transactions.createdAt})`)
+      .groupBy(trendBucket)
+      .orderBy(trendBucket)
 
     // Build lookup maps from raw query results
     const revenueByDate = new Map<string, { revenue: number; count: number }>()
     for (const row of trendRevenue) {
-      revenueByDate.set(row.date, { revenue: Number(row.revenue) || 0, count: row.count })
+      revenueByDate.set(toTrendKey(row.date, isHourlyTrend), { revenue: Number(row.revenue) || 0, count: row.count })
     }
 
     const profitByDate = new Map<string, number>()
     for (const row of trendProfit) {
-      profitByDate.set(row.date, Number(row.profit) || 0)
+      profitByDate.set(toTrendKey(row.date, isHourlyTrend), Number(row.profit) || 0)
     }
 
-    // Fill all days in range (zero-fill missing days so chart is never flat/empty)
+    // Today is plotted per hour; longer ranges are plotted per day.
     const salesTrend: { date: string; revenue: number; transactions: number; profit: number }[] = []
-    for (let i = 0; i < days; i++) {
+    const pointCount = isHourlyTrend ? 24 : days
+    for (let i = 0; i < pointCount; i++) {
       const d = new Date(from)
-      d.setDate(d.getDate() + i)
-      const dateStr = d.toISOString().slice(0, 10)
+      if (isHourlyTrend) d.setHours(i, 0, 0, 0)
+      else d.setDate(d.getDate() + i)
 
-      const revData = revenueByDate.get(dateStr)
+      const trendKey = isHourlyTrend ? toLocalHourKey(d) : toLocalDateKey(d)
+      const revData = revenueByDate.get(trendKey)
       salesTrend.push({
-        date: dateStr,
+        date: trendKey,
         revenue: revData?.revenue ?? 0,
         transactions: revData?.count ?? 0,
-        profit: profitByDate.get(dateStr) ?? 0,
+        profit: profitByDate.get(trendKey) ?? 0,
       })
     }
 
@@ -292,19 +316,10 @@ export async function GET(request: NextRequest) {
     // 7. Sparkline: last N days (max 7) for KPI cards
     // =========================================================================
     const sparkDays = Math.min(days, 7)
-    const revenueSparkline: number[] = []
-    const countSparkline: number[] = []
-    const profitSparkline: number[] = []
-
-    for (let i = sparkDays - 1; i >= 0; i--) {
-      const d = new Date(to)
-      d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().slice(0, 10)
-      const revData = revenueByDate.get(dateStr)
-      revenueSparkline.push(revData?.revenue ?? 0)
-      countSparkline.push(revData?.count ?? 0)
-      profitSparkline.push(profitByDate.get(dateStr) ?? 0)
-    }
+    const sparkPoints = isHourlyTrend ? salesTrend.slice(-7) : salesTrend.slice(-sparkDays)
+    const revenueSparkline = sparkPoints.map((point) => point.revenue)
+    const countSparkline = sparkPoints.map((point) => point.transactions)
+    const profitSparkline = sparkPoints.map((point) => point.profit)
 
     // =========================================================================
     // 8. Compute trend percentages
@@ -327,20 +342,6 @@ export async function GET(request: NextRequest) {
     const profitTrend = prevProfit > 0
       ? ((totalProfit - prevProfit) / prevProfit) * 100
       : totalProfit > 0 ? 100 : 0
-
-    // =========================================================================
-    // DEBUG: Final output log
-    // =========================================================================
-    console.log('[Dashboard API] RESULTS:')
-    console.log({
-      totalRevenue,
-      totalProfit,
-      totalTransactions,
-      trendCount: salesTrend.length,
-      topProductsCount: topProducts.length,
-      trendSample: salesTrend.slice(0, 3),
-    })
-    console.log('[Dashboard API] ===========================')
 
     // =========================================================================
     // Response
