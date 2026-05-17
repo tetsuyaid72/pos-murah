@@ -7,14 +7,10 @@ import { NextResponse } from 'next/server'
 import { eq, and, desc } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { memberships, payments } from '@/lib/db/schema'
+import { payments } from '@/lib/db/schema'
 import { normalizeStoragePublicUrl } from '@/lib/supabase'
 import {
-  NEW_USER_DISCOUNT_PERCENT,
-  NEW_USER_PROMO_CODE,
-  PRICING,
-  getPromoPricing,
-  isEligibleForNewUserPromo,
+  getDisplayPricing,
   type BillingPeriod,
   type PaidPlanType,
 } from '@/lib/pricing'
@@ -48,27 +44,14 @@ export async function POST(request: Request) {
       ? normalizeStoragePublicUrl(body.proofUrl)
       : null
     const plan = parsePlan(body.plan)
-    const billingPeriod = parseBillingPeriod(body.billingPeriod)
-    const originalPrice = PRICING[plan][billingPeriod]
+    const requestedBillingPeriod = parseBillingPeriod(body.billingPeriod)
+    const billingPeriod: BillingPeriod = plan === 'PRO' ? requestedBillingPeriod : 'lifetime'
+    const displayPricing = getDisplayPricing(plan, billingPeriod, false)
 
-    const [membership, paymentHistory] = await Promise.all([
-      db.query.memberships.findFirst({
-        where: eq(memberships.storeId, session.storeId),
-      }),
-      db.query.payments.findMany({
-        where: eq(payments.userId, session.userId),
-      }),
-    ])
-    const isNewUserPromoEligible = isEligibleForNewUserPromo({
-      membership,
-      memberships: membership ? [membership] : [],
-      payments: paymentHistory,
-    })
-    const promoPricing = getPromoPricing(originalPrice, isNewUserPromoEligible, NEW_USER_DISCOUNT_PERCENT)
+    const promoPricing = displayPricing.promo
 
-    console.log('[Pricing Promo]', {
+    console.log('[Pricing]', {
       plan,
-      isNewUserPromoEligible,
       originalPrice: promoPricing.originalPrice,
       discountPercent: promoPricing.discountPercent,
       finalAmount: promoPricing.finalAmount,
@@ -85,8 +68,8 @@ export async function POST(request: Request) {
       discountPercent: promoPricing.discountPercent,
       discountAmount: promoPricing.discountAmount,
       finalAmount: promoPricing.finalAmount,
-      promoCode: promoPricing.isPromoApplied ? NEW_USER_PROMO_CODE : null,
-      promoType: promoPricing.isPromoApplied ? NEW_USER_PROMO_CODE : null,
+      promoCode: promoPricing.promoCode,
+      promoType: promoPricing.promoType,
       method,
       proofUrl,
       status: 'PENDING',
@@ -107,8 +90,7 @@ function parsePlan(plan: unknown): PaidPlanType {
 }
 
 function parseBillingPeriod(period: unknown): BillingPeriod {
-  void period
-  return 'lifetime'
+  return period === 'monthly' ? 'monthly' : 'lifetime'
 }
 
 export async function GET() {

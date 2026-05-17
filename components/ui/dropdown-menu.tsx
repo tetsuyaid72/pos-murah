@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface DropdownMenuProps {
@@ -29,6 +30,7 @@ interface DropdownMenuItemProps {
 type DropdownMenuControlProps = {
   open?: boolean
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>
+  menuRef?: React.RefObject<HTMLDivElement | null>
 }
 
 type DropdownMenuItemControlProps = {
@@ -58,6 +60,7 @@ function DropdownMenu({ children }: DropdownMenuProps) {
         return React.cloneElement(child, {
           open,
           setOpen,
+          menuRef: ref,
         } as DropdownMenuControlProps)
       })}
     </div>
@@ -91,15 +94,43 @@ function DropdownMenuContent({
   sideOffset = 8,
   open,
   setOpen,
+  menuRef,
 }: DropdownMenuContentProps & DropdownMenuControlProps) {
-  if (!open) return null
+  const [position, setPosition] = useState<React.CSSProperties>({})
 
-  return (
+  useEffect(() => {
+    if (!open || !menuRef?.current) return
+
+    const updatePosition = () => {
+      const rect = menuRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const width = 176
+      setPosition({
+        position: 'fixed',
+        top: rect.bottom + sideOffset,
+        left: align === 'end' ? Math.max(8, rect.right - width) : rect.left,
+        minWidth: width,
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [align, menuRef, open, sideOffset])
+
+  if (!open || typeof document === 'undefined') return null
+
+  return createPortal(
     <div
-      style={{ marginTop: sideOffset }}
+      style={position}
+      onMouseDown={(event) => event.stopPropagation()}
       className={cn(
-        'absolute top-full z-50 min-w-44 rounded-2xl border border-border/60 bg-popover p-1.5 text-popover-foreground shadow-xl',
-        align === 'end' ? 'right-0' : 'left-0',
+        'z-[100] rounded-2xl border border-border/60 bg-popover p-1.5 text-popover-foreground shadow-xl',
         className
       )}
     >
@@ -114,7 +145,8 @@ function DropdownMenuContent({
 
         return child
       })}
-    </div>
+    </div>,
+    document.body
   )
 }
 

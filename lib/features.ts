@@ -30,12 +30,12 @@ export const QUICK_TRIAL_LIMITS = {
 export const PLAN_LIMITS = {
   max_products: {
     FREE: 50,
-    PRO: 150,
+    PRO: 200,
     BUSINESS: 999999,
   },
   max_transactions_monthly: {
     FREE: 300,
-    PRO: 250,
+    PRO: 500,
     BUSINESS: 999999,
   },
   max_cashiers: {
@@ -45,7 +45,7 @@ export const PLAN_LIMITS = {
   },
   max_customers: {
     FREE: 50,
-    PRO: 500,
+    PRO: 100,
     BUSINESS: 999999,
   },
   report_history_days: {
@@ -70,10 +70,10 @@ export const FEATURE_DEFAULTS: Record<string, Record<PlanType, boolean | number>
   // =========================================================================
   // LIMITS (numeric)
   // =========================================================================
-  max_products: { FREE: 50, PRO: 150, BUSINESS: 999999 },
-  max_transactions_monthly: { FREE: 300, PRO: 250, BUSINESS: 999999 },
+  max_products: { FREE: 50, PRO: 200, BUSINESS: 999999 },
+  max_transactions_monthly: { FREE: 300, PRO: 500, BUSINESS: 999999 },
   max_cashiers: { FREE: 1, PRO: 5, BUSINESS: 999999 },
-  max_customers: { FREE: 50, PRO: 500, BUSINESS: 999999 },
+  max_customers: { FREE: 50, PRO: 100, BUSINESS: 999999 },
   report_history_days: { FREE: 30, PRO: 365, BUSINESS: 999999 },
   storage_mb: { FREE: 100, PRO: 1024, BUSINESS: 10240 },
 

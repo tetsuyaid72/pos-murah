@@ -22,9 +22,11 @@ import { useTransactionStore } from '@/stores/transaction-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { thermalPrinterService } from '@/lib/printer/thermal-printer-service'
-import type { PaymentMethod, Transaction } from '@/types'
+import { queueOfflineTransaction } from '@/lib/offline-transactions'
+import type { Customer, PaymentMethod, Transaction } from '@/types'
 
 const ReceiptPreview = dynamic(
   () => import('@/components/pos/receipt-preview').then((mod) => mod.ReceiptPreview),
@@ -45,7 +47,7 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; icon: typeof Bankn
 ]
 
 export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
-  const { items, getTotal, getSubtotal, paymentMethod, setPaymentMethod, clearCart, discountAmount, discountType } =
+  const { items, getTotal, getSubtotal, paymentMethod, setPaymentMethod, clearCart, discountAmount, discountType, customerId, setCustomerId } =
     useCartStore()
   const { fetchProducts } = useProductStore()
   const { addTransaction } = useTransactionStore()
@@ -66,6 +68,9 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
   const [showReceipt, setShowReceipt] = useState(false)
   const [isPrintingReceipt, setIsPrintingReceipt] = useState(false)
   const [printMessage, setPrintMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [newCustomerName, setNewCustomerName] = useState('')
+  const [debtError, setDebtError] = useState('')
 
   const total = getTotal()
   const subtotal = getSubtotal()
@@ -77,7 +82,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       ? paidNum >= total
       : paymentMethod === 'qris'
         ? true
-        : true // debt
+        : Boolean(customerId)
 
   const resetDialogState = useCallback(() => {
     setAmountPaid('')
@@ -87,6 +92,8 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
     setShowReceipt(false)
     setIsPrintingReceipt(false)
     setPrintMessage(null)
+    setDebtError('')
+    setNewCustomerName('')
   }, [])
 
   const handleClose = useCallback(() => {
@@ -95,7 +102,10 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
   }, [resetDialogState, onClose])
 
   const handlePayment = useCallback(async () => {
-    if (!canPay || isProcessing) return
+    if (!canPay || isProcessing) {
+      if (paymentMethod === 'debt' && !customerId) setDebtError('Pilih pelanggan dulu untuk mencatat hutang.')
+      return
+    }
 
     setIsProcessing(true)
 
@@ -110,24 +120,55 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
       subtotal: item.subtotal,
     }))
 
+    const payload: Record<string, unknown> = {
+      items: txItems,
+      subtotal,
+      discountAmount,
+      discountType: discountType.toUpperCase(),
+      taxAmount: 0,
+      totalAmount: total,
+      paymentMethod: paymentMethod.toUpperCase(),
+      amountPaid: paymentMethod === 'cash' ? paidNum : paymentMethod === 'debt' ? 0 : total,
+      changeAmount: paymentMethod === 'cash' ? Math.max(0, change) : 0,
+      customerId: paymentMethod === 'debt' ? customerId : null,
+      notes: paymentMethod === 'debt' ? 'Hutang pelanggan' : null,
+    }
+
+    const buildReceiptTransaction = (id: string, invoiceNumber: string): Transaction => ({
+      id,
+      invoiceNumber,
+      items: items.map((item) => ({
+        id: generateId(),
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        costPrice: item.costPrice,
+        discountAmount: item.discountAmount,
+        subtotal: item.subtotal,
+      })),
+      subtotal,
+      discountAmount,
+      discountType,
+      taxAmount: 0,
+      totalAmount: total,
+      paymentMethod,
+      amountPaid: paymentMethod === 'cash' ? paidNum : paymentMethod === 'debt' ? 0 : total,
+      changeAmount: paymentMethod === 'cash' ? Math.max(0, change) : 0,
+      customerId: paymentMethod === 'debt' ? customerId : null,
+      cashierId: 'user-1',
+      outletId: 'outlet-1',
+      status: 'completed',
+      notes: paymentMethod === 'debt' ? 'Hutang pelanggan' : null,
+      createdAt: new Date().toISOString(),
+    })
+
     // Save transaction via API (also decrements stock server-side)
     try {
       const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: txItems,
-          subtotal,
-          discountAmount,
-          discountType: discountType.toUpperCase(),
-          taxAmount: 0,
-          totalAmount: total,
-          paymentMethod: paymentMethod.toUpperCase(),
-          amountPaid: paymentMethod === 'cash' ? paidNum : total,
-          changeAmount: paymentMethod === 'cash' ? Math.max(0, change) : 0,
-          customerId: null,
-          notes: null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) {
@@ -143,35 +184,7 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
 
       const { transaction: savedTx } = await res.json()
 
-      // Build local transaction object for receipt display
-      const transaction: Transaction = {
-        id: savedTx.id,
-        invoiceNumber: savedTx.invoiceNumber,
-        items: items.map((item) => ({
-          id: generateId(),
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          costPrice: item.costPrice,
-          discountAmount: item.discountAmount,
-          subtotal: item.subtotal,
-        })),
-        subtotal,
-        discountAmount,
-        discountType,
-        taxAmount: 0,
-        totalAmount: total,
-        paymentMethod,
-        amountPaid: paymentMethod === 'cash' ? paidNum : total,
-        changeAmount: paymentMethod === 'cash' ? Math.max(0, change) : 0,
-        customerId: null,
-        cashierId: 'user-1',
-        outletId: 'outlet-1',
-        status: 'completed',
-        notes: null,
-        createdAt: new Date().toISOString(),
-      }
+      const transaction = buildReceiptTransaction(savedTx.id, savedTx.invoiceNumber)
 
       // Save to local store for dashboard display
       addTransaction(transaction)
@@ -203,11 +216,54 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
           })
       }
     } catch (err) {
-      console.error('Payment error:', err)
+      const offlineId = generateId()
+      const invoiceNumber = `OFF-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${offlineId.slice(0, 6).toUpperCase()}`
+      const transaction = buildReceiptTransaction(offlineId, invoiceNumber)
+
+      queueOfflineTransaction({
+        id: offlineId,
+        payload,
+        receiptTransaction: transaction,
+        createdAt: new Date().toISOString(),
+        lastError: err instanceof Error ? err.message : 'Offline',
+      })
+
+      addTransaction(transaction)
+      setLastTransaction(transaction)
+      setPrintMessage({ type: 'success', text: 'Mode offline: transaksi disimpan lokal dan akan disinkronkan saat online.' })
+      setIsSuccess(true)
     } finally {
       setIsProcessing(false)
     }
-  }, [canPay, isProcessing, items, subtotal, discountAmount, discountType, total, paymentMethod, paidNum, change, addTransaction, fetchProducts, autoPrint, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
+  }, [canPay, isProcessing, paymentMethod, customerId, items, subtotal, discountAmount, discountType, total, paidNum, change, addTransaction, fetchProducts, autoPrint, printerPaperSize, storeName, storeAddress, storePhone, receiptFooter, userName])
+
+  useEffect(() => {
+    if (!open || paymentMethod !== 'debt') return
+
+    fetch('/api/customers')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data: { customers?: Customer[] }) => setCustomers(data.customers ?? []))
+      .catch(() => setCustomers([]))
+  }, [open, paymentMethod])
+
+  const handleAddDebtCustomer = useCallback(async () => {
+    const name = newCustomerName.trim()
+    if (!name) return
+
+    const res = await fetch('/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+
+    if (!res.ok) return
+
+    const data = await res.json() as { customer: Customer }
+    setCustomers((prev) => [data.customer, ...prev])
+    setCustomerId(data.customer.id)
+    setNewCustomerName('')
+    setDebtError('')
+  }, [newCustomerName, setCustomerId])
 
   // Keyboard shortcut: Enter to confirm payment
   useEffect(() => {
@@ -303,6 +359,13 @@ export function PaymentDialog({ open, onClose }: PaymentDialogProps) {
               onPay={handlePayment}
               onClose={handleClose}
               onExactAmount={handleExactAmount}
+              customerId={customerId}
+              setCustomerId={setCustomerId}
+              customers={customers}
+              newCustomerName={newCustomerName}
+              setNewCustomerName={setNewCustomerName}
+              onAddDebtCustomer={handleAddDebtCustomer}
+              debtError={debtError}
             />
           )}
         </AnimatePresence>
@@ -333,6 +396,13 @@ function PaymentForm({
   onPay,
   onClose,
   onExactAmount,
+  customerId,
+  setCustomerId,
+  customers,
+  newCustomerName,
+  setNewCustomerName,
+  onAddDebtCustomer,
+  debtError,
 }: {
   total: number
   paymentMethod: PaymentMethod
@@ -346,6 +416,13 @@ function PaymentForm({
   onPay: () => void
   onClose: () => void
   onExactAmount: () => void
+  customerId: string | null
+  setCustomerId: (id: string | null) => void
+  customers: Customer[]
+  newCustomerName: string
+  setNewCustomerName: (value: string) => void
+  onAddDebtCustomer: () => void
+  debtError: string
 }) {
   return (
     <motion.div
@@ -455,23 +532,50 @@ function PaymentForm({
         </div>
       )}
 
-      {/* QRIS placeholder */}
+      {/* QRIS static: customer scans the physical QRIS sticker at the cashier desk. */}
       {paymentMethod === 'qris' && (
-        <div className="mb-5 rounded-xl border border-dashed p-6 text-center">
-          <QrCode className="mx-auto mb-2 h-12 w-12 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            QR Code akan ditampilkan di sini
-          </p>
+        <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-100">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm dark:bg-slate-950/40 dark:text-emerald-300">
+              <QrCode className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="text-sm font-bold">Pembayaran QRIS fisik</p>
+              <p className="mt-1 text-sm leading-relaxed text-emerald-800/80 dark:text-emerald-100/75">
+                Minta pelanggan scan QRIS yang ditempel di meja kasir, lalu pastikan dana sudah masuk sebelum konfirmasi.
+              </p>
+            </div>
+          </div>
+
         </div>
       )}
 
-      {/* Debt placeholder */}
       {paymentMethod === 'debt' && (
-        <div className="mb-5 rounded-xl border border-dashed p-4 text-center">
-          <BookOpen className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            Transaksi akan dicatat sebagai hutang pelanggan
-          </p>
+        <div className="mb-5 space-y-3 rounded-xl border border-dashed p-4">
+          <div className="flex items-start gap-3">
+            <BookOpen className="mt-0.5 h-5 w-5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-semibold">Pilih pelanggan hutang</p>
+              <p className="text-xs text-muted-foreground">Jika belum ada, tambahkan pelanggan dulu.</p>
+            </div>
+          </div>
+          <Select value={customerId ?? ''} onChange={(e) => setCustomerId(e.target.value || null)}>
+            <option value="">Pilih pelanggan</option>
+            {customers.map((customer) => (
+              <option key={customer.id} value={customer.id}>{customer.name}</option>
+            ))}
+          </Select>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nama pelanggan baru"
+              value={newCustomerName}
+              onChange={(e) => setNewCustomerName(e.target.value)}
+            />
+            <Button type="button" variant="outline" onClick={onAddDebtCustomer} disabled={!newCustomerName.trim()}>
+              Tambah
+            </Button>
+          </div>
+          {debtError ? <p className="text-xs font-medium text-destructive">{debtError}</p> : null}
         </div>
       )}
 
@@ -487,7 +591,7 @@ function PaymentForm({
           : paymentMethod === 'cash'
           ? 'Konfirmasi Pembayaran'
           : paymentMethod === 'qris'
-            ? 'Konfirmasi QRIS'
+            ? 'Pembayaran QRIS Diterima'
             : 'Catat Hutang'}
       </Button>
     </motion.div>

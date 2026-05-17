@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, PRICING, formatPrice, getDisplayPricing } from '@/lib/pricing'
+import { PLANS, PRICING, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 export function PricingSection() {
   return (
@@ -11,7 +11,7 @@ export function PricingSection() {
       <div className="relative mx-auto max-w-6xl px-5 sm:px-6">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-sm sm:px-4 sm:py-1.5 sm:text-xs">
-            Promo User Baru: Diskon {NEW_USER_DISCOUNT_PERCENT}%
+            Harga Promo Launching
           </span>
           <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-950 sm:mt-5 sm:text-3xl md:text-4xl lg:text-5xl">
             Pilih Paket yang Sesuai untuk Warung Anda
@@ -76,13 +76,13 @@ function PricingCard({ plan, planKey, href, cta, popular = false }: PricingCardP
         <div>
           <p className="text-sm text-slate-500">
             <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
-            <span className="ml-2 font-medium text-emerald-700">hemat {NEW_USER_DISCOUNT_PERCENT}%</span>
+            <span className="ml-2 font-medium text-emerald-700">hemat {displayPricing.promo.discountPercent}%</span>
           </p>
           <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
             <span className="text-4xl font-bold tracking-tight text-emerald-700">
               {formatPrice(displayPricing.finalPrice)}
             </span>
-            <span className="pb-1 text-sm text-slate-500">akses selamanya</span>
+            <span className="pb-1 text-sm text-slate-500">{displayPricing.periodLabel}</span>
           </div>
         </div>
       </div>

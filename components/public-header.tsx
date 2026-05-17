@@ -2,7 +2,12 @@ import Link from 'next/link'
 import { Store } from 'lucide-react'
 import { PricingAuthAction } from '@/components/pricing/pricing-auth-action'
 
-export function PublicHeader() {
+interface PublicHeaderProps {
+  authHref?: string
+  authLabel?: string
+}
+
+export function PublicHeader({ authHref, authLabel }: PublicHeaderProps) {
   return (
     <header className="relative left-1/2 z-[100] flex h-14 w-screen -translate-x-1/2 items-center justify-between gap-3 px-4 sm:h-16 sm:px-8">
       <Link href="/" className="flex min-w-0 items-center gap-2.5 justify-self-start">
@@ -14,7 +19,7 @@ export function PublicHeader() {
         </span>
       </Link>
 
-      <PricingAuthAction />
+      <PricingAuthAction authHref={authHref} authLabel={authLabel} />
     </header>
   )
 }

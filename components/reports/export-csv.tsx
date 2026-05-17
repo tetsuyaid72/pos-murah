@@ -1,8 +1,8 @@
 'use client'
 
-import { Download, FileSpreadsheet, FileText, Lock } from 'lucide-react'
+import { FileSpreadsheet, FileText, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { downloadCSV } from '@/lib/export'
+import { downloadCSV, downloadPDF } from '@/lib/export'
 import { usePlanGate } from '@/hooks/use-plan-gate'
 import { PlanLimitModal } from '@/components/plan-limit-modal'
 import type { Transaction } from '@/types'
@@ -25,7 +25,7 @@ export function ExportCSV({ transactions, mobile = false }: ExportCSVProps) {
   const handleExportPDF = () => {
     if (transactions.length === 0) return
     if (!gate('export_pdf')) return
-    // TODO: Implement PDF export when ready
+    downloadPDF(transactions)
   }
 
   return (

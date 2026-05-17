@@ -49,11 +49,16 @@ function checkTrialExpired(membership: { isTrial: boolean; trialEndAt: Date }): 
   return new Date(membership.trialEndAt) <= new Date()
 }
 
+function checkSubscriptionExpired(membership: { plan: string; isTrial: boolean; subscriptionEndAt?: Date | null }): boolean {
+  if (membership.isTrial || membership.plan !== 'PRO' || !membership.subscriptionEndAt) return false
+  return new Date(membership.subscriptionEndAt) <= new Date()
+}
+
 /**
  * Get the effective limit for a store based on their plan and trial status.
  */
 function getEffectiveLimit(
-  membership: { plan: string; isTrial: boolean; trialEndAt: Date },
+  membership: { plan: string; isTrial: boolean; trialEndAt: Date; subscriptionEndAt?: Date | null },
   limitKey: LimitKey
 ): number {
   if (checkTrialActive(membership)) {
@@ -62,7 +67,7 @@ function getEffectiveLimit(
     if (limitKey === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
   }
 
-  if (checkTrialExpired(membership)) return 0
+  if (checkTrialExpired(membership) || checkSubscriptionExpired(membership)) return 0
 
   const plan = normalizePlanType(membership.plan)
   return PLAN_LIMITS[limitKey][plan] ?? PLAN_LIMITS[limitKey].FREE
@@ -74,9 +79,9 @@ function getEffectiveLimit(
 function getUpgradeSuggestion(currentPlan: PlanType): string {
   switch (currentPlan) {
     case 'FREE':
-      return 'Upgrade ke Pro (Rp 50.000, akses selamanya) untuk limit lebih besar.'
+      return 'Upgrade ke Pro (Rp49K/bulan) untuk limit lebih besar.'
     case 'PRO':
-      return 'Upgrade ke Business (Rp 100.000, akses selamanya) untuk akses unlimited.'
+      return 'Upgrade ke Business (Rp199K sekali bayar, akses selamanya) untuk akses unlimited.'
     default:
       return 'Hubungi admin untuk menambah limit.'
   }
@@ -266,6 +271,14 @@ export async function checkFeatureAccess(
     }
   }
 
+  if (checkSubscriptionExpired(membership)) {
+    return {
+      allowed: false,
+      message: 'Langganan Pro Anda telah berakhir. Perpanjang paket untuk melanjutkan menggunakan fitur POS.',
+      plan: normalizePlanType(membership.plan),
+    }
+  }
+
   const { FEATURE_DEFAULTS } = await import('@/lib/features')
   const featureConfig = FEATURE_DEFAULTS[feature]
   const plan = normalizePlanType(membership.plan)
@@ -333,6 +346,14 @@ export async function checkStrictFeatureAccess(
     return {
       allowed: false,
       message: 'Quick Trial Anda telah berakhir.',
+      plan: normalizePlanType(membership.plan),
+    }
+  }
+
+  if (checkSubscriptionExpired(membership)) {
+    return {
+      allowed: false,
+      message: 'Langganan Pro Anda telah berakhir.',
       plan: normalizePlanType(membership.plan),
     }
   }

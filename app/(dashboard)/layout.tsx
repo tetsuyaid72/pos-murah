@@ -3,6 +3,7 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
+import { OfflineSyncStatus } from '@/components/offline/offline-sync-status'
 import { ToastProvider } from '@/components/ui/toast'
 import { AuthProvider } from '@/components/auth-provider'
 import { useUIStore } from '@/stores/ui-store'
@@ -14,7 +15,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { sidebarCollapsed, isMobile } = useUIStore()
+  const { isMobile } = useUIStore()
   const hydrated = useStoreHydration()
 
   if (!hydrated) {
@@ -49,6 +50,8 @@ export default function DashboardLayout({
               {children}
             </main>
           </div>
+
+          <OfflineSyncStatus />
 
           {/* Mobile bottom navigation */}
           {isMobile && <MobileNav />}

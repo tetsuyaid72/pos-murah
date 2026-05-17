@@ -66,6 +66,9 @@ export async function GET() {
             isTrial: user.store.membership.isTrial,
             trialStartAt: user.store.membership.trialStartAt,
             trialEndAt: user.store.membership.trialEndAt,
+            billingPeriod: user.store.membership.billingPeriod,
+            subscriptionStartAt: user.store.membership.subscriptionStartAt,
+            subscriptionEndAt: user.store.membership.subscriptionEndAt,
           }
         : null,
     })

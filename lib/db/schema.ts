@@ -12,7 +12,6 @@ import {
   boolean,
   timestamp,
   index,
-  uniqueIndex,
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
@@ -55,6 +54,9 @@ export const memberships = pgTable('memberships', {
   isTrial: boolean('is_trial').notNull().default(true),
   trialStartAt: timestamp('trial_start_at').notNull().defaultNow(),
   trialEndAt: timestamp('trial_end_at').notNull(),
+  billingPeriod: text('billing_period', { enum: ['monthly', 'lifetime'] }),
+  subscriptionStartAt: timestamp('subscription_start_at'),
+  subscriptionEndAt: timestamp('subscription_end_at'),
   features: jsonb('features').notNull().default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow().$onUpdateFn(() => new Date()),
@@ -191,7 +193,7 @@ export const payments = pgTable('payments', {
   storeId: text('store_id').notNull().references(() => stores.id, { onDelete: 'cascade' }),
   amount: integer('amount').notNull().default(50000),
   plan: text('plan', { enum: ['PRO', 'BUSINESS'] }).notNull().default('PRO'),
-  billingPeriod: text('billing_period', { enum: ['lifetime'] }).notNull().default('lifetime'),
+  billingPeriod: text('billing_period', { enum: ['monthly', 'lifetime'] }).notNull().default('lifetime'),
   originalPrice: integer('original_price').notNull().default(50000),
   discountPercent: integer('discount_percent').notNull().default(0),
   discountAmount: integer('discount_amount').notNull().default(0),

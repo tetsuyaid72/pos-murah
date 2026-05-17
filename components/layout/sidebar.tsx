@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from '@/components/theme-provider'
 import {
   BarChart3,
+  Calculator,
   ChevronLeft,
   Crown,
   LayoutDashboard,
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/pos', label: 'Kasir', icon: ShoppingCart },
   { href: '/products', label: 'Produk', icon: Package },
+  { href: '/hpp', label: 'HPP', icon: Calculator },
   { href: '/transactions', label: 'Transaksi', icon: Receipt },
   { href: '/customers', label: 'Pelanggan', icon: Users },
   { href: '/reports', label: 'Laporan', icon: BarChart3 },
@@ -64,8 +66,8 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'sticky top-0 hidden h-screen shrink-0 border-r border-slate-200 bg-white text-slate-950 shadow-sm transition-all duration-300 ease-out dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 md:flex',
-        sidebarCollapsed ? 'w-20' : 'w-[280px]'
+        'sticky top-0 hidden h-dvh shrink-0 border-r border-slate-200 bg-white text-slate-950 shadow-sm transition-all duration-300 ease-out dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 md:flex',
+        sidebarCollapsed ? 'w-[72px] xl:w-20' : 'w-[clamp(232px,18vw,280px)]'
       )}
     >
       <SidebarContent
@@ -116,13 +118,13 @@ function SidebarContent({
 
       <Separator className="mx-4 w-auto bg-slate-200/80 dark:bg-slate-800" />
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3 [scrollbar-width:thin] [@media(max-height:760px)]:py-2 xl:px-3 xl:py-4">
         {!collapsed && (
           <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
             Navigasi
           </p>
         )}
-        <div className="space-y-1.5">
+        <div className="space-y-1 [@media(max-height:760px)]:space-y-0.5 xl:space-y-1.5">
           {navItems.map((item) => (
             <SidebarNavItem
               key={item.href}
@@ -151,9 +153,11 @@ function SidebarContent({
         )}
       </nav>
 
-      <div className="shrink-0 px-3 pb-3">
+      <div className="shrink-0 px-2.5 pb-2.5 [@media(max-height:760px)]:px-2 [@media(max-height:760px)]:pb-2 xl:px-3 xl:pb-3">
         {!isPaidPlan && (
-          <PlanCard collapsed={collapsed} ctaHref={ctaHref} onNavigate={onNavigate} />
+          <div className="[@media(max-height:760px)]:hidden">
+            <PlanCard collapsed={collapsed} ctaHref={ctaHref} onNavigate={onNavigate} />
+          </div>
         )}
         <FooterActions
           collapsed={collapsed}
@@ -191,7 +195,7 @@ function SidebarNavItem({
       onClick={onNavigate}
       title={collapsed ? item.label : undefined}
       className={cn(
-        'group relative flex h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-all duration-200',
+        'group relative flex h-10 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition-all duration-200 [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:rounded-xl xl:h-11',
         active
           ? 'bg-emerald-50 text-emerald-700 shadow-sm ring-1 ring-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/15'
           : 'text-slate-500 hover:bg-slate-100/80 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
@@ -224,9 +228,9 @@ function StoreHeader({
   plan: PlanDisplay
 }) {
   return (
-    <div className={cn('px-4 py-4', collapsed && 'px-3')}>
-      <div className={cn('flex items-center gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70', collapsed && 'justify-center rounded-2xl p-2')}>
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-emerald-600 text-white shadow-sm dark:border-slate-700">
+    <div className={cn('px-3 py-3 [@media(max-height:760px)]:py-2 xl:px-4 xl:py-4', collapsed && 'px-2.5 xl:px-3')}>
+      <div className={cn('flex items-center gap-3 rounded-3xl border border-slate-200/80 bg-white/80 p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 [@media(max-height:760px)]:rounded-2xl [@media(max-height:760px)]:p-2 xl:p-3', collapsed && 'justify-center rounded-2xl p-2')}>
+        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-emerald-600 text-white shadow-sm dark:border-slate-700 [@media(max-height:760px)]:h-9 [@media(max-height:760px)]:w-9 xl:h-11 xl:w-11">
           {storeLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={storeLogo} alt={storeName || 'Logo toko'} className="h-full w-full object-cover" />
@@ -275,14 +279,14 @@ function PlanCard({
 
 
   return (
-    <div className="mb-3 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-3 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10">
+    <div className="mb-2.5 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-2.5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10 xl:mb-3 xl:p-3">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/20">
           <Crown className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-slate-950 dark:text-slate-50">Upgrade Paket</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
             Upgrade paket untuk buka semua fitur
           </p>
         </div>
@@ -290,7 +294,7 @@ function PlanCard({
       <Link
         href={ctaHref}
         onClick={onNavigate}
-        className={cn(buttonVariants({ size: 'sm' }), 'mt-3 h-9 w-full rounded-2xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700')}
+        className={cn(buttonVariants({ size: 'sm' }), 'mt-2.5 h-8 w-full rounded-2xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700 xl:mt-3 xl:h-9')}
       >
         Upgrade
       </Link>
@@ -318,23 +322,23 @@ function FooterActions({
   onCollapse?: () => void
 }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white/80 p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+    <div className="rounded-3xl border border-slate-200 bg-white/80 p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 [@media(max-height:760px)]:rounded-2xl [@media(max-height:760px)]:border-transparent [@media(max-height:760px)]:bg-transparent [@media(max-height:760px)]:p-0 [@media(max-height:760px)]:shadow-none [@media(max-height:760px)]:dark:bg-transparent xl:p-2">
       <button
         type="button"
         onClick={onToggleTheme}
         className={cn(
-          'flex h-10 w-full items-center gap-3 rounded-2xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+          'flex h-9 w-full items-center gap-3 rounded-2xl px-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50 [@media(max-height:760px)]:justify-center [@media(max-height:760px)]:rounded-xl [@media(max-height:760px)]:px-2 xl:h-10',
           collapsed && 'justify-center px-2'
         )}
         title={collapsed ? `Tema: ${isDark ? 'dark' : 'light'}` : undefined}
       >
         {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-        {!collapsed && <span>{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>}
+        {!collapsed && <span className="[@media(max-height:760px)]:hidden">{isDark ? 'Mode Gelap' : 'Mode Terang'}</span>}
       </button>
 
-      <Separator className="my-2 bg-slate-200 dark:bg-slate-800" />
+      <Separator className="my-1.5 bg-slate-200 dark:bg-slate-800 [@media(max-height:760px)]:hidden xl:my-2" />
 
-      <div className={cn('flex items-center gap-3 rounded-2xl px-3 py-2', collapsed && 'justify-center px-2')}>
+      <div className={cn('flex items-center gap-3 rounded-2xl px-3 py-1.5 [@media(max-height:760px)]:hidden xl:py-2', collapsed && 'justify-center px-2')}>
         <UserAvatar name={userName} imageUrl={userAvatar} size="md" />
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -344,20 +348,20 @@ function FooterActions({
         )}
       </div>
 
-      <div className={cn('mt-2 grid gap-2', collapsed ? 'grid-cols-1' : 'grid-cols-2')}>
+      <div className={cn('mt-1.5 grid gap-1.5 [@media(max-height:760px)]:mt-1 [@media(max-height:760px)]:grid-cols-2 xl:mt-2 xl:gap-2', collapsed ? 'grid-cols-1 [@media(max-height:760px)]:grid-cols-1' : 'grid-cols-2')}>
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={onLogout}
           className={cn(
-            'h-10 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300',
+            'h-9 rounded-2xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300 [@media(max-height:760px)]:h-8 [@media(max-height:760px)]:rounded-xl [@media(max-height:760px)]:bg-slate-100/80 [@media(max-height:760px)]:dark:bg-slate-900 xl:h-10',
             collapsed && 'px-2'
           )}
           title={collapsed ? 'Keluar' : undefined}
         >
           <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Keluar</span>}
+          {!collapsed && <span className="ml-2 [@media(max-height:760px)]:hidden">Keluar</span>}
         </Button>
 
         {onCollapse && (
@@ -367,13 +371,13 @@ function FooterActions({
             size="sm"
             onClick={onCollapse}
             className={cn(
-              'h-10 rounded-2xl text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+              'h-9 rounded-2xl text-slate-500 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50 [@media(max-height:760px)]:h-8 [@media(max-height:760px)]:rounded-xl [@media(max-height:760px)]:bg-slate-100/80 [@media(max-height:760px)]:dark:bg-slate-900 xl:h-10',
               collapsed && 'px-2'
             )}
             title={collapsed ? 'Buka Sidebar' : undefined}
           >
             <ChevronLeft className={cn('h-4 w-4 transition-transform duration-300', collapsed && 'rotate-180')} />
-            {!collapsed && <span className="ml-2">Tutup</span>}
+            {!collapsed && <span className="ml-2 [@media(max-height:760px)]:hidden">Tutup</span>}
           </Button>
         )}
       </div>
@@ -401,11 +405,6 @@ function getDisplayPlan(membership: AuthMembership | null): PlanDisplay {
 }
 
 const PLAN_DISPLAY: Record<string, PlanDisplay> = {
-  FREE: {
-    key: 'FREE',
-    label: 'Free',
-    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  },
   QUICK_TRIAL: {
     key: 'QUICK_TRIAL',
     label: 'Quick Trial',

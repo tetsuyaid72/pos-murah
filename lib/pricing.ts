@@ -1,7 +1,7 @@
 /**
  * Pricing Constants — Warung Madura POS
  *
- * Centralized pricing configuration for one-time lifetime access plans.
+ * Centralized pricing configuration for paid plans.
  * Paid plans: PRO / BUSINESS. FREE is used only for trial/free account state.
  *
  * Harga dalam Rupiah (integer, tanpa desimal).
@@ -9,7 +9,7 @@
 
 import type { PlanType } from '@/lib/features'
 
-export type BillingPeriod = 'lifetime'
+export type BillingPeriod = 'monthly' | 'lifetime'
 export type PaidPlanType = Exclude<PlanType, 'FREE'>
 export type NewUserPromoInput = {
   user?: { createdAt?: string | Date | null } | null
@@ -19,7 +19,15 @@ export type NewUserPromoInput = {
 }
 
 export interface PlanPricing {
+  monthly?: number
   lifetime: number
+}
+
+export interface PlanPriceMeta {
+  originalPrice: number
+  finalPrice: number
+  periodLabel: string
+  accessLabel: string
 }
 
 export interface PromoPricing {
@@ -52,15 +60,31 @@ export interface PlanInfo {
 export const NEW_USER_DISCOUNT_PERCENT = 0
 export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
 
+export const PLAN_PRICE_META: Record<PaidPlanType, PlanPriceMeta> = {
+  PRO: {
+    originalPrice: 99_000,
+    finalPrice: 49_000,
+    periodLabel: '/bulan',
+    accessLabel: 'langganan bulanan',
+  },
+  BUSINESS: {
+    originalPrice: 399_000,
+    finalPrice: 199_000,
+    periodLabel: 'sekali bayar',
+    accessLabel: 'akses selamanya',
+  },
+}
+
 /**
- * Pricing per plan (in Rupiah).
+ * Pricing per plan (in Rupiah). Stored as lifetime for current payment schema compatibility.
  */
 export const PRICING: Record<PaidPlanType, PlanPricing> = {
   PRO: {
-    lifetime: 50_000,
+    monthly: PLAN_PRICE_META.PRO.finalPrice,
+    lifetime: PLAN_PRICE_META.PRO.finalPrice,
   },
   BUSINESS: {
-    lifetime: 100_000,
+    lifetime: PLAN_PRICE_META.BUSINESS.finalPrice,
   },
 }
 
@@ -68,6 +92,10 @@ export const PRICING: Record<PaidPlanType, PlanPricing> = {
  * Format price to Rupiah string.
  */
 export function formatPrice(amount: number): string {
+  if (amount >= 1_000 && amount % 1_000 === 0) {
+    return `Rp${amount / 1_000}K`
+  }
+
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
@@ -122,17 +150,17 @@ export const PLANS: Record<PaidPlanType, PlanInfo> = {
     pricing: PRICING.PRO,
     popular: true,
     features: [
-      '150 produk',
-      '250 transaksi/hari',
-      '5 kasir',
-      '500 pelanggan',
-      'Backup otomatis mingguan',
+      '200 produk',
+      '500 transaksi/hari',
+      '100 pelanggan',
+      'Laporan sampai 365 hari',
+      'Backup & restore data',
     ],
     limits: {
-      products: 150,
-      transactionsMonthly: 250,
+      products: 200,
+      transactionsMonthly: 500,
       cashiers: 5,
-      customers: 500,
+      customers: 100,
       reportHistoryDays: 365,
       storageMb: 1_024,
     },
@@ -146,9 +174,9 @@ export const PLANS: Record<PaidPlanType, PlanInfo> = {
     features: [
       'Unlimited produk',
       'Unlimited transaksi',
-      'Unlimited kasir',
       'Unlimited pelanggan',
-      'Backup otomatis harian',
+      'Laporan tanpa batas',
+      'Backup & restore data',
     ],
     limits: {
       products: 'unlimited',
@@ -165,7 +193,7 @@ export const PLANS: Record<PaidPlanType, PlanInfo> = {
  * Get the one-time lifetime price for a specific plan.
  */
 export function getPlanPrice(plan: PaidPlanType, period: BillingPeriod): number {
-  return PRICING[plan][period]
+  return period === 'monthly' ? PRICING[plan].monthly ?? PRICING[plan].lifetime : PRICING[plan].lifetime
 }
 
 export function getDisplayPricing(
@@ -173,13 +201,27 @@ export function getDisplayPricing(
   period: BillingPeriod,
   isPromoEligible: boolean
 ) {
-  const normalPrice = getPlanPrice(plan, period)
-  const promo = getPromoPricing(normalPrice, isPromoEligible)
+  void period
+  void isPromoEligible
+  const meta = PLAN_PRICE_META[plan]
+  const discountAmount = Math.max(0, meta.originalPrice - meta.finalPrice)
+  const discountPercent = Math.round((discountAmount / meta.originalPrice) * 100)
+  const promo: PromoPricing = {
+    originalPrice: meta.originalPrice,
+    discountPercent,
+    discountAmount,
+    finalAmount: meta.finalPrice,
+    promoCode: 'LAUNCH_PRICE',
+    promoType: 'LAUNCH_PRICE',
+    isPromoApplied: discountAmount > 0,
+  }
 
   return {
-    normalPrice,
-    finalPrice: promo.finalAmount,
-    lifetimePrice: promo.finalAmount,
+    normalPrice: meta.originalPrice,
+    finalPrice: meta.finalPrice,
+    lifetimePrice: meta.finalPrice,
+    periodLabel: meta.periodLabel,
+    accessLabel: meta.accessLabel,
     promo,
   }
 }

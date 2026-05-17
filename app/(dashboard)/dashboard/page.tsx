@@ -17,7 +17,7 @@ import { UpgradePopup } from '@/components/dashboard/upgrade-popup'
 import { TrialExpiredBanner } from '@/components/dashboard/trial-expired-banner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { formatRupiah } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -107,9 +107,9 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden lg:h-screen">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-muted/20 lg:h-screen">
       <div className="block min-h-screen overflow-x-hidden bg-background pb-24 md:hidden">
-        <div className="space-y-3 px-3 pt-3">
+        <div className="space-y-4 px-3.5 pt-3.5">
           <div>
             <div className="flex items-start gap-3">
               <Button
@@ -192,40 +192,23 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <Card className="rounded-2xl border border-border bg-card shadow-sm">
-            <CardHeader className="px-3 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-sm font-bold">Trend Penjualan</CardTitle>
-                <div className="scale-[0.92] origin-right [&_.rounded-xl]:rounded-lg [&_button]:h-7 [&_button]:px-2 [&_button]:text-[11px]" />
-              </div>
-            </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
-              {isLoading ? (
-                <div className="h-[135px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
-              ) : (
-                <SalesTrendChart trend={data.trend} compact hideHeader />
-              )}
-            </CardContent>
-          </Card>
+          {isLoading ? (
+            <div className="h-[170px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
+          ) : (
+            <SalesTrendChart trend={data.trend} compact />
+          )}
 
-          <Card className="rounded-2xl border border-border bg-card shadow-sm">
-            <CardHeader className="px-3 py-3">
-              <CardTitle className="text-sm font-bold">Produk Terlaris</CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
-              {isLoading ? (
-                <div className="h-[132px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
-              ) : (
-                <TopProducts topProducts={data.topProducts} compact hideHeader />
-              )}
-            </CardContent>
-          </Card>
+          {isLoading ? (
+            <div className="h-[180px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
+          ) : (
+            <TopProducts topProducts={data.topProducts} compact />
+          )}
 
         </div>
       </div>
 
       <div className="hidden min-h-0 flex-1 overflow-x-hidden overflow-y-auto md:block lg:overflow-hidden">
-        <div className="mx-auto flex h-full max-w-[1366px] min-h-0 flex-col gap-3 p-4 lg:overflow-hidden">
+        <div className="mx-auto flex h-full min-h-0 max-w-[1440px] flex-col gap-4 p-5 lg:overflow-hidden xl:p-6">
           <div className="shrink-0">
             <DashboardHeader period={period} onPeriodChange={handlePeriodChange} />
           </div>
@@ -233,7 +216,7 @@ export default function DashboardPage() {
           <TrialExpiredBanner />
 
           {isLoading ? (
-            <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[...Array(4)].map((_, i) => (
                 <div
                   key={i}
@@ -245,10 +228,10 @@ export default function DashboardPage() {
             <KpiGrid kpi={data.kpi} />
           )}
 
-          <section className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:overflow-hidden">
-            <div className="flex min-h-0 flex-col gap-3">
+          <section className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.75fr)_minmax(340px,0.9fr)] lg:overflow-hidden">
+            <div className="flex min-h-0 flex-col gap-4">
               {isLoading ? (
-                <div className="h-[220px] shrink-0 animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
+                <div className="h-[230px] shrink-0 animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
               ) : (
                 <SalesTrendChart trend={data.trend} />
               )}
@@ -258,7 +241,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-col gap-3">
+            <div className="flex min-h-0 flex-col gap-4">
               {isLoading ? (
                 <div className="h-[260px] shrink-0 animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
               ) : (

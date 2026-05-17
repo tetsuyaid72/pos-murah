@@ -123,8 +123,8 @@ export function DemoProvider({ children }: { children: React.ReactNode }) {
             Mulai dari
           </p>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-foreground">Rp 50.000</span>
-                          <span className="text-sm text-muted-foreground">akses selamanya</span>
+            <span className="text-2xl font-bold text-foreground">Rp49K</span>
+                          <span className="text-sm text-muted-foreground">/bulan</span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Semua fitur dasar POS termasuk cetak struk, export Excel, dan backup data.

@@ -20,19 +20,21 @@ import { useSubscriptionStore } from '@/stores/subscription-store'
 const plans = {
   pro: {
     name: 'Pro',
-    price: 'Rp50.000',
-    amount: 50000,
+    price: 'Rp49K',
+    amount: 49000,
     apiPlan: 'PRO',
+    billingPeriod: 'monthly',
     summaryPlan: 'pro',
-    description: 'Untuk pengguna individu yang butuh fitur utama.',
+    description: 'Langganan bulanan untuk fitur utama POS.',
   },
   bisnis: {
     name: 'Bisnis',
-    price: 'Rp100.000',
-    amount: 100000,
+    price: 'Rp199K',
+    amount: 199000,
     apiPlan: 'BUSINESS',
+    billingPeriod: 'lifetime',
     summaryPlan: 'business',
-    description: 'Untuk usaha yang butuh fitur lebih lengkap.',
+    description: 'Sekali bayar untuk akses selamanya.',
     badge: 'Pilihan Terbaik',
   },
 } as const
@@ -115,7 +117,7 @@ function PaymentContent() {
           method: 'QRIS',
           proofUrl,
           plan: selectedPlan.apiPlan,
-          billingPeriod: 'lifetime',
+          billingPeriod: selectedPlan.billingPeriod,
         }),
       })
       const data = await res.json().catch(() => ({}))

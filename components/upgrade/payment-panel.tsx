@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { NEW_USER_DISCOUNT_PERCENT, formatPrice, getDisplayPricing } from '@/lib/pricing'
+import { formatPrice, getDisplayPricing } from '@/lib/pricing'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 
 type SelectedPlan = 'pro' | 'business'
@@ -170,7 +170,7 @@ export function UpgradePaymentPanel({
             method: activeTab === 'qris' ? 'QRIS' : 'BANK_TRANSFER',
             proofUrl: uploadedUrl,
             plan: selectedPlan.toUpperCase(),
-            billingPeriod: 'lifetime',
+            billingPeriod: selectedPlan === 'pro' ? 'monthly' : 'lifetime',
             amount: promoPricing.finalAmount,
             originalPrice: promoPricing.originalPrice,
             discountPercent: promoPricing.discountPercent,
@@ -258,20 +258,18 @@ export function UpgradePaymentPanel({
               Metode Pembayaran
             </label>
 
-            {isNewUserPromoEligible && (
-              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
-                <span className="inline-flex rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
-                  Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
-                </span>
-                <p className="mt-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
-                  Promo khusus pelanggan baru
-                </p>
-                <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>. Sekarang{' '}
-                  <span className="font-bold">{formattedPrice}</span>.
-                </p>
-              </div>
-            )}
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/60 dark:bg-amber-950/30">
+              <span className="inline-flex rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                Hemat {promoPricing.discountPercent}%
+              </span>
+              <p className="mt-2 text-sm font-semibold text-amber-900 dark:text-amber-100">
+                Harga promo launching
+              </p>
+              <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>. Sekarang{' '}
+                <span className="font-bold">{formattedPrice}</span>.
+              </p>
+            </div>
 
             <div className="mt-2 grid grid-cols-2 gap-3">
               <button
@@ -355,19 +353,15 @@ export function UpgradePaymentPanel({
 
               <div className="rounded-2xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
                 <p className="text-[11px] uppercase tracking-wider text-emerald-600/70 dark:text-emerald-400/70">Nominal Transfer</p>
-                {isNewUserPromoEligible && (
-                  <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
-                    Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span>
+                </p>
                 <p className="mt-0.5 text-xl font-bold text-emerald-700 dark:text-emerald-400">
                   {formattedPrice}
                 </p>
-                {isNewUserPromoEligible && (
-                  <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    Sekarang {formattedPrice}
-                  </p>
-                )}
+                <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                  Sekarang {formattedPrice}
+                </p>
               </div>
             </div>
           )}
@@ -386,11 +380,9 @@ export function UpgradePaymentPanel({
               <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                 Scan QRIS untuk membayar <strong className="text-slate-700 dark:text-slate-200">{formattedPrice}</strong>
               </p>
-              {isNewUserPromoEligible && (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span> · Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
-                </p>
-              )}
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Harga normal <span className="line-through">{formatPrice(promoPricing.originalPrice)}</span> · hemat {promoPricing.discountPercent}%
+              </p>
             </div>
           )}
 

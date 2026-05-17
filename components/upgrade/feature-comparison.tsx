@@ -19,10 +19,10 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   {
     category: 'Kuota & Limit',
     features: [
-      { name: 'Produk', pro: '150', business: 'Unlimited' },
-      { name: 'Transaksi/hari', pro: '250', business: 'Unlimited' },
+      { name: 'Produk', pro: '200', business: 'Unlimited' },
+      { name: 'Transaksi/hari', pro: '500', business: 'Unlimited' },
       { name: 'Kasir', pro: '5', business: 'Unlimited' },
-      { name: 'Pelanggan', pro: '500', business: 'Unlimited' },
+      { name: 'Pelanggan', pro: '100', business: 'Unlimited' },
       { name: 'Riwayat laporan', pro: '1 tahun', business: 'Unlimited' },
     ],
   },
@@ -50,7 +50,6 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     category: 'Operasional',
     features: [
       { name: 'Backup & restore', pro: true, business: true },
-      { name: 'Backup otomatis', pro: 'Mingguan', business: 'Harian' },
       { name: 'Multi-toko / outlet', pro: false, business: true },
       { name: 'Transfer stok antar toko', pro: false, business: true },
       { name: 'API access & webhook', pro: false, business: true },

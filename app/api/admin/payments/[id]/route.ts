@@ -52,10 +52,18 @@ export async function PATCH(
         approvedAt: new Date(),
       }).where(eq(payments.id, id))
 
+      const now = new Date()
+      const subscriptionEndAt = payment.plan === 'PRO' && payment.billingPeriod === 'monthly'
+        ? new Date(now.getFullYear(), now.getMonth() + 1, now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds())
+        : null
+
       // Activate the requested plan from the approved payment.
       await db.update(memberships).set({
         plan: payment.plan,
         isTrial: false,
+        billingPeriod: payment.billingPeriod,
+        subscriptionStartAt: now,
+        subscriptionEndAt,
       }).where(eq(memberships.storeId, payment.storeId))
 
       return NextResponse.json({ message: 'Pembayaran berhasil di-approve', status: 'APPROVED' })

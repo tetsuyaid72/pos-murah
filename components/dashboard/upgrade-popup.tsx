@@ -6,7 +6,7 @@ import { Dialog, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/
 import { Button } from '@/components/ui/button'
 import { Check, Zap, ShieldCheck } from 'lucide-react'
 import { useSubscriptionStore } from '@/stores/subscription-store'
-import { PLANS, formatPrice, PRICING } from '@/lib/pricing'
+import { PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 /** Popup will not reappear for this many days after it is shown to a subscribed user. */
 const POPUP_COOLDOWN_DAYS = 7
@@ -24,7 +24,7 @@ export function UpgradePopup() {
 
   const nextPlan = isFree ? 'PRO' : 'BUSINESS'
   const nextPlanInfo = isFree ? PLANS.PRO : PLANS.BUSINESS
-  const nextPlanPrice = isFree ? PRICING.PRO.lifetime : PRICING.BUSINESS.lifetime
+  const nextPlanPricing = getDisplayPricing(nextPlan, 'lifetime', false)
   const ctaHref = isPending ? '/successpayment' : '/pricing'
   const ctaLabel = isPending ? 'Lihat Status Pembayaran' : 'Upgrade Sekarang'
 
@@ -88,8 +88,8 @@ export function UpgradePopup() {
       {/* Price */}
       <div className="rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4 mb-6">
         <div className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold text-foreground">{formatPrice(nextPlanPrice)}</span>
-          <span className="text-sm text-muted-foreground">akses selamanya</span>
+          <span className="text-2xl font-bold text-foreground">{formatPrice(nextPlanPricing.finalPrice)}</span>
+          <span className="text-sm text-muted-foreground">{nextPlanPricing.periodLabel}</span>
         </div>
       </div>
 

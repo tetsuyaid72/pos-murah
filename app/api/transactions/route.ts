@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { eq, and, gte, lte, desc, isNull, inArray, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { transactions, transactionItems, products } from '@/lib/db/schema'
+import { transactions, transactionItems, products, customers, debtRecords } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
 import { logActivityAsync } from '@/lib/activity'
 import { generateId } from '@/lib/utils'
@@ -177,6 +177,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Total transaksi tidak valid' }, { status: 400 })
     }
 
+    if (paymentMethod === 'DEBT' && !customerId) {
+      return NextResponse.json({ error: 'Pelanggan wajib dipilih untuk transaksi hutang' }, { status: 400 })
+    }
+
+    if (paymentMethod === 'DEBT') {
+      const customer = await db.query.customers.findFirst({
+        where: and(eq(customers.id, customerId), eq(customers.storeId, storeId)),
+        columns: { id: true },
+      })
+
+      if (!customer) {
+        return NextResponse.json({ error: 'Pelanggan tidak ditemukan atau bukan milik toko ini' }, { status: 400 })
+      }
+    }
+
     const productIds = Array.from(new Set(items.map((item) => item.productId).filter(Boolean)))
     const existingProducts = productIds.length
       ? await db.query.products.findMany({
@@ -224,8 +239,8 @@ export async function POST(request: NextRequest) {
         taxAmount,
         totalAmount,
         paymentMethod,
-        amountPaid,
-        changeAmount,
+        amountPaid: paymentMethod === 'DEBT' ? 0 : amountPaid,
+        changeAmount: paymentMethod === 'DEBT' ? 0 : changeAmount,
         customerId: customerId || null,
         status: 'COMPLETED',
         notes: notes || null,
@@ -236,6 +251,22 @@ export async function POST(request: NextRequest) {
       const stockAdjustments = mergeStockQuantities(items)
 
       await tx.insert(transactionItems).values(itemValues)
+
+      if (paymentMethod === 'DEBT') {
+        await tx.insert(debtRecords).values({
+          storeId,
+          customerId,
+          transactionId,
+          amount: totalAmount,
+          paidAmount: 0,
+          status: 'UNPAID',
+        })
+
+        await tx
+          .update(customers)
+          .set({ totalDebt: sql`${customers.totalDebt} + ${totalAmount}` })
+          .where(and(eq(customers.id, customerId), eq(customers.storeId, storeId)))
+      }
 
       // 3. Decrease stock per unique product without extra select queries
       for (const item of stockAdjustments) {

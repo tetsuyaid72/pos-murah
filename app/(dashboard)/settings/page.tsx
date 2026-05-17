@@ -35,6 +35,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Dialog, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { useUIStore } from '@/stores/ui-store'
+import { useTheme } from '@/components/theme-provider'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { AvatarUpload } from '@/components/settings/avatar-upload'
@@ -64,6 +65,7 @@ const TABS: { id: SettingsTab; label: string; icon: typeof User }[] = [
 
 export default function SettingsPage() {
   const { theme, setTheme, setSidebarOpen } = useUIStore()
+  const { setTheme: applyTheme } = useTheme()
   const {
     storeName, setStoreName,
     storeAddress, setStoreAddress,
@@ -322,11 +324,23 @@ export default function SettingsPage() {
     setImportResult(null)
   }, [])
 
-  const themes = [
+    const themes = [
     { value: 'light' as const, label: 'Terang', icon: Sun, desc: 'Latar terang' },
     { value: 'dark' as const, label: 'Gelap', icon: Moon, desc: 'Latar gelap' },
     { value: 'system' as const, label: 'Sistem', icon: Monitor, desc: 'Ikuti perangkat' },
   ]
+
+  const handleThemeChange = (nextTheme: (typeof themes)[number]['value']) => {
+    const resolvedTheme =
+      nextTheme === 'system'
+        ? window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light'
+        : nextTheme
+
+    setTheme(nextTheme)
+    applyTheme(resolvedTheme)
+  }
 
   // =========================================================================
   // Render
@@ -500,7 +514,7 @@ export default function SettingsPage() {
                       return (
                         <button
                           key={t.value}
-                          onClick={() => setTheme(t.value)}
+                          onClick={() => handleThemeChange(t.value)}
                           className={cn(
                             'flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all duration-200 cursor-pointer',
                             isActive
@@ -893,7 +907,7 @@ export default function SettingsPage() {
                       return (
                         <button
                           key={t.value}
-                          onClick={() => setTheme(t.value)}
+                          onClick={() => handleThemeChange(t.value)}
                           className={cn(
                             'group flex flex-col items-center gap-2 rounded-2xl border p-5 transition-all duration-200 cursor-pointer',
                             isActive

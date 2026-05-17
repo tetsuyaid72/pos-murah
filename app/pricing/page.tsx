@@ -16,32 +16,35 @@ import {
 const plans = [
   {
     name: 'Pro',
-    price: 'Rp50.000',
-    description: 'Untuk pengguna individu yang butuh fitur utama.',
+    price: 'Rp49K',
+    originalPrice: 'Rp99K',
+    discount: 'Hemat 51%',
+    period: '/bulan',
+    description: 'Untuk toko yang ingin mulai pakai POS dengan biaya bulanan ringan.',
     features: [
-      'Tambah dan edit produk',
-      'Kelola stok dan harga',
-      'Kategori produk',
-      'Kasir dan transaksi',
-      'Laporan penjualan dasar',
-      'Akses selamanya',
+      '200 produk',
+      '500 transaksi per hari',
+      '100 pelanggan',
+      'Laporan sampai 365 hari',
+      'Backup & restore data',
+      'Langganan bulanan',
     ],
     cta: 'Pilih Pro',
     href: '/payment?plan=pro',
   },
   {
     name: 'Bisnis',
-    price: 'Rp100.000',
-    originalPrice: 'Rp150.000',
-    discount: 'Diskon',
-    description: 'Untuk usaha yang butuh fitur lebih lengkap.',
+    price: 'Rp199K',
+    originalPrice: 'Rp399K',
+    discount: 'Hemat 50%',
+    period: 'sekali bayar',
+    description: 'Untuk usaha yang ingin akses penuh tanpa biaya bulanan.',
     features: [
-      'Semua fitur Pro',
-      'Multi kasir',
-      'Laporan lebih lengkap',
-      'Backup data',
-      'Branding struk toko',
-      'Support prioritas',
+      'Produk unlimited',
+      'Transaksi unlimited',
+      'Pelanggan unlimited',
+      'Laporan tanpa batas',
+      'Backup & restore data',
       'Akses selamanya',
     ],
     cta: 'Pilih Bisnis',
@@ -64,13 +67,13 @@ export default function PricingPage() {
 
         <section id="pricing" className="flex flex-1 flex-col items-center justify-start pb-7 pt-6 text-center sm:justify-center sm:pb-8 sm:pt-0">
           <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-            Paket Berlangganan
+            Pro Bulanan & Bisnis Lifetime
           </Badge>
           <h1 className="mt-4 text-[28px] font-black leading-tight tracking-[-0.045em] text-emerald-600 dark:text-emerald-400 sm:mt-5 sm:text-5xl">
             Pilih Paket
           </h1>
           <p className="mt-3 max-w-[320px] text-sm leading-6 text-slate-600 dark:text-slate-400 sm:mt-4 sm:max-w-2xl sm:text-base sm:leading-7">
-            Cukup pilih Pro atau Bisnis sesuai kebutuhan toko Anda.
+            Pilih Pro untuk langganan bulanan ringan, atau Bisnis untuk akses selamanya tanpa biaya berulang.
           </p>
 
           <div className="mt-7 grid w-full gap-4 sm:max-w-sm md:max-w-3xl md:grid-cols-2">
@@ -110,7 +113,7 @@ export default function PricingPage() {
                     )}
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-black tracking-[-0.04em] text-slate-950 dark:text-slate-50 sm:text-3xl">{plan.price}</span>
-                      <span className="pb-1 text-sm font-medium text-slate-500 dark:text-slate-400">sekali bayar</span>
+                      <span className="pb-1 text-sm font-medium text-slate-500 dark:text-slate-400">{plan.period}</span>
                     </div>
                   </div>
 

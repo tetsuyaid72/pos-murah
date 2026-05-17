@@ -14,7 +14,7 @@ export default function LoginPage() {
       </div>
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col">
-        <PublicHeader />
+        <PublicHeader authHref="/register" authLabel="Daftar" />
 
         <section className="flex flex-1 items-center justify-center pb-10 pt-4 sm:pb-16 sm:pt-6">
           <Suspense fallback={null}>

@@ -17,7 +17,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export function PricingAuthAction() {
+interface PricingAuthActionProps {
+  authHref?: string
+  authLabel?: string
+}
+
+export function PricingAuthAction({ authHref = '/login', authLabel = 'Log in' }: PricingAuthActionProps) {
   const router = useRouter()
   const { user, membership, isAuthenticated, isLoading, fetchAuth, logout } = useAuthStore()
 
@@ -39,10 +44,10 @@ export function PricingAuthAction() {
       <div className="relative z-[9999] flex items-center gap-3">
         <ThemeToggleButton />
         <Link
-          href="/login"
+          href={authHref}
           className="rounded-2xl bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_32px_rgba(16,185,129,0.24)] transition-colors hover:bg-emerald-700 sm:px-5 sm:py-2.5 sm:text-sm"
         >
-          Log in
+          {authLabel}
         </Link>
       </div>
     )

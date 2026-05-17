@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Sync server membership â†’ subscription store (server is source of truth)
   useEffect(() => {
     if (isAuthenticated && membership) {
-      syncFromServer(membership.plan, membership.isTrial, membership.trialEndAt)
+      syncFromServer(membership.plan, membership.isTrial, membership.trialEndAt, membership.subscriptionEndAt)
     }
   }, [isAuthenticated, membership, syncFromServer])
 
@@ -67,10 +67,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       membership.isTrial &&
       membership.trialEndAt &&
       new Date(membership.trialEndAt) <= new Date()
+    const isSubscriptionExpired =
+      !membership.isTrial &&
+      membership.plan === 'PRO' &&
+      membership.subscriptionEndAt &&
+      new Date(membership.subscriptionEndAt) <= new Date()
     const allowedPaths = ['/dashboard', '/pricing', '/payment', '/successpayment', '/settings']
     const isAllowedPath = allowedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
-    if (isTrialExpired && !isAllowedPath) {
+    if ((isTrialExpired || isSubscriptionExpired) && !isAllowedPath) {
       router.replace('/dashboard')
     }
   }, [isLoading, isAuthenticated, membership, user, pathname, router])

@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate, formatNumber, formatRupiah } from '@/lib/format'
 
-type ReportPeriod = '7days' | '30days' | 'all'
+type ReportPeriod = 'today' | '7days' | '30days' | 'all'
 
 function getDateStr(daysAgo: number): string {
   const d = new Date()
@@ -24,7 +24,7 @@ function getDateStr(daysAgo: number): string {
 export default function ReportsPage() {
   const { transactions, fetchTransactions } = useTransactionStore()
   const [period, setPeriod] = useState<ReportPeriod>('30days')
-  const [mobilePeriodVisual, setMobilePeriodVisual] = useState<'today' | '7days' | '30days' | 'all'>('30days')
+  const mobilePeriodVisual = period
   const { getResourceLimit } = usePlanLimit()
   const { setSidebarOpen } = useUIStore()
 
@@ -35,11 +35,6 @@ export default function ReportsPage() {
   useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
-
-  useEffect(() => {
-    if (period === '30days') setMobilePeriodVisual('30days')
-    else if (period === 'all') setMobilePeriodVisual('all')
-  }, [period])
 
   // Filter transactions by period, capped by plan's report_history_days
   const filteredTransactions = useMemo(() => {
@@ -53,7 +48,7 @@ export default function ReportsPage() {
       return transactions.filter((t) => dates.has(t.createdAt.slice(0, 10)))
     }
 
-    const days = period === '7days' ? 7 : 30
+    const days = period === 'today' ? 1 : period === '7days' ? 7 : 30
     const cappedDays = Math.min(days, maxHistoryDays)
     const dates = new Set<string>()
     for (let i = 0; i < cappedDays; i++) {
@@ -124,6 +119,7 @@ export default function ReportsPage() {
 
   // Period options with plan-based locking
   const periodOptions: { value: ReportPeriod; label: string; minDays: number; requiredPlan?: string }[] = [
+    { value: 'today', label: 'Hari Ini', minDays: 1 },
     { value: '7days', label: '7 Hari', minDays: 7 },
     { value: '30days', label: '30 Hari', minDays: 30 },
     { value: 'all', label: 'Semua', minDays: 365, requiredPlan: 'PRO' },
@@ -136,7 +132,7 @@ export default function ReportsPage() {
     minDays: number
     requiredPlan?: string
   }[] = [
-    { value: '7days', visual: 'today', label: 'Hari Ini', minDays: 1 },
+    { value: 'today', visual: 'today', label: 'Hari Ini', minDays: 1 },
     { value: '7days', visual: '7days', label: '7 Hari', minDays: 7 },
     { value: '30days', visual: '30days', label: '30 Hari', minDays: 30 },
     { value: 'all', visual: 'all', label: 'Semua', minDays: 365, requiredPlan: 'PRO' },
@@ -177,7 +173,6 @@ export default function ReportsPage() {
                   variant={isActive ? 'default' : 'ghost'}
                   onClick={() => {
                     if (isLocked) return
-                    setMobilePeriodVisual(opt.visual)
                     setPeriod(opt.value)
                   }}
                   disabled={isLocked}

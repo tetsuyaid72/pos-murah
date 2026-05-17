@@ -2,15 +2,15 @@
 
 import { useState } from 'react'
 import {
-  AreaChart,
   Area,
-  BarChart,
+  AreaChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -40,7 +40,6 @@ const DAYS_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
 export function SalesTrendChart({ trend, compact = false, hideHeader = false }: SalesTrendChartProps) {
   const [mode, setMode] = useState<ChartMode>('revenue')
-
   const chartData = trend.map((point) => {
     const d = new Date(point.date + 'T00:00:00')
     const label = trend.length <= 7
@@ -56,11 +55,11 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
     }
   })
 
-  const formatValue = (v: number) => {
-    if (mode === 'transactions') return v.toString()
-    if (v >= 1000000) return `${(v / 1000000).toFixed(1)}jt`
-    if (v >= 1000) return `${(v / 1000).toFixed(0)}rb`
-    return v.toString()
+  const formatValue = (value: number) => {
+    if (mode === 'transactions') return value.toString()
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}jt`
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}rb`
+    return value.toString()
   }
 
   const tooltipFormatter = (value: unknown) => {
@@ -69,17 +68,17 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
     return [`Rp ${num.toLocaleString('id-ID')}`, mode === 'revenue' ? 'Pendapatan' : 'Profit']
   }
 
-  const chartColor = mode === 'revenue' ? '#059669' : mode === 'profit' ? '#10b981' : '#6366f1'
+  const chartColor = mode === 'revenue' ? '#059669' : mode === 'profit' ? '#0d9488' : '#2563eb'
   const gradientId = `gradient-${mode}`
 
   return (
-    <Card className={cn('shrink-0 overflow-hidden rounded-2xl', compact ? 'h-[170px]' : 'h-[220px]')}>
+    <Card className={cn('shrink-0 overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm', compact ? 'h-[170px]' : 'h-[230px]')}>
       {!hideHeader && (
         <CardHeader className={cn('space-y-0', compact ? 'px-3 pb-2 pt-3' : 'px-4 pb-2 pt-3.5')}>
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className={cn('font-semibold', compact ? 'text-xs' : 'text-sm md:text-base')}>Trend Penjualan</CardTitle>
+            <CardTitle className={cn('font-semibold tracking-tight', compact ? 'text-xs' : 'text-sm md:text-base')}>Trend Penjualan</CardTitle>
 
-            <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
+            <div className="flex rounded-xl border border-border/60 bg-muted/40 p-1">
               {MODE_TABS.map((tab) => (
                 <button
                   key={tab.value}
@@ -88,7 +87,7 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
                     'cursor-pointer rounded-lg font-medium leading-tight transition-all duration-200',
                     compact ? 'px-2 py-1 text-[10px]' : 'px-3 py-1.5 text-xs',
                     mode === tab.value
-                      ? 'bg-card text-foreground shadow-sm'
+                      ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -100,86 +99,43 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
         </CardHeader>
       )}
       <CardContent className={cn('h-full px-3', hideHeader ? 'pb-3 pt-3' : 'pb-3 pt-0')}>
-        <div className={cn('w-full', compact ? 'h-[130px]' : 'h-[154px]')}>
+        <div className={cn('w-full rounded-xl bg-muted/15 p-2', compact ? 'h-[130px]' : 'h-[164px]')}>
           <ResponsiveContainer width="100%" height="100%">
             {mode === 'transactions' ? (
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.5} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
+              <BarChart data={chartData} margin={{ top: 6, right: 8, left: -22, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.45} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} className="fill-muted-foreground" axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    boxShadow: '0 8px 25px rgb(0 0 0 / 0.1)',
-                    padding: '8px 10px',
-                  }}
+                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '12px', boxShadow: '0 10px 30px rgb(0 0 0 / 0.10)', padding: '8px 10px' }}
                   formatter={tooltipFormatter}
-                  cursor={{ fill: 'var(--muted)', opacity: 0.3, radius: 8 }}
+                  cursor={{ fill: 'var(--muted)', opacity: 0.28, radius: 8 }}
                 />
-                <Bar
-                  dataKey="transactions"
-                  fill={chartColor}
-                  radius={[8, 8, 0, 0]}
-                  maxBarSize={24}
-                />
+                <Bar dataKey="transactions" fill={chartColor} radius={[8, 8, 2, 2]} maxBarSize={26} />
               </BarChart>
             ) : (
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 6, right: 8, left: -22, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.15} />
+                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.22} />
                     <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.5} />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={formatValue}
-                />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} opacity={0.45} />
+                <XAxis dataKey="label" tick={{ fontSize: 11 }} className="fill-muted-foreground" axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" axisLine={false} tickLine={false} tickFormatter={formatValue} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    boxShadow: '0 8px 25px rgb(0 0 0 / 0.1)',
-                    padding: '8px 10px',
-                  }}
+                  contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '12px', boxShadow: '0 10px 30px rgb(0 0 0 / 0.10)', padding: '8px 10px' }}
                   formatter={tooltipFormatter}
                 />
                 <Area
                   type="monotone"
                   dataKey={mode}
                   stroke={chartColor}
-                  strokeWidth={2.25}
+                  strokeWidth={2.5}
                   fill={`url(#${gradientId})`}
                   dot={false}
-                  activeDot={{ r: 4, strokeWidth: 2, fill: 'var(--card)', stroke: chartColor }}
+                  activeDot={{ r: 4, strokeWidth: 2.5, fill: 'var(--card)', stroke: chartColor }}
                 />
               </AreaChart>
             )}

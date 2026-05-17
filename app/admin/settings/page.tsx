@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { FEATURE_DEFAULTS } from '@/lib/features'
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getPromoPricing } from '@/lib/pricing'
+import { PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 interface FeatureFlag {
   id: string
@@ -204,16 +204,16 @@ export default function AdminSettingsPage() {
                         {plan.name}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right text-foreground">{formatPrice(plan.pricing.lifetime)}</td>
+                    <td className="px-3 py-2 text-right text-foreground">{formatPrice(getDisplayPricing(key as 'PRO' | 'BUSINESS', 'lifetime', false).normalPrice)}</td>
                     <td className="px-3 py-2 text-right">
                       <div className="space-y-0.5">
                         <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          {formatPrice(getPromoPricing(plan.pricing.lifetime, true).finalAmount)}
+                          {formatPrice(getDisplayPricing(key as 'PRO' | 'BUSINESS', 'lifetime', false).finalPrice)}
                         </span>
-                        <p className="text-[10px] text-muted-foreground">Diskon {NEW_USER_DISCOUNT_PERCENT}%</p>
+                        <p className="text-[10px] text-muted-foreground">Hemat {getDisplayPricing(key as 'PRO' | 'BUSINESS', 'lifetime', false).promo.discountPercent}%</p>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-right text-foreground">Selamanya</td>
+                    <td className="px-3 py-2 text-right text-foreground">{getDisplayPricing(key as 'PRO' | 'BUSINESS', 'lifetime', false).accessLabel}</td>
                     <td className="px-3 py-2 text-right text-muted-foreground">
                       {plan.limits.products === 'unlimited' ? '∞' : plan.limits.products}
                     </td>

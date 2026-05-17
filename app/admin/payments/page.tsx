@@ -14,13 +14,13 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { formatRupiah } from '@/lib/format'
+import { formatPrice } from '@/lib/pricing'
 
 interface Payment {
   id: string
   amount: number
   plan: 'PRO' | 'BUSINESS'
-  billingPeriod: 'lifetime'
+  billingPeriod: 'monthly' | 'lifetime'
   originalPrice: number
   discountPercent: number
   discountAmount: number
@@ -271,13 +271,13 @@ export default function AdminPaymentsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-foreground">
                           <div className="space-y-0.5">
-                            <p>{formatRupiah(payment.finalAmount ?? payment.amount)}</p>
+                            <p>{formatPrice(payment.finalAmount ?? payment.amount)}</p>
                             <p className="text-[10px] font-normal text-muted-foreground">
-                              {payment.plan} · Akses selamanya
+                              {payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Akses selamanya'}
                             </p>
                             {payment.promoType && (
                               <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                {payment.promoType} · normal <span className="line-through">{formatRupiah(payment.originalPrice)}</span>
+                                {payment.promoType} · normal <span className="line-through">{formatPrice(payment.originalPrice)}</span>
                               </p>
                             )}
                           </div>
@@ -347,16 +347,16 @@ export default function AdminPaymentsPage() {
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{payment.storeName}</span>
-                      <span>{formatRupiah(payment.finalAmount ?? payment.amount)}</span>
+                      <span>{formatPrice(payment.finalAmount ?? payment.amount)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{payment.plan} · Akses selamanya</span>
+                      <span>{payment.plan} · {payment.billingPeriod === 'monthly' ? 'Bulanan' : 'Akses selamanya'}</span>
                       {payment.promoType && <span className="font-semibold text-emerald-600 dark:text-emerald-400">{payment.promoType}</span>}
                     </div>
                     {payment.promoType && (
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Harga normal</span>
-                        <span className="line-through">{formatRupiah(payment.originalPrice)}</span>
+                        <span className="line-through">{formatPrice(payment.originalPrice)}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">

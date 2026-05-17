@@ -23,6 +23,7 @@ export async function GET() {
         plan: memberships.plan,
         isTrial: memberships.isTrial,
         trialEndAt: memberships.trialEndAt,
+        subscriptionEndAt: memberships.subscriptionEndAt,
       })
       .from(memberships)
       .where(eq(memberships.storeId, storeId))
@@ -38,6 +39,7 @@ export async function GET() {
     const plan = normalizePlanType(membership.plan)
     const isTrialActive = membership.isTrial && new Date(membership.trialEndAt) > new Date()
     const isTrialExpired = membership.isTrial && new Date(membership.trialEndAt) <= new Date()
+    const isSubscriptionExpired = plan === 'PRO' && membership.subscriptionEndAt && new Date(membership.subscriptionEndAt) <= new Date()
 
     const effectiveLimit = (key: keyof typeof PLAN_LIMITS) => {
       if (isTrialActive) {
@@ -46,7 +48,7 @@ export async function GET() {
         if (key === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
       }
 
-      if (isTrialExpired) return 0
+      if (isTrialExpired || isSubscriptionExpired) return 0
 
       return PLAN_LIMITS[key][plan]
     }
@@ -121,7 +123,7 @@ export async function GET() {
     for (const key of featureKeys) {
       if (isTrialActive) {
         featureAccess[key] = true
-      } else if (isTrialExpired) {
+      } else if (isTrialExpired || isSubscriptionExpired) {
         featureAccess[key] = false
       } else {
         const config = FEATURE_DEFAULTS[key]
@@ -133,6 +135,8 @@ export async function GET() {
     const warnings: string[] = []
     if (isTrialExpired) {
       warnings.push('Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan.')
+    } else if (isSubscriptionExpired) {
+      warnings.push('Langganan Pro Anda telah berakhir. Perpanjang paket untuk melanjutkan.')
     } else {
       if (usage.products.percentage >= 80) {
         warnings.push(`Produk hampir penuh (${usage.products.current}/${usage.products.limit})`)
@@ -149,6 +153,7 @@ export async function GET() {
       plan,
       isTrialActive,
       isTrialExpired,
+      isSubscriptionExpired,
       usage,
       featureAccess,
       warnings,

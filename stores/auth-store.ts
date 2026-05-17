@@ -27,6 +27,9 @@ export interface AuthMembership {
   plan: string
   isTrial: boolean
   trialEndAt: string | null
+  billingPeriod?: string | null
+  subscriptionStartAt?: string | null
+  subscriptionEndAt?: string | null
 }
 
 interface AuthState {

@@ -32,7 +32,7 @@ interface SubscriptionActions {
    * @param isTrial - Whether the membership is still in trial mode (not yet paid)
    * @param trialEndAt - Trial end date (if trial is expired and isTrial=true, user hasn't paid)
    */
-  syncFromServer: (serverPlan: string, isTrial?: boolean, trialEndAt?: string | null) => void
+  syncFromServer: (serverPlan: string, isTrial?: boolean, trialEndAt?: string | null, subscriptionEndAt?: string | null) => void
 }
 
 function normalizePlan(serverPlan: string): Plan | null {
@@ -80,13 +80,14 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
         set({ billingPeriod: period })
       },
 
-      syncFromServer: (serverPlan: string, isTrial?: boolean, trialEndAt?: string | null) => {
+      syncFromServer: (serverPlan: string, isTrial?: boolean, trialEndAt?: string | null, subscriptionEndAt?: string | null) => {
         const { paymentStatus, pendingPaymentSummary } = get()
         const normalizedPlan = normalizePlan(serverPlan)
 
         // Trial memberships are not paid subscriptions, even while active.
         const isTrialExpired = isTrial && trialEndAt && new Date(trialEndAt) <= new Date()
         const isTrialActive = isTrial && !isTrialExpired
+        const isSubscriptionExpired = normalizedPlan === 'pro' && subscriptionEndAt && new Date(subscriptionEndAt) <= new Date()
 
         if (isTrialActive) {
           set({
@@ -106,6 +107,15 @@ export const useSubscriptionStore = create<SubscriptionState & SubscriptionActio
           set({
             plan: normalizedPlan,
             paymentStatus: 'pending',
+          })
+          return
+        }
+
+        if (isSubscriptionExpired) {
+          set({
+            plan: normalizedPlan,
+            paymentStatus: 'none',
+            pendingPaymentSummary: null,
           })
           return
         }

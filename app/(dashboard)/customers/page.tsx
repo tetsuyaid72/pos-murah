@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   BanknoteArrowDown,
   CreditCard,
@@ -12,11 +12,6 @@ import {
 } from 'lucide-react'
 import { formatDateTime, formatRupiah } from '@/lib/format'
 import { cn, generateId } from '@/lib/utils'
-import {
-  sampleCustomers,
-  sampleCustomerTransactions,
-  sampleDebtPayments,
-} from '@/data/customers'
 import { AlertDialog } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -94,9 +89,9 @@ function normalizeText(value?: string | null): string {
 }
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>(sampleCustomers)
-  const [transactions, setTransactions] = useState<CustomerTransaction[]>(sampleCustomerTransactions)
-  const [debtPayments, setDebtPayments] = useState<DebtPayment[]>(sampleDebtPayments)
+  const [customers, setCustomers] = useState<Customer[]>([])
+  const [transactions, setTransactions] = useState<CustomerTransaction[]>([])
+  const [debtPayments, setDebtPayments] = useState<DebtPayment[]>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
 
@@ -110,6 +105,27 @@ export default function CustomersPage() {
   const [paymentForm, setPaymentForm] = useState<PaymentFormState>(emptyPaymentForm)
   const [formError, setFormError] = useState('')
   const [paymentError, setPaymentError] = useState('')
+
+  useEffect(() => {
+    fetch('/api/customers')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data: { customers?: Array<{ id: string; name: string; phone?: string | null; address?: string | null; totalDebt?: number; createdAt: string }> }) => {
+        setCustomers(
+          (data.customers ?? []).map((customer) => ({
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone ?? null,
+            address: customer.address ?? null,
+            notes: null,
+            debt: customer.totalDebt ?? 0,
+            totalTransactions: 0,
+            lastTransactionAt: null,
+            createdAt: customer.createdAt,
+          }))
+        )
+      })
+      .catch(() => setCustomers([]))
+  }, [])
 
   const totalDebt = useMemo(
     () => customers.reduce((sum, customer) => sum + customer.debt, 0),
@@ -175,22 +191,37 @@ export default function CustomersPage() {
       return
     }
 
-    const newCustomer: Customer = {
-      id: generateId(),
-      name: data.name.trim(),
-      phone: data.phone.trim() || null,
-      address: data.address.trim() || null,
-      notes: data.notes.trim() || null,
-      debt: 0,
-      totalTransactions: 0,
-      lastTransactionAt: null,
-      createdAt: new Date().toISOString(),
-    }
-
-    setCustomers((prev) => [newCustomer, ...prev])
-    setCustomerForm(emptyCustomerForm)
-    setFormError('')
-    setAddOpen(false)
+    fetch('/api/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: data.name.trim(),
+        phone: data.phone.trim() || null,
+        address: data.address.trim() || null,
+      }),
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((result: { customer: { id: string; name: string; phone?: string | null; address?: string | null; totalDebt?: number; createdAt: string } }) => {
+        const customer = result.customer
+        setCustomers((prev) => [
+          {
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone ?? null,
+            address: customer.address ?? null,
+            notes: data.notes.trim() || null,
+            debt: customer.totalDebt ?? 0,
+            totalTransactions: 0,
+            lastTransactionAt: null,
+            createdAt: customer.createdAt,
+          },
+          ...prev,
+        ])
+        setCustomerForm(emptyCustomerForm)
+        setFormError('')
+        setAddOpen(false)
+      })
+      .catch(() => setFormError('Gagal menambahkan pelanggan.'))
   }
 
   const handleUpdateCustomer = (id: string, data: CustomerFormState) => {
@@ -366,7 +397,7 @@ export default function CustomersPage() {
               </CardContent>
             </Card>
 
-            <TabsContent className="min-h-0 flex-1 overflow-hidden pt-0">
+            <TabsContent className="min-h-0 flex-1 overflow-hidden pt-3">
               <ScrollArea className="flex-1 min-h-0 overflow-y-auto">
                 {!hasCustomers ? (
                   <EmptyState
@@ -518,7 +549,7 @@ export default function CustomersPage() {
           if (!open) setDeleteCustomerId(null)
         }}
         title="Hapus pelanggan"
-        description={`Yakin ingin menghapus ${customerToDelete?.name ?? 'pelanggan'}? Riwayat transaksi dan pembayaran hutang mock pada halaman ini juga akan dihapus.`}
+        description={`Yakin ingin menghapus ${customerToDelete?.name ?? 'pelanggan'}? Riwayat transaksi dan pembayaran hutang pelanggan ini juga akan dihapus dari tampilan.`}
         confirmLabel="Hapus pelanggan"
         onConfirm={() => {
           if (customerToDelete) handleDeleteCustomer(customerToDelete.id)

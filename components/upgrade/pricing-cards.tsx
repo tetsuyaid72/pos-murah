@@ -2,7 +2,7 @@
 
 import { Check, Zap, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { NEW_USER_DISCOUNT_PERCENT, PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
+import { PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 type SelectedPlan = 'pro' | 'business'
 
@@ -46,11 +46,9 @@ export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligibl
                 Populer
               </span>
             )}
-            {isNewUserPromoEligible && (
-              <span className="absolute -top-2.5 right-4 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                Diskon {NEW_USER_DISCOUNT_PERCENT}% untuk User Baru
-              </span>
-            )}
+            <span className="absolute -top-2.5 right-4 inline-flex items-center rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-sm">
+              Hemat {displayPricing.promo.discountPercent}%
+            </span>
 
             {/* Header */}
             <div className="flex items-center gap-2">
@@ -72,25 +70,21 @@ export function PricingCards({ selectedPlan, onSelectPlan, isNewUserPromoEligibl
 
             {/* Price */}
             <div className="mt-3">
-              {isNewUserPromoEligible && (
-                <p className="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">
-                  Harga normal <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
-                </p>
-              )}
+              <p className="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">
+                Harga normal <span className="line-through">{formatPrice(displayPricing.normalPrice)}</span>
+              </p>
               <div className="flex items-baseline gap-1">
                 <span className={cn(
                   'text-2xl font-bold',
-                  isNewUserPromoEligible ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
+                  'text-emerald-600 dark:text-emerald-400'
                 )}>
                   {formatPrice(displayPricing.lifetimePrice)}
                 </span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">akses selamanya</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{displayPricing.periodLabel}</span>
               </div>
-              {isNewUserPromoEligible && (
-                <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  Sekarang {formatPrice(displayPricing.finalPrice)} akses selamanya
-                </p>
-              )}
+              <p className="mt-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {displayPricing.accessLabel}
+              </p>
             </div>
 
             {/* Features */}
