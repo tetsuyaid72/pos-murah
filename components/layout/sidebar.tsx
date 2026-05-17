@@ -51,11 +51,13 @@ export function Sidebar() {
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent
           side="left"
+          hideCloseButton
           className="w-[288px] max-w-[86vw] overflow-hidden border-r border-slate-200 bg-white p-0 text-slate-950 shadow-2xl dark:border-slate-800 dark:bg-slate-950 dark:text-slate-50 sm:max-w-[288px]"
         >
           <SidebarContent
             pathname={pathname}
             collapsed={false}
+            mobile
             onNavigate={() => setSidebarOpen(false)}
           />
         </SheetContent>
@@ -84,9 +86,11 @@ function SidebarContent({
   collapsed,
   onCollapse,
   onNavigate,
+  mobile = false,
 }: {
   pathname: string
   collapsed: boolean
+  mobile?: boolean
   onCollapse?: () => void
   onNavigate?: () => void
 }) {
@@ -153,10 +157,10 @@ function SidebarContent({
         )}
       </nav>
 
-      <div className="shrink-0 px-2.5 pb-2.5 [@media(max-height:760px)]:px-2 [@media(max-height:760px)]:pb-2 xl:px-3 xl:pb-3">
+      <div className={cn('shrink-0 px-2.5 pb-2.5 [@media(max-height:760px)]:px-2 [@media(max-height:760px)]:pb-2 xl:px-3 xl:pb-3', mobile && 'px-3 pb-[max(12px,env(safe-area-inset-bottom))]')}>
         {!isPaidPlan && (
           <div className="[@media(max-height:760px)]:hidden">
-            <PlanCard collapsed={collapsed} ctaHref={ctaHref} onNavigate={onNavigate} />
+            <PlanCard collapsed={collapsed} ctaHref={ctaHref} mobile={mobile} onNavigate={onNavigate} />
           </div>
         )}
         <FooterActions
@@ -168,6 +172,7 @@ function SidebarContent({
           onToggleTheme={toggleTheme}
           onLogout={logout}
           onCollapse={onCollapse}
+          mobile={mobile}
         />
       </div>
     </div>
@@ -259,9 +264,11 @@ function PlanCard({
   collapsed,
   ctaHref,
   onNavigate,
+  mobile = false,
 }: {
   collapsed: boolean
   ctaHref: string
+  mobile?: boolean
   onNavigate?: () => void
 }) {
   if (collapsed) {
@@ -279,7 +286,7 @@ function PlanCard({
 
 
   return (
-    <div className="mb-2.5 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-2.5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10 xl:mb-3 xl:p-3">
+    <div className={cn('mb-2.5 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-emerald-50 p-2.5 shadow-sm dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-emerald-500/10 xl:mb-3 xl:p-3', mobile && 'mb-2 rounded-[22px] p-3')}>
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm shadow-amber-500/20">
           <Crown className="h-4 w-4" />
@@ -294,7 +301,7 @@ function PlanCard({
       <Link
         href={ctaHref}
         onClick={onNavigate}
-        className={cn(buttonVariants({ size: 'sm' }), 'mt-2.5 h-8 w-full rounded-2xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700 xl:mt-3 xl:h-9')}
+        className={cn(buttonVariants({ size: 'sm' }), 'mt-2.5 h-8 w-full rounded-2xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-700 xl:mt-3 xl:h-9', mobile && 'h-9 rounded-xl')}
       >
         Upgrade
       </Link>
@@ -311,6 +318,7 @@ function FooterActions({
   onToggleTheme,
   onLogout,
   onCollapse,
+  mobile = false,
 }: {
   collapsed: boolean
   isDark: boolean
@@ -320,7 +328,33 @@ function FooterActions({
   onToggleTheme: () => void
   onLogout: () => void
   onCollapse?: () => void
+  mobile?: boolean
 }) {
+  if (mobile) {
+    return (
+      <div className="rounded-[24px] border border-slate-200 bg-white/90 p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/80">
+        <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-2 dark:bg-slate-950/40">
+          <UserAvatar name={userName} imageUrl={userAvatar} size="md" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-slate-950 dark:text-slate-50">{userName || 'Pengguna'}</p>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">{userEmail || '-'}</p>
+          </div>
+        </div>
+
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onToggleTheme} className="h-10 rounded-2xl bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:bg-slate-800">
+            {isDark ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+            {isDark ? 'Gelap' : 'Terang'}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onLogout} className="h-10 rounded-2xl bg-rose-50 text-xs font-bold text-rose-600 hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/15">
+            <LogOut className="mr-2 h-4 w-4" />
+            Keluar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-3xl border border-slate-200 bg-white/80 p-1.5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 [@media(max-height:760px)]:rounded-2xl [@media(max-height:760px)]:border-transparent [@media(max-height:760px)]:bg-transparent [@media(max-height:760px)]:p-0 [@media(max-height:760px)]:shadow-none [@media(max-height:760px)]:dark:bg-transparent xl:p-2">
       <button

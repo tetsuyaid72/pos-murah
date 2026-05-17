@@ -77,7 +77,7 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
   const gradientId = `gradient-${mode}`
 
   return (
-    <Card className={cn('shrink-0 overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm', compact ? 'h-[170px]' : 'h-[230px]')}>
+    <Card className={cn('flex shrink-0 flex-col overflow-hidden rounded-2xl border-border/70 bg-card shadow-sm', compact ? 'h-[220px]' : 'h-[230px]')}>
       {!hideHeader && (
         <CardHeader className={cn('space-y-0', compact ? 'px-3 pb-2 pt-3' : 'px-4 pb-2 pt-3.5')}>
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -103,8 +103,8 @@ export function SalesTrendChart({ trend, compact = false, hideHeader = false }: 
           </div>
         </CardHeader>
       )}
-      <CardContent className={cn('h-full px-3', hideHeader ? 'pb-3 pt-3' : 'pb-3 pt-0')}>
-        <div className={cn('w-full rounded-xl bg-muted/15 p-2', compact ? 'h-[130px]' : 'h-[164px]')}>
+      <CardContent className={cn('min-h-0 flex-1 px-3', hideHeader ? 'pb-3 pt-3' : 'pb-3 pt-0')}>
+        <div className="h-full w-full rounded-xl bg-muted/15 p-2">
           <ResponsiveContainer width="100%" height="100%">
             {mode === 'transactions' ? (
               <BarChart data={chartData} margin={{ top: 6, right: 8, left: -22, bottom: 0 }}>

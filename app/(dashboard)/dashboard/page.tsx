@@ -193,7 +193,7 @@ export default function DashboardPage() {
           )}
 
           {isLoading ? (
-            <div className="h-[170px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
+            <div className="h-[220px] animate-pulse rounded-2xl border border-border/40 bg-muted/30" />
           ) : (
             <SalesTrendChart trend={data.trend} compact />
           )}

@@ -64,7 +64,7 @@ export function LoginForm() {
 
   return (
     <motion.div className="mx-auto flex w-full max-w-md flex-col items-center text-center" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}>
-      <motion.h1 className="text-4xl font-black tracking-[-0.045em] text-foreground sm:text-5xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
+      <motion.h1 className="text-4xl font-black tracking-[-0.045em] text-emerald-600 dark:text-emerald-400 sm:text-5xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
         Masuk
       </motion.h1>
       <motion.p className="relative -left-2 mt-4 w-full text-center text-sm leading-6 text-muted-foreground sm:-left-4 sm:whitespace-nowrap sm:text-base" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}>

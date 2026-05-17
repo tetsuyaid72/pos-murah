@@ -67,6 +67,7 @@ function SheetOverlay({ className }: { className?: string }) {
 
 interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
   side?: SheetSide
+  hideCloseButton?: boolean
 }
 
 function getMotionProps(side: SheetSide) {
@@ -96,7 +97,7 @@ function getSideClasses(side: SheetSide) {
 }
 
 const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
-  ({ side = 'right', className, children, ...props }, ref) => {
+  ({ side = 'right', hideCloseButton = false, className, children, ...props }, ref) => {
     const { open, onOpenChange } = useSheetContext()
     const motionProps = getMotionProps(side)
 
@@ -117,14 +118,16 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
               {...props}
             >
               {children}
-              <button
-                type="button"
-                onClick={() => onOpenChange(false)}
-                className="absolute right-4 top-4 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:bg-accent hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
-              </button>
+              {!hideCloseButton && (
+                <button
+                  type="button"
+                  onClick={() => onOpenChange(false)}
+                  className="absolute right-4 top-4 rounded-sm text-muted-foreground opacity-70 transition-opacity hover:bg-accent hover:text-foreground hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </button>
+              )}
             </motion.div>
           ) : null}
         </AnimatePresence>

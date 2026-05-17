@@ -14,6 +14,7 @@ export function Topbar() {
   const hasOwnMobileHeader = [
     '/dashboard',
     '/products',
+    '/hpp',
     '/transactions',
     '/reports',
     '/settings',

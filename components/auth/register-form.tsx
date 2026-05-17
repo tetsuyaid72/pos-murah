@@ -56,55 +56,55 @@ export function RegisterForm() {
 
   return (
     <motion.div className="w-full max-w-[420px] text-center" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}>
-      <motion.h1 className="text-4xl font-black tracking-[-0.045em] text-slate-950 sm:text-5xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
+      <motion.h1 className="text-4xl font-black tracking-[-0.045em] text-emerald-600 dark:text-emerald-400 sm:text-5xl" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
         Daftar
       </motion.h1>
-      <motion.p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 sm:text-base" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}>
+      <motion.p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-300 sm:text-base" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.16 }}>
         Buat akun dengan email dan password, atau lanjutkan dengan Google.
       </motion.p>
 
       <AnimatePresence>
         {(oauthError || error) && (
-          <motion.div className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-            <p className="text-sm text-red-600">{error || oauthError}</p>
+          <motion.div className="mt-7 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-left dark:border-red-500/20 dark:bg-red-500/10" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+            <p className="text-sm text-red-600 dark:text-red-400">{error || oauthError}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4 text-left">
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
           Nama
-          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nama Anda" required />
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/20" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nama Anda" required />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
           Email
-          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@email.com" required />
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/20" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="nama@email.com" required />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
           Password
-          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimal 6 karakter" minLength={6} required />
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/20" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Minimal 6 karakter" minLength={6} required />
         </label>
-        <label className="block text-sm font-semibold text-slate-800">
+        <label className="block text-sm font-semibold text-slate-800 dark:text-slate-100">
           Nama Toko
-          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" value={storeName} onChange={(event) => setStoreName(event.target.value)} placeholder="Warung Anda" required />
+          <input className="mt-2 h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 dark:placeholder:text-slate-500 dark:focus:border-emerald-400 dark:focus:ring-emerald-500/20" value={storeName} onChange={(event) => setStoreName(event.target.value)} placeholder="Warung Anda" required />
         </label>
         <button className="flex h-13 w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 text-[15px] font-bold text-white shadow-[0_16px_38px_rgba(16,185,129,0.22)] transition hover:bg-emerald-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Memproses...' : 'Daftar dengan Email'}
         </button>
       </form>
 
-      <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-        <span className="h-px flex-1 bg-slate-200" /> atau <span className="h-px flex-1 bg-slate-200" />
+      <div className="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" /> atau <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
       </div>
 
-      <a href="/api/auth/google" className="mx-auto flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98]">
+      <a href="/api/auth/google" className="mx-auto flex h-14 w-full max-w-[420px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 text-[15px] font-semibold text-slate-800 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50/70 hover:shadow-[0_16px_38px_rgba(16,185,129,0.12)] active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:shadow-none dark:hover:border-emerald-500/40 dark:hover:bg-slate-800">
         <GoogleIcon className="h-5 w-5" />
         Masuk dengan Google
       </a>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
         Sudah punya akun?{' '}
-        <Link href="/sign-in" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700">
+        <Link href="/sign-in" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
           Masuk
         </Link>
       </p>
