@@ -30,6 +30,7 @@ export type ActivityAction =
   | 'product.create'
   | 'product.update'
   | 'product.delete'
+  | 'product.import'
   // Categories
   | 'category.create'
   | 'category.update'

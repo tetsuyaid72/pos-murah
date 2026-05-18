@@ -11,8 +11,9 @@ import {
 } from '@/lib/offline-transactions'
 
 export function OfflineSyncStatus() {
-  const [online, setOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine))
-  const [pending, setPending] = useState<PendingOfflineTransaction[]>(() => getPendingOfflineTransactions())
+  const [mounted, setMounted] = useState(false)
+  const [online, setOnline] = useState(true)
+  const [pending, setPending] = useState<PendingOfflineTransaction[]>([])
   const [syncing, setSyncing] = useState(false)
 
   const refreshPending = useCallback(() => {
@@ -31,12 +32,19 @@ export function OfflineSyncStatus() {
   }, [refreshPending, syncing])
 
   useEffect(() => {
+    const hydrateStatus = () => {
+      setMounted(true)
+      setOnline(navigator.onLine)
+      refreshPending()
+    }
+    const timer = window.setTimeout(hydrateStatus, 0)
     const updateOnline = () => setOnline(navigator.onLine)
 
     window.addEventListener('online', updateOnline)
     window.addEventListener('offline', updateOnline)
     window.addEventListener('offline-transactions-changed', refreshPending)
     return () => {
+      window.clearTimeout(timer)
       window.removeEventListener('online', updateOnline)
       window.removeEventListener('offline', updateOnline)
       window.removeEventListener('offline-transactions-changed', refreshPending)
@@ -52,7 +60,7 @@ export function OfflineSyncStatus() {
     }
   }, [online, pending.length, syncNow])
 
-  if (online && pending.length === 0) return null
+  if (!mounted || (online && pending.length === 0)) return null
 
   return (
     <div className="fixed bottom-20 left-1/2 z-[80] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 md:bottom-5 md:left-auto md:right-5 md:translate-x-0">

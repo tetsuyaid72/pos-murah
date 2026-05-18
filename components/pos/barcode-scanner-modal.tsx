@@ -1,0 +1,174 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import { Barcode, Camera, Keyboard, Loader2, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+
+interface BarcodeScannerModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onScan: (code: string) => Promise<boolean> | boolean
+}
+
+export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScannerModalProps) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const controlsRef = useRef<{ stop: () => void } | null>(null)
+  const lastScanRef = useRef({ code: '', time: 0 })
+  const [status, setStatus] = useState('Arahkan kamera ke barcode produk.')
+  const [error, setError] = useState<string | null>(null)
+  const [manualCode, setManualCode] = useState('')
+  const [notFoundCode, setNotFoundCode] = useState<string | null>(null)
+  const [isStarting, setIsStarting] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+
+    let cancelled = false
+    const reader = new BrowserMultiFormatReader()
+
+    const startScanner = async () => {
+      setIsStarting(true)
+      setError(null)
+      setNotFoundCode(null)
+      setStatus('Membuka kamera...')
+      try {
+        if (!videoRef.current) return
+        const devices = await BrowserMultiFormatReader.listVideoInputDevices()
+        const backCamera = devices.find((device) => /back|rear|environment/i.test(device.label))
+        const selectedDeviceId = backCamera?.deviceId || devices[0]?.deviceId
+
+        if (!selectedDeviceId) {
+          throw new Error('Kamera tidak ditemukan di perangkat ini.')
+        }
+
+        const controls = await reader.decodeFromVideoDevice(
+          selectedDeviceId,
+          videoRef.current,
+          async (result, decodeError) => {
+            if (cancelled) return
+            if (decodeError || !result) return
+
+            const code = result.getText().trim()
+            const now = Date.now()
+            if (code === lastScanRef.current.code && now - lastScanRef.current.time < 1500) return
+            lastScanRef.current = { code, time: now }
+            setStatus(`Barcode terbaca: ${code}`)
+            navigator.vibrate?.(80)
+            const found = await onScan(code)
+            if (!found) {
+              setNotFoundCode(code)
+              setStatus('Produk belum terdaftar.')
+            } else {
+              setNotFoundCode(null)
+              setStatus('Produk ditambahkan. Silakan scan berikutnya.')
+            }
+          }
+        )
+        controlsRef.current = controls
+        setStatus('Arahkan kamera ke barcode produk.')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Gagal membuka kamera.')
+      } finally {
+        setIsStarting(false)
+      }
+    }
+
+    startScanner()
+
+    return () => {
+      cancelled = true
+      controlsRef.current?.stop()
+      controlsRef.current = null
+    }
+  }, [open, onScan])
+
+  if (!open) return null
+
+  const handleManualSubmit = async () => {
+    const code = manualCode.trim()
+    if (!code) return
+    const found = await onScan(code)
+    setManualCode('')
+    setNotFoundCode(found ? null : code)
+    setStatus(found ? 'Produk ditambahkan.' : 'Produk belum terdaftar.')
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/90 p-4 text-white">
+      <div className="relative flex h-full w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 shadow-2xl sm:h-auto sm:max-h-[92vh]">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-300">
+              <Barcode className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold">Scan Barcode</h2>
+              <p className="text-xs text-white/60">Gunakan kamera belakang HP.</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10 hover:text-white" onClick={() => onOpenChange(false)}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="relative aspect-[3/4] bg-black sm:aspect-video">
+          <video ref={videoRef} className="h-full w-full object-cover" muted playsInline />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="relative h-36 w-72 max-w-[78vw] rounded-3xl border-2 border-emerald-300/80 shadow-[0_0_0_999px_rgba(2,6,23,0.42)]">
+              <div className="absolute left-4 right-4 top-1/2 h-0.5 -translate-y-1/2 bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
+            </div>
+          </div>
+          {isStarting && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <Loader2 className="h-7 w-7 animate-spin text-emerald-300" />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 p-4">
+          <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/80">
+            {error || status}
+          </div>
+
+          {notFoundCode && (
+            <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
+              <p className="font-semibold">Produk dengan barcode ini belum terdaftar.</p>
+              <p className="mt-1 text-xs opacity-80">Barcode: {notFoundCode}</p>
+              <Link href={`/products/new?barcode=${encodeURIComponent(notFoundCode)}`}>
+                <Button className="mt-3 h-9 rounded-xl bg-amber-300 text-slate-950 hover:bg-amber-200">
+                  Tambah Produk
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-white/70">
+              <Keyboard className="h-4 w-4" />
+              Input manual jika kamera sulit membaca barcode
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={manualCode}
+                onChange={(event) => setManualCode(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') handleManualSubmit() }}
+                placeholder="Masukkan barcode"
+                className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-emerald-300/60"
+              />
+              <Button onClick={handleManualSubmit} className="h-10 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600">
+                Cari
+              </Button>
+            </div>
+          </div>
+
+          <Button variant="outline" className="h-11 w-full rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white" onClick={() => onOpenChange(false)}>
+            <Camera className="mr-2 h-4 w-4" />
+            Tutup Scanner
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

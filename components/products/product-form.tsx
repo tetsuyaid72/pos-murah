@@ -34,9 +34,10 @@ type ProductFormData = z.infer<typeof productSchema>
 
 interface ProductFormProps {
   product?: Product // If provided, we're editing
+  initialBarcode?: string
 }
 
-export function ProductForm({ product }: ProductFormProps) {
+export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) {
   const router = useRouter()
   const { createProduct, updateProduct, categories } = useProductStore()
   const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl || null)
@@ -64,7 +65,7 @@ export function ProductForm({ product }: ProductFormProps) {
         }
       : {
           name: '',
-          barcode: '',
+          barcode: initialBarcode,
           sku: '',
           categoryId: '',
           costPrice: 0,

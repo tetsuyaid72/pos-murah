@@ -2,12 +2,13 @@
 
 import { useEffect, useState, type MouseEvent } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Package, Menu, ShieldCheck, SlidersHorizontal } from 'lucide-react'
+import { Plus, Search, Package, Menu, ShieldCheck, SlidersHorizontal, Upload } from 'lucide-react'
 import { useProductStore } from '@/stores/product-store'
 import { useUIStore } from '@/stores/ui-store'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ProductTable } from '@/components/products/product-table'
+import { ProductImportDialog } from '@/components/products/product-import-dialog'
 import { PlanLimitModal } from '@/components/plan-limit-modal'
 import { usePlanGate } from '@/hooks/use-plan-gate'
 import { cn } from '@/lib/utils'
@@ -19,6 +20,7 @@ export default function ProductsPage() {
   } = useProductStore()
   const [search, setSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
   const { setSidebarOpen } = useUIStore()
   const { getResourceLimit, gateLimit, modalProps } = usePlanGate()
 
@@ -71,12 +73,18 @@ export default function ProductsPage() {
               Produk
             </h1>
           </div>
-          <Link href="/products/new" onClick={handleAddProductClick}>
-            <Button className="h-8 rounded-full bg-emerald-500 px-3 text-[12px] font-semibold text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600">
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              Tambah
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" className="h-8 rounded-full px-3 text-[12px] font-semibold" onClick={() => setImportOpen(true)}>
+              <Upload className="mr-1 h-3.5 w-3.5" />
+              Import
             </Button>
-          </Link>
+            <Link href="/products/new" onClick={handleAddProductClick}>
+              <Button className="h-8 rounded-full bg-emerald-500 px-3 text-[12px] font-semibold text-white shadow-md shadow-emerald-500/20 hover:bg-emerald-600">
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                Tambah
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -195,6 +203,10 @@ export default function ProductsPage() {
                     Kategori
                   </Button>
                 </Link>
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setImportOpen(true)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Excel
+                </Button>
                 <Link href="/products/new" onClick={handleAddProductClick}>
                   <Button variant="premium" size="sm" className="rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
@@ -265,6 +277,14 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      <ProductImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => {
+          fetchProducts()
+          fetchCategories()
+        }}
+      />
       <PlanLimitModal {...modalProps} />
     </div>
   )

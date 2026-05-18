@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
-import { Menu } from 'lucide-react'
+import { useEffect, useCallback, useState } from 'react'
+import { Barcode, Menu } from 'lucide-react'
 import { useProductStore } from '@/stores/product-store'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
@@ -12,7 +12,10 @@ import { CategoryFilter } from '@/components/pos/category-filter'
 import { ProductGrid } from '@/components/pos/product-grid'
 import { CartPanel } from '@/components/pos/cart-panel'
 import { MobileCartSheet } from '@/components/pos/mobile-cart-sheet'
+import { BarcodeScannerModal } from '@/components/pos/barcode-scanner-modal'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/toast'
+import type { Product } from '@/types'
 
 export default function POSPage() {
   const { products, fetchProducts, fetchCategories } = useProductStore()
@@ -22,6 +25,8 @@ export default function POSPage() {
   const removeMissingProducts = useCartStore((s) => s.removeMissingProducts)
   const setViewMode = useProductStore((s) => s.setViewMode)
   const { setSidebarOpen } = useUIStore()
+  const { toast } = useToast()
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   // Reset persisted cart when the active store changes.
   useEffect(() => {
@@ -44,17 +49,37 @@ export default function POSPage() {
   }, [products, removeMissingProducts])
 
   // Barcode scanner integration
+  const addScannedProduct = useCallback((product: Product) => {
+    if (product.stock <= 0) {
+      toast('Stok produk habis.', 'warning')
+      return false
+    }
+    addItem(product)
+    toast(`${product.name} ditambahkan ke keranjang.`, 'success')
+    return true
+  }, [addItem, toast])
+
   const handleBarcodeScan = useCallback(
     (barcode: string) => {
-      const product = products.find(
-        (p) => p.barcode === barcode && p.isActive && p.stock > 0
-      )
-      if (product) {
-        addItem(product)
-      }
+      const product = products.find((p) => p.barcode === barcode && p.isActive)
+      if (product) addScannedProduct(product)
     },
-    [products, addItem]
+    [products, addScannedProduct]
   )
+
+  const handleCameraBarcodeScan = useCallback(async (barcode: string) => {
+    const localProduct = products.find((p) => p.barcode === barcode && p.isActive)
+    if (localProduct) return addScannedProduct(localProduct)
+
+    const res = await fetch(`/api/products/by-barcode?code=${encodeURIComponent(barcode)}`)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      toast(data.error || 'Gagal mencari produk barcode.', 'error')
+      return false
+    }
+    if (!data.product) return false
+    return addScannedProduct(data.product)
+  }, [products, addScannedProduct, toast])
 
   useBarcodeScanner({ onScan: handleBarcodeScan })
 
@@ -74,6 +99,15 @@ export default function POSPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Kasir</h1>
             <p className="text-sm text-muted-foreground">Pilih produk untuk transaksi</p>
           </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 shrink-0 rounded-xl"
+            onClick={() => setScannerOpen(true)}
+            aria-label="Scan barcode"
+          >
+            <Barcode className="h-5 w-5" />
+          </Button>
         </div>
 
         <div className="pt-2">
@@ -93,7 +127,15 @@ export default function POSPage() {
           <div className="sticky top-0 z-20 shrink-0 border-b border-border/50 bg-background/95 p-2 md:p-3 backdrop-blur-xl">
             <div className="rounded-xl border border-border/60 bg-card/80 p-2.5 shadow-sm backdrop-blur-xl md:rounded-2xl md:p-3">
               <div className="space-y-1.5 md:space-y-2">
-                <SearchBar />
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <SearchBar />
+                  </div>
+                  <Button variant="outline" className="h-10 rounded-xl" onClick={() => setScannerOpen(true)}>
+                    <Barcode className="mr-2 h-4 w-4" />
+                    Scan Barcode
+                  </Button>
+                </div>
                 <CategoryFilter />
               </div>
             </div>
@@ -108,6 +150,12 @@ export default function POSPage() {
           <CartPanel />
         </aside>
       </div>
+
+      <BarcodeScannerModal
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={handleCameraBarcodeScan}
+      />
     </div>
   )
 }
