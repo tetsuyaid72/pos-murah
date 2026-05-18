@@ -29,6 +29,14 @@ BEGIN
   LOOP
     EXECUTE format('ALTER TABLE payments DROP CONSTRAINT %I', c.conname);
   END LOOP;
+  FOR c IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'payments'::regclass
+      AND conname = 'payments_provider_check'
+  LOOP
+    EXECUTE format('ALTER TABLE payments DROP CONSTRAINT %I', c.conname);
+  END LOOP;
 END $$;
 
 ALTER TABLE payments
