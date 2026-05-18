@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 import { Barcode, Camera, Keyboard, Loader2, X } from 'lucide-react'
@@ -16,19 +16,37 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
   const videoRef = useRef<HTMLVideoElement>(null)
   const controlsRef = useRef<{ stop: () => void } | null>(null)
   const lastScanRef = useRef({ code: '', time: 0 })
+  const audioContextRef = useRef<AudioContext | null>(null)
   const [status, setStatus] = useState('Arahkan kamera ke barcode produk.')
   const [error, setError] = useState<string | null>(null)
   const [manualCode, setManualCode] = useState('')
   const [notFoundCode, setNotFoundCode] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
+  const [cameraRequested, setCameraRequested] = useState(false)
 
-  useEffect(() => {
-    if (!open) return
+  const playBeep = useCallback(() => {
+    const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AudioContextClass) return
 
-    let cancelled = false
-    const reader = new BrowserMultiFormatReader()
+    const context = audioContextRef.current ?? new AudioContextClass()
+    audioContextRef.current = context
+    if (context.state === 'suspended') context.resume()
 
-    const startScanner = async () => {
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    oscillator.type = 'square'
+    oscillator.frequency.setValueAtTime(1200, context.currentTime)
+    gain.gain.setValueAtTime(0.0001, context.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.12)
+    oscillator.connect(gain)
+    gain.connect(context.destination)
+    oscillator.start(context.currentTime)
+    oscillator.stop(context.currentTime + 0.13)
+  }, [])
+
+  const startScanner = useCallback(async () => {
+      const reader = new BrowserMultiFormatReader()
       setIsStarting(true)
       setError(null)
       setNotFoundCode(null)
@@ -58,7 +76,6 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
           selectedDeviceId,
           videoRef.current,
           async (result, decodeError) => {
-            if (cancelled) return
             if (decodeError || !result) return
 
             const code = result.getText().trim()
@@ -67,6 +84,7 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
             lastScanRef.current = { code, time: now }
             setStatus(`Barcode terbaca: ${code}`)
             navigator.vibrate?.(80)
+            playBeep()
             const found = await onScan(code)
             if (!found) {
               setNotFoundCode(code)
@@ -90,16 +108,25 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
       } finally {
         setIsStarting(false)
       }
-    }
+  }, [onScan, playBeep])
 
-    startScanner()
-
-    return () => {
-      cancelled = true
+  useEffect(() => {
+    if (!open) {
+      const timer = window.setTimeout(() => setCameraRequested(false), 0)
       controlsRef.current?.stop()
       controlsRef.current = null
+      return () => window.clearTimeout(timer)
     }
-  }, [open, onScan])
+  }, [open])
+
+  useEffect(() => {
+    return () => {
+      controlsRef.current?.stop()
+      controlsRef.current = null
+      audioContextRef.current?.close()
+      audioContextRef.current = null
+    }
+  }, [])
 
   if (!open) return null
 
@@ -137,6 +164,21 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
               <div className="absolute left-4 right-4 top-1/2 h-0.5 -translate-y-1/2 bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
             </div>
           </div>
+          {!cameraRequested && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 px-6 text-center">
+              <Camera className="h-10 w-10 text-emerald-300" />
+              <p className="text-sm font-semibold">Izinkan kamera untuk mulai scan barcode.</p>
+              <Button
+                className="rounded-2xl bg-emerald-500 text-white hover:bg-emerald-600"
+                onClick={() => {
+                  setCameraRequested(true)
+                  startScanner()
+                }}
+              >
+                Izinkan Kamera
+              </Button>
+            </div>
+          )}
           {isStarting && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
               <Loader2 className="h-7 w-7 animate-spin text-emerald-300" />
