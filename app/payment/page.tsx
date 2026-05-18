@@ -182,14 +182,11 @@ function PaymentContent() {
       <main className="relative flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 text-slate-950">
         <Card className="w-full max-w-md rounded-[28px] border border-slate-200/80 bg-white/90 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur">
           <CardHeader className="items-center p-7">
-            <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
-              Midtrans
-            </Badge>
-            <CardTitle className="mt-3 text-2xl font-black tracking-[-0.035em] text-slate-950">
-              Membuka Halaman Pembayaran
+            <CardTitle className="text-2xl font-black tracking-[-0.035em] text-slate-950">
+              Mohon tunggu !!!
             </CardTitle>
             <CardDescription className="max-w-sm text-sm leading-6 text-slate-500">
-              Mohon tunggu, Anda akan diarahkan ke pembayaran Midtrans untuk paket {selectedPlan.name}.
+              Sedang menyiapkan halaman pembayaran untuk paket {selectedPlan.name}.
             </CardDescription>
             {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
             {uploadError && (
@@ -272,7 +269,7 @@ function PaymentContent() {
                 disabled={isMidtransLoading}
                 className="h-11 w-full rounded-2xl bg-slate-950 font-bold text-white shadow-[0_14px_32px_rgba(15,23,42,0.16)] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {isMidtransLoading ? 'Membuka Midtrans...' : 'Bayar Otomatis via Midtrans'}
+                {isMidtransLoading ? 'Mohon tunggu !!!' : 'Bayar Otomatis'}
               </Button>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs font-medium leading-5 text-amber-800">
