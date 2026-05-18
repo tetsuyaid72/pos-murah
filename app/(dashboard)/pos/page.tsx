@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useState } from 'react'
-import { Barcode, Menu } from 'lucide-react'
+import { Camera, Menu } from 'lucide-react'
 import { useProductStore } from '@/stores/product-store'
 import { useCartStore } from '@/stores/cart-store'
 import { useAuthStore } from '@/stores/auth-store'
@@ -85,7 +85,7 @@ export default function POSPage() {
 
   return (
     <div className="flex h-full min-h-0 overflow-hidden bg-background lg:h-screen">
-      <div className="block min-h-screen overflow-x-hidden bg-background pb-24 md:hidden">
+      <div className="block min-h-screen overflow-x-hidden bg-background pb-40 md:hidden">
         <div className="flex items-start gap-3 px-4 pt-4">
           <Button
             variant="ghost"
@@ -106,7 +106,7 @@ export default function POSPage() {
             onClick={() => setScannerOpen(true)}
             aria-label="Scan barcode"
           >
-            <Barcode className="h-5 w-5" />
+            <Camera className="h-5 w-5" />
           </Button>
         </div>
 
@@ -132,7 +132,7 @@ export default function POSPage() {
                     <SearchBar />
                   </div>
                   <Button variant="outline" className="h-10 rounded-xl" onClick={() => setScannerOpen(true)}>
-                    <Barcode className="mr-2 h-4 w-4" />
+                    <Camera className="mr-2 h-4 w-4" />
                     Scan Barcode
                   </Button>
                 </div>

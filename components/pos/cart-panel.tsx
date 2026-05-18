@@ -127,7 +127,7 @@ export function CartPanel({ compactMobile = false }: CartPanelProps) {
 
         {/* Cart footer — totals & pay button */}
         {items.length > 0 && (
-          <div className={compactMobile ? 'shrink-0 border-t border-border/50 bg-background px-4 py-4' : 'shrink-0 border-t border-border/50 bg-background/60 p-3 backdrop-blur-sm md:p-4'}>
+          <div className={compactMobile ? 'shrink-0 border-t border-border/50 bg-background px-4 pb-6 pt-4' : 'shrink-0 border-t border-border/50 bg-background/60 p-3 backdrop-blur-sm md:p-4'}>
             {/* Subtotal */}
             <div className={compactMobile ? 'flex items-center justify-between text-sm' : 'flex items-center justify-between text-[13px] md:text-sm'}>
               <span className="text-muted-foreground">Subtotal</span>
