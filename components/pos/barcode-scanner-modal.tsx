@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import { Barcode, Camera, Keyboard, Loader2, X } from 'lucide-react'
+import { Barcode, Camera, Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BarcodeScannerModalProps {
@@ -19,7 +19,6 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
   const audioContextRef = useRef<AudioContext | null>(null)
   const [status, setStatus] = useState('Arahkan kamera ke barcode produk.')
   const [error, setError] = useState<string | null>(null)
-  const [manualCode, setManualCode] = useState('')
   const [notFoundCode, setNotFoundCode] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   const [cameraRequested, setCameraRequested] = useState(false)
@@ -32,17 +31,26 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
     audioContextRef.current = context
     if (context.state === 'suspended') context.resume()
 
-    const oscillator = context.createOscillator()
-    const gain = context.createGain()
-    oscillator.type = 'square'
-    oscillator.frequency.setValueAtTime(1200, context.currentTime)
-    gain.gain.setValueAtTime(0.0001, context.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.01)
-    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.12)
-    oscillator.connect(gain)
-    gain.connect(context.destination)
-    oscillator.start(context.currentTime)
-    oscillator.stop(context.currentTime + 0.13)
+    const now = context.currentTime
+    const masterGain = context.createGain()
+    masterGain.gain.setValueAtTime(0.0001, now)
+    masterGain.gain.exponentialRampToValueAtTime(0.22, now + 0.006)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18)
+    masterGain.connect(context.destination)
+
+    const firstTone = context.createOscillator()
+    firstTone.type = 'square'
+    firstTone.frequency.setValueAtTime(1040, now)
+    firstTone.connect(masterGain)
+    firstTone.start(now)
+    firstTone.stop(now + 0.075)
+
+    const secondTone = context.createOscillator()
+    secondTone.type = 'square'
+    secondTone.frequency.setValueAtTime(1560, now + 0.07)
+    secondTone.connect(masterGain)
+    secondTone.start(now + 0.07)
+    secondTone.stop(now + 0.18)
   }, [])
 
   const startScanner = useCallback(async () => {
@@ -130,15 +138,6 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
 
   if (!open) return null
 
-  const handleManualSubmit = async () => {
-    const code = manualCode.trim()
-    if (!code) return
-    const found = await onScan(code)
-    setManualCode('')
-    setNotFoundCode(found ? null : code)
-    setStatus(found ? 'Produk ditambahkan.' : 'Produk belum terdaftar.')
-  }
-
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/90 p-4 text-white">
       <div className="relative flex h-full w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-950 shadow-2xl sm:h-auto sm:max-h-[92vh]">
@@ -202,25 +201,6 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
               </Link>
             </div>
           )}
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-white/70">
-              <Keyboard className="h-4 w-4" />
-              Input manual jika kamera sulit membaca barcode
-            </div>
-            <div className="flex gap-2">
-              <input
-                value={manualCode}
-                onChange={(event) => setManualCode(event.target.value)}
-                onKeyDown={(event) => { if (event.key === 'Enter') handleManualSubmit() }}
-                placeholder="Masukkan barcode"
-                className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-900 px-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-emerald-300/60"
-              />
-              <Button onClick={handleManualSubmit} className="h-10 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600">
-                Cari
-              </Button>
-            </div>
-          </div>
 
           <Button variant="outline" className="h-11 w-full rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white" onClick={() => onOpenChange(false)}>
             <Camera className="mr-2 h-4 w-4" />

@@ -116,13 +116,13 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
     <div className="mx-auto max-w-2xl">
 
       {/* Header */}
-      <div className="mb-4 flex items-start gap-3 md:mb-6 md:items-center md:gap-4">
-        <Link href="/products">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg md:h-10 md:w-10">
-            <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
+      <div className="mb-3 hidden items-start gap-3 md:mb-6 md:flex md:items-center md:gap-4">
+        <Link href="/products" className="hidden md:block">
+          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-[20px] font-bold leading-tight md:text-2xl">
             {isEditing ? 'Edit Produk' : 'Tambah Produk'}
           </h1>
