@@ -17,23 +17,26 @@ const persistedStores = [
   useSettingsStore,
 ]
 
+function hasHydrated(store: typeof useCartStore | typeof useSettingsStore): boolean {
+  return store.persist?.hasHydrated?.() ?? true
+}
+
 export function useStoreHydration(): boolean {
   const [hydrated, setHydrated] = useState(() =>
-    persistedStores.every((store) => store.persist.hasHydrated())
+    persistedStores.every(hasHydrated)
   )
 
   useEffect(() => {
     if (hydrated) return
 
-    // Subscribe to each store's onFinishHydration
-    const unsubscribes = persistedStores.map((store) =>
-      store.persist.onFinishHydration(() => {
-        const nowReady = persistedStores.every((s) => s.persist.hasHydrated())
+    const unsubscribes = persistedStores
+      .map((store) => store.persist?.onFinishHydration?.(() => {
+        const nowReady = persistedStores.every(hasHydrated)
         if (nowReady) {
           setHydrated(true)
         }
-      })
-    )
+      }))
+      .filter((unsub): unsub is () => void => typeof unsub === 'function')
 
     return () => {
       unsubscribes.forEach((unsub) => unsub())
