@@ -20,35 +20,35 @@ const plans = [
     originalPrice: 'Rp99K',
     discount: 'Hemat 51%',
     period: '/bulan',
-    description: 'Untuk toko yang ingin mulai pakai POS dengan biaya bulanan ringan.',
+    description: 'Untuk warung aktif yang ingin biaya ringan bulanan.',
     features: [
       '200 produk',
       '500 transaksi per hari',
       '100 pelanggan',
       'Laporan sampai 365 hari',
       'Backup & restore data',
-      'Langganan bulanan',
+      'Langganan bulanan fleksibel',
     ],
     cta: 'Pilih Pro',
-    href: '/payment?plan=pro',
+    href: '/payment?plan=pro&auto=midtrans',
   },
   {
     name: 'Bisnis',
     price: 'Rp199K',
     originalPrice: 'Rp399K',
-    discount: 'Hemat 50%',
+    discount: 'Promo Lifetime',
     period: 'sekali bayar',
-    description: 'Untuk usaha yang ingin akses penuh tanpa biaya bulanan.',
+    description: 'Promo launching untuk akses penuh tanpa biaya bulanan.',
     features: [
       'Produk unlimited',
       'Transaksi unlimited',
       'Pelanggan unlimited',
       'Laporan tanpa batas',
       'Backup & restore data',
-      'Akses selamanya',
+      'Bayar sekali, akses selamanya',
     ],
     cta: 'Pilih Bisnis',
-    href: '/payment?plan=bisnis',
+    href: '/payment?plan=bisnis&auto=midtrans',
     highlighted: true,
   },
 ]
@@ -67,13 +67,13 @@ export default function PricingPage() {
 
         <section id="pricing" className="flex flex-1 flex-col items-center justify-start pb-7 pt-6 text-center sm:justify-center sm:pb-8 sm:pt-0">
           <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-            Pro Bulanan & Bisnis Lifetime
+            Pro Bulanan & Promo Lifetime
           </Badge>
           <h1 className="mt-4 text-[28px] font-black leading-tight tracking-[-0.045em] text-emerald-600 dark:text-emerald-400 sm:mt-5 sm:text-5xl">
             Pilih Paket
           </h1>
           <p className="mt-3 max-w-[320px] text-sm leading-6 text-slate-600 dark:text-slate-400 sm:mt-4 sm:max-w-2xl sm:text-base sm:leading-7">
-            Pilih Pro untuk langganan bulanan ringan, atau Bisnis untuk akses selamanya tanpa biaya berulang.
+            Pilih Pro untuk langganan bulanan ringan, atau Bisnis Lifetime promo launching untuk bayar sekali dan akses selamanya.
           </p>
 
           <div className="mt-7 grid w-full gap-4 sm:max-w-sm md:max-w-3xl md:grid-cols-2">
@@ -89,7 +89,7 @@ export default function PricingPage() {
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 sm:-top-4">
                     <Badge className="bg-emerald-600 px-3 py-1 text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)]">
-                      Pilihan Terbaik
+                      Promo Lifetime Launching
                     </Badge>
                   </div>
                 )}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   CheckCircle2,
   ShoppingCart,
@@ -46,6 +46,8 @@ function getRelativeTime(dateStr: string): string {
 }
 
 export function RecentActivity({ transactions, products }: RecentActivityProps) {
+  const [renderedAt] = useState(() => Date.now())
+
   const activities = useMemo(() => {
     const items: ActivityItem[] = []
 
@@ -81,7 +83,7 @@ export function RecentActivity({ transactions, products }: RecentActivityProps) 
         title: `Stok ${prod.name} menipis`,
         description: `Tersisa ${prod.stock} ${prod.unit}`,
         time: 'Perlu restock',
-        timestamp: Date.now() - 1000,
+        timestamp: renderedAt - 1000,
       })
     }
 
@@ -105,7 +107,7 @@ export function RecentActivity({ transactions, products }: RecentActivityProps) 
     return items
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 6)
-  }, [transactions, products])
+  }, [transactions, products, renderedAt])
 
   return (
     <Card className="h-full">

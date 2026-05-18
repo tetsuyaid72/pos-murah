@@ -12,26 +12,23 @@ import { useSettingsStore } from '@/stores/settings-store'
  * Note: useProductStore and useTransactionStore are NOT persisted
  * (they fetch from the database), so they're excluded from hydration checks.
  */
+const persistedStores = [
+  useCartStore,
+  useSettingsStore,
+]
+
 export function useStoreHydration(): boolean {
-  const [hydrated, setHydrated] = useState(false)
+  const [hydrated, setHydrated] = useState(() =>
+    persistedStores.every((store) => store.persist.hasHydrated())
+  )
 
   useEffect(() => {
-    const stores = [
-      useCartStore,
-      useSettingsStore,
-    ]
+    if (hydrated) return
 
-    // Check if all stores have already hydrated (synchronous path)
-    const allReady = stores.every((store) => store.persist.hasHydrated())
-    if (allReady) {
-      setHydrated(true)
-      return
-    }
-
-    // Otherwise, subscribe to each store's onFinishHydration
-    const unsubscribes = stores.map((store) =>
+    // Subscribe to each store's onFinishHydration
+    const unsubscribes = persistedStores.map((store) =>
       store.persist.onFinishHydration(() => {
-        const nowReady = stores.every((s) => s.persist.hasHydrated())
+        const nowReady = persistedStores.every((s) => s.persist.hasHydrated())
         if (nowReady) {
           setHydrated(true)
         }
@@ -41,7 +38,7 @@ export function useStoreHydration(): boolean {
     return () => {
       unsubscribes.forEach((unsub) => unsub())
     }
-  }, [])
+  }, [hydrated])
 
   return hydrated
 }

@@ -2,12 +2,12 @@ import { create } from 'zustand'
 import type { Transaction } from '@/types'
 import { useDashboardStore } from '@/stores/dashboard-store'
 
-function normalizeTransaction(t: Record<string, any>): Transaction {
+function normalizeTransaction(t: Record<string, unknown>): Transaction {
   return {
     ...t,
-    paymentMethod: (t.paymentMethod || 'cash').toLowerCase(),
-    status: (t.status || 'completed').toLowerCase(),
-    discountType: (t.discountType || 'fixed').toLowerCase(),
+    paymentMethod: String(t.paymentMethod || 'cash').toLowerCase(),
+    status: String(t.status || 'completed').toLowerCase(),
+    discountType: String(t.discountType || 'fixed').toLowerCase(),
   } as Transaction
 }
 

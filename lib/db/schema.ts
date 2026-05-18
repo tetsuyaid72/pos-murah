@@ -184,7 +184,7 @@ export const debtRecords = pgTable('debt_records', {
 ])
 
 // =============================================================================
-// PAYMENTS (Manual upgrade requests)
+// PAYMENTS (Manual + Midtrans upgrade requests)
 // =============================================================================
 
 export const payments = pgTable('payments', {
@@ -200,16 +200,26 @@ export const payments = pgTable('payments', {
   finalAmount: integer('final_amount').notNull().default(50000),
   promoCode: text('promo_code'),
   promoType: text('promo_type'),
-  status: text('status', { enum: ['PENDING', 'APPROVED', 'REJECTED'] }).notNull().default('PENDING'),
-  method: text('method', { enum: ['BANK_TRANSFER', 'QRIS'] }).notNull().default('BANK_TRANSFER'),
+  status: text('status', { enum: ['PENDING', 'APPROVED', 'REJECTED', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED'] }).notNull().default('PENDING'),
+  method: text('method', { enum: ['BANK_TRANSFER', 'QRIS', 'MIDTRANS'] }).notNull().default('BANK_TRANSFER'),
+  provider: text('provider', { enum: ['MANUAL', 'MIDTRANS'] }).notNull().default('MANUAL'),
+  providerOrderId: text('provider_order_id').unique(),
+  providerTransactionId: text('provider_transaction_id'),
+  providerStatus: text('provider_status'),
+  snapToken: text('snap_token'),
+  snapRedirectUrl: text('snap_redirect_url'),
   proofUrl: text('proof_url'),
   notes: text('notes'),
+  paidAt: timestamp('paid_at'),
+  expiredAt: timestamp('expired_at'),
+  metadata: jsonb('metadata').notNull().default({}),
   approvedBy: text('approved_by').references(() => users.id, { onDelete: 'set null' }),
   approvedAt: timestamp('approved_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => [
   index('payments_user_id_idx').on(table.userId),
   index('payments_status_idx').on(table.status),
+  index('payments_provider_order_id_idx').on(table.providerOrderId),
 ])
 
 export const paymentsRelations = relations(payments, ({ one }) => ({

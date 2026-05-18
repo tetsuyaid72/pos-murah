@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle2,
@@ -27,8 +28,11 @@ interface Payment {
   finalAmount: number
   promoCode: string | null
   promoType: string | null
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
-  method: 'BANK_TRANSFER' | 'QRIS'
+  status: PaymentStatus
+  method: 'BANK_TRANSFER' | 'QRIS' | 'MIDTRANS'
+  provider?: 'MANUAL' | 'MIDTRANS' | null
+  providerOrderId?: string | null
+  paidAt?: string | null
   proofUrl: string | null
   notes: string | null
   createdAt: string
@@ -43,12 +47,20 @@ interface ProofModalState {
   hasError: boolean
 }
 
-type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'
+type PaymentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'PAID' | 'FAILED' | 'EXPIRED' | 'CANCELLED' | 'REFUNDED'
+type StatusFilter = 'ALL' | PaymentStatus
 
-const STATUS_CONFIG = {
+const STATUS_FILTERS: StatusFilter[] = ['ALL', 'PENDING', 'APPROVED', 'PAID', 'REJECTED', 'FAILED', 'EXPIRED', 'CANCELLED']
+
+const STATUS_CONFIG: Record<PaymentStatus, { label: string; icon: typeof Clock; color: string }> = {
   PENDING: { label: 'Pending', icon: Clock, color: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
-  APPROVED: { label: 'Approved', icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  APPROVED: { label: 'Approved Manual', icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  PAID: { label: 'Paid Gateway', icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
   REJECTED: { label: 'Rejected', icon: XCircle, color: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
+  FAILED: { label: 'Failed', icon: XCircle, color: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
+  EXPIRED: { label: 'Expired', icon: AlertTriangle, color: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400' },
+  CANCELLED: { label: 'Cancelled', icon: XCircle, color: 'bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400' },
+  REFUNDED: { label: 'Refunded', icon: AlertTriangle, color: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
 }
 
 export default function AdminPaymentsPage() {
@@ -72,9 +84,6 @@ export default function AdminPaymentsPage() {
       if (!res.ok) throw new Error('Failed to fetch')
       const data = await res.json()
       const nextPayments = data.payments || []
-      nextPayments.forEach((payment: Payment) => {
-        console.log('[Admin Payments] proof url:', payment.proofUrl)
-      })
       setPayments(nextPayments)
     } catch {
       setPayments([])
@@ -92,7 +101,7 @@ export default function AdminPaymentsPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const status = params.get('status')
-    if (status && ['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+    if (status && STATUS_FILTERS.includes(status as StatusFilter)) {
       const timeout = setTimeout(() => setFilter(status as StatusFilter), 0)
       return () => clearTimeout(timeout)
     }
@@ -159,7 +168,7 @@ export default function AdminPaymentsPage() {
       {/* Filters & Search */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex rounded-xl border border-border/50 bg-muted/50 p-1">
-          {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as StatusFilter[]).map((status) => (
+          {STATUS_FILTERS.map((status) => (
             <button
               key={status}
               type="button"
@@ -242,11 +251,12 @@ export default function AdminPaymentsPage() {
                                 {failedProofUrls[payment.proofUrl] ? (
                                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
                                 ) : (
-                                  <img
+                                  <Image
                                     src={payment.proofUrl}
                                     alt="Bukti"
-                                    className="h-full w-full object-cover"
-                                    loading="lazy"
+                                    fill
+                                    sizes="40px"
+                                    className="object-cover"
                                     onError={() => markProofImageFailed(payment.proofUrl!)}
                                   />
                                 )}
@@ -267,7 +277,11 @@ export default function AdminPaymentsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : 'QRIS'}
+                          <div className="space-y-0.5">
+                            <p>{payment.provider ?? 'MANUAL'}</p>
+                            <p>{payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : payment.method}</p>
+                            {payment.providerOrderId && <p className="text-[10px]">Order: {payment.providerOrderId}</p>}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-foreground">
                           <div className="space-y-0.5">
@@ -360,7 +374,7 @@ export default function AdminPaymentsPage() {
                       </div>
                     )}
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : 'QRIS'}</span>
+                      <span>{payment.provider ?? 'MANUAL'} · {payment.method === 'BANK_TRANSFER' ? 'Transfer Bank' : payment.method}</span>
                       <span>{formatDate(payment.createdAt)}</span>
                     </div>
                     {payment.proofUrl ? (
@@ -492,10 +506,12 @@ export default function AdminPaymentsPage() {
                     </a>
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={proofModal.url}
                     alt="Bukti pembayaran"
-                    className="max-h-[76vh] max-w-full rounded-lg object-contain"
+                    width={1200}
+                    height={900}
+                    className="max-h-[76vh] w-auto max-w-full rounded-lg object-contain"
                     onError={() => setProofModal((current) => current ? { ...current, hasError: true } : current)}
                   />
                 )}

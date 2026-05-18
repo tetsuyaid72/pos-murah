@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ImagePlus, Store, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,7 @@ const plans = {
     billingPeriod: 'monthly',
     summaryPlan: 'pro',
     description: 'Langganan bulanan untuk fitur utama POS.',
+    accessLabel: 'Langganan bulanan',
   },
   bisnis: {
     name: 'Bisnis',
@@ -34,8 +35,9 @@ const plans = {
     apiPlan: 'BUSINESS',
     billingPeriod: 'lifetime',
     summaryPlan: 'business',
-    description: 'Sekali bayar untuk akses selamanya.',
-    badge: 'Pilihan Terbaik',
+    description: 'Promo lifetime: sekali bayar untuk akses selamanya.',
+    accessLabel: 'Lifetime / sekali bayar',
+    badge: 'Promo Lifetime',
   },
 } as const
 
@@ -51,13 +53,16 @@ function PaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const selectedPlan = getSelectedPlan(searchParams.get('plan'))
+  const autoPayment = searchParams.get('auto') === 'midtrans'
   const { toast } = useToast()
   const { submitPayment } = useSubscriptionStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const autoRedirectStarted = useRef(false)
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [proofPreview, setProofPreview] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isMidtransLoading, setIsMidtransLoading] = useState(false)
 
   const handleProofChange = (file: File | null) => {
     setUploadError(null)
@@ -100,6 +105,39 @@ function PaymentContent() {
     return data.url as string
   }
 
+  const handleMidtransClick = useCallback(async () => {
+    setIsMidtransLoading(true)
+    setUploadError(null)
+    try {
+      const res = await fetch('/api/payments/midtrans/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: selectedPlan.apiPlan,
+          billingPeriod: selectedPlan.billingPeriod,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal membuat pembayaran Midtrans.')
+      }
+      if (!data.redirectUrl) {
+        throw new Error('Link pembayaran Midtrans tidak tersedia.')
+      }
+      window.location.href = data.redirectUrl
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Gagal membuka pembayaran Midtrans.')
+    } finally {
+      setIsMidtransLoading(false)
+    }
+  }, [selectedPlan.apiPlan, selectedPlan.billingPeriod])
+
+  useEffect(() => {
+    if (!autoPayment || autoRedirectStarted.current) return
+    autoRedirectStarted.current = true
+    handleMidtransClick()
+  }, [autoPayment, handleMidtransClick])
+
   const handlePaidClick = async () => {
     if (!proofFile) {
       setUploadError('Wajib upload bukti pembayaran terlebih dahulu.')
@@ -139,6 +177,39 @@ function PaymentContent() {
     }
   }
 
+  if (autoPayment) {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center bg-[#F8FAFC] px-4 text-slate-950">
+        <Card className="w-full max-w-md rounded-[28px] border border-slate-200/80 bg-white/90 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur">
+          <CardHeader className="items-center p-7">
+            <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
+              Midtrans
+            </Badge>
+            <CardTitle className="mt-3 text-2xl font-black tracking-[-0.035em] text-slate-950">
+              Membuka Halaman Pembayaran
+            </CardTitle>
+            <CardDescription className="max-w-sm text-sm leading-6 text-slate-500">
+              Mohon tunggu, Anda akan diarahkan ke pembayaran Midtrans untuk paket {selectedPlan.name}.
+            </CardDescription>
+            {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
+            {uploadError && (
+              <div className="mt-4 grid w-full gap-3 sm:grid-cols-2">
+                <Button onClick={handleMidtransClick} disabled={isMidtransLoading} className="h-11 rounded-2xl bg-slate-950 font-bold text-white hover:bg-slate-800">
+                  Coba Lagi
+                </Button>
+                <Link href={`/payment?plan=${selectedPlan.summaryPlan}`} className="w-full">
+                  <Button variant="outline" className="h-11 w-full rounded-2xl border-slate-200 bg-white/80 font-bold text-slate-800">
+                    Bayar Manual
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardHeader>
+        </Card>
+      </main>
+    )
+  }
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#F8FAFC] px-4 text-slate-950 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
@@ -171,13 +242,13 @@ function PaymentContent() {
           <Card className="w-full max-w-md rounded-[28px] border border-slate-200/80 bg-white/90 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:max-w-lg">
             <CardHeader className="items-center p-5 pb-4 sm:p-7 sm:pb-5">
               <Badge className="border border-emerald-100 bg-emerald-50 px-3 py-1 text-emerald-700">
-                QRIS Only
+                Pembayaran Manual QRIS
               </Badge>
               <CardTitle className="mt-3 text-2xl font-black tracking-[-0.035em] text-slate-950 sm:text-3xl">
-                Selesaikan Pembayaran
+                Selesaikan Pembayaran Manual
               </CardTitle>
               <CardDescription className="max-w-sm text-sm leading-6 text-slate-500">
-                Scan QRIS untuk mengaktifkan paket berlangganan Warung Madura POS.
+                Scan QRIS lalu upload bukti pembayaran. Admin akan memverifikasi sebelum paket aktif.
               </CardDescription>
             </CardHeader>
 
@@ -185,6 +256,7 @@ function PaymentContent() {
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <p className="text-sm font-semibold text-emerald-700">Paket {selectedPlan.name}</p>
+                  <Badge className="border border-emerald-200 bg-white text-emerald-700">{selectedPlan.accessLabel}</Badge>
                   {'badge' in selectedPlan && selectedPlan.badge && (
                     <Badge className="bg-emerald-600 text-white">{selectedPlan.badge}</Badge>
                   )}
@@ -193,6 +265,18 @@ function PaymentContent() {
                   {selectedPlan.price}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{selectedPlan.description}</p>
+              </div>
+
+              <Button
+                onClick={handleMidtransClick}
+                disabled={isMidtransLoading}
+                className="h-11 w-full rounded-2xl bg-slate-950 font-bold text-white shadow-[0_14px_32px_rgba(15,23,42,0.16)] hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isMidtransLoading ? 'Membuka Midtrans...' : 'Bayar Otomatis via Midtrans'}
+              </Button>
+
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs font-medium leading-5 text-amber-800">
+                Pembayaran ini diverifikasi manual oleh admin. Setelah bukti pembayaran valid, paket Anda akan diaktifkan.
               </div>
 
               <div className="mx-auto flex w-full max-w-[290px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:max-w-[320px] sm:p-5">
@@ -212,8 +296,8 @@ function PaymentContent() {
                     <ImagePlus className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900">Upload bukti pembayaran</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">Format JPG, PNG, atau WebP. Maksimal 2MB.</p>
+                    <p className="text-sm font-bold text-slate-900">Upload bukti pembayaran manual</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">Format JPG, PNG, atau WebP. Maksimal 2MB. Verifikasi dilakukan oleh admin.</p>
                   </div>
                 </div>
 
@@ -259,7 +343,7 @@ function PaymentContent() {
                   disabled={isSubmitting}
                   className="h-11 rounded-2xl bg-emerald-600 font-bold text-white shadow-[0_14px_32px_rgba(16,185,129,0.22)] hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {isSubmitting ? 'Mengirim...' : 'Saya Sudah Bayar'}
+                  {isSubmitting ? 'Mengirim...' : 'Kirim Bukti Bayar'}
                 </Button>
                 <Link href="/pricing" className="w-full">
                   <Button

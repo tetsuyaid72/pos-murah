@@ -1,6 +1,7 @@
 /**
  * GET /api/admin/payments — List all payments (admin only)
  * Query params: ?status=PENDING|APPROVED|REJECTED&search=keyword
+ * Future gateway statuses are tolerated by the UI after schema migration.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -41,8 +42,14 @@ export async function GET(request: NextRequest) {
         promoType: payments.promoType,
         status: payments.status,
         method: payments.method,
+        provider: payments.provider,
+        providerOrderId: payments.providerOrderId,
+        providerTransactionId: payments.providerTransactionId,
+        providerStatus: payments.providerStatus,
         proofUrl: payments.proofUrl,
         notes: payments.notes,
+        paidAt: payments.paidAt,
+        expiredAt: payments.expiredAt,
         createdAt: payments.createdAt,
         approvedAt: payments.approvedAt,
         userName: users.name,
@@ -55,8 +62,9 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(payments.createdAt))
       .$dynamic()
 
-    if (statusFilter && ['PENDING', 'APPROVED', 'REJECTED'].includes(statusFilter)) {
-      query = query.where(eq(payments.status, statusFilter as 'PENDING' | 'APPROVED' | 'REJECTED'))
+    const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'PAID', 'FAILED', 'EXPIRED', 'CANCELLED', 'REFUNDED'] as const
+    if (statusFilter && validStatuses.includes(statusFilter as typeof validStatuses[number])) {
+      query = query.where(eq(payments.status, statusFilter as typeof validStatuses[number]))
     }
 
     if (search) {
@@ -72,6 +80,7 @@ export async function GET(request: NextRequest) {
     const results = await query
     const normalizedPayments = results.map((payment) => ({
       ...payment,
+      paidAt: payment.paidAt ?? payment.approvedAt,
       proofUrl: normalizeStoragePublicUrl(payment.proofUrl),
     }))
 

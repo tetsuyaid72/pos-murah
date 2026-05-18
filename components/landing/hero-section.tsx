@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -143,7 +144,7 @@ export function HeroSection() {
                     'linear-gradient(to bottom, transparent 0%, black 6%, black 92%, transparent 100%)',
                   ].join(', '),
                   maskComposite: 'intersect',
-                  WebkitMaskComposite: 'source-in' as any,
+                  WebkitMaskComposite: 'source-in' as CSSProperties['maskComposite'],
                 }}
               />
               {/* Desktop: radial ellipse mask */}

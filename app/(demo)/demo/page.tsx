@@ -78,7 +78,8 @@ export default function DemoDashboardPage() {
   }, [])
 
   useEffect(() => {
-    fetchDashboard(period)
+    const timeout = setTimeout(() => { fetchDashboard(period) }, 0)
+    return () => clearTimeout(timeout)
   }, [period, fetchDashboard])
 
   const handlePeriodChange = (newPeriod: DashboardPeriod) => {
