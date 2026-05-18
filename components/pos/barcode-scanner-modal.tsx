@@ -23,7 +23,7 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
   const [isStarting, setIsStarting] = useState(false)
   const [cameraRequested, setCameraRequested] = useState(false)
 
-  const playBeep = useCallback(() => {
+  const playBeep = useCallback((type: 'success' | 'not-found') => {
     const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioContextClass) return
 
@@ -34,23 +34,22 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
     const now = context.currentTime
     const masterGain = context.createGain()
     masterGain.gain.setValueAtTime(0.0001, now)
-    masterGain.gain.exponentialRampToValueAtTime(0.22, now + 0.006)
-    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18)
+    masterGain.gain.exponentialRampToValueAtTime(type === 'success' ? 0.22 : 0.16, now + 0.006)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + (type === 'success' ? 0.18 : 0.28))
     masterGain.connect(context.destination)
 
-    const firstTone = context.createOscillator()
-    firstTone.type = 'square'
-    firstTone.frequency.setValueAtTime(1040, now)
-    firstTone.connect(masterGain)
-    firstTone.start(now)
-    firstTone.stop(now + 0.075)
+    const tones = type === 'success'
+      ? [{ frequency: 1040, start: 0, duration: 0.075 }, { frequency: 1560, start: 0.07, duration: 0.11 }]
+      : [{ frequency: 420, start: 0, duration: 0.13 }, { frequency: 260, start: 0.14, duration: 0.14 }]
 
-    const secondTone = context.createOscillator()
-    secondTone.type = 'square'
-    secondTone.frequency.setValueAtTime(1560, now + 0.07)
-    secondTone.connect(masterGain)
-    secondTone.start(now + 0.07)
-    secondTone.stop(now + 0.18)
+    tones.forEach((tone) => {
+      const oscillator = context.createOscillator()
+      oscillator.type = 'square'
+      oscillator.frequency.setValueAtTime(tone.frequency, now + tone.start)
+      oscillator.connect(masterGain)
+      oscillator.start(now + tone.start)
+      oscillator.stop(now + tone.start + tone.duration)
+    })
   }, [])
 
   const startScanner = useCallback(async () => {
@@ -92,12 +91,13 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
             lastScanRef.current = { code, time: now }
             setStatus(`Barcode terbaca: ${code}`)
             navigator.vibrate?.(80)
-            playBeep()
             const found = await onScan(code)
             if (!found) {
+              playBeep('not-found')
               setNotFoundCode(code)
               setStatus('Produk belum terdaftar.')
             } else {
+              playBeep('success')
               setNotFoundCode(null)
               setStatus('Produk ditambahkan. Silakan scan berikutnya.')
             }
