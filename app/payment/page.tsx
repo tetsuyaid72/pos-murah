@@ -119,6 +119,10 @@ function PaymentContent() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (res.status === 401) {
+          router.replace('/login')
+          return
+        }
         throw new Error(data.error || 'Gagal membuat pembayaran Midtrans.')
       }
       if (!data.redirectUrl) {
@@ -130,7 +134,7 @@ function PaymentContent() {
     } finally {
       setIsMidtransLoading(false)
     }
-  }, [selectedPlan.apiPlan, selectedPlan.billingPeriod])
+  }, [router, selectedPlan.apiPlan, selectedPlan.billingPeriod])
 
   useEffect(() => {
     if (!autoPayment || autoRedirectStarted.current) return

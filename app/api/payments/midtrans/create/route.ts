@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { eq } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { payments, users } from '@/lib/db/schema'
+import { payments, stores, users } from '@/lib/db/schema'
 import { createSnapTransaction, getMidtransMode } from '@/lib/payments/midtrans'
 import { getDisplayPricing, type BillingPeriod, type PaidPlanType } from '@/lib/pricing'
 
@@ -17,18 +17,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Store tidak ditemukan' }, { status: 400 })
     }
 
+    const [sessionUser] = await db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(eq(users.id, session.userId))
+      .limit(1)
+
+    if (!sessionUser) {
+      return NextResponse.json({ error: 'Sesi login sudah tidak valid. Silakan login ulang.' }, { status: 401 })
+    }
+
+    const [sessionStore] = await db
+      .select({ id: stores.id })
+      .from(stores)
+      .where(eq(stores.id, session.storeId))
+      .limit(1)
+
+    if (!sessionStore) {
+      return NextResponse.json({ error: 'Data toko tidak ditemukan. Silakan login ulang.' }, { status: 401 })
+    }
+
     const body = await request.json().catch(() => ({}))
     const plan = parsePlan(body.plan)
     const requestedBillingPeriod = parseBillingPeriod(body.billingPeriod)
     const billingPeriod: BillingPeriod = plan === 'PRO' ? requestedBillingPeriod : 'lifetime'
     const displayPricing = getDisplayPricing(plan, billingPeriod, false)
     const promoPricing = displayPricing.promo
-
-    const [user] = await db
-      .select({ name: users.name, email: users.email })
-      .from(users)
-      .where(eq(users.id, session.userId))
-      .limit(1)
 
     const [payment] = await db.insert(payments).values({
       userId: session.userId,
@@ -55,8 +69,8 @@ export async function POST(request: Request) {
       plan,
       billingPeriod,
       customer: {
-        firstName: user?.name || 'Warung Madura POS User',
-        email: user?.email || session.email || 'user@example.com',
+        firstName: sessionUser.name || 'Warung Madura POS User',
+        email: sessionUser.email || session.email || 'user@example.com',
       },
     })
 
