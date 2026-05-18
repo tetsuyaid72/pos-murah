@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Camera, Save } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ImageUpload } from '@/components/ui/image-upload'
+import { BarcodeScannerModal } from '@/components/pos/barcode-scanner-modal'
 import { useProductStore } from '@/stores/product-store'
 import { PRODUCT_UNITS } from '@/lib/constants'
 import type { Product } from '@/types'
@@ -42,12 +43,15 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
   const { createProduct, updateProduct, categories } = useProductStore()
   const [imageUrl, setImageUrl] = useState<string | null>(product?.imageUrl || null)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [scanOpen, setScanOpen] = useState(false)
+  const [lookupMessage, setLookupMessage] = useState<string | null>(null)
 
   const isEditing = !!product
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -75,6 +79,39 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
           unit: 'pcs',
         },
   })
+
+  const handleBarcodeScan = async (code: string) => {
+    setApiError(null)
+    setLookupMessage('Mencari data produk...')
+    setValue('barcode', code, { shouldDirty: true, shouldValidate: true })
+
+    try {
+      const res = await fetch(`/api/products/barcode-lookup?code=${encodeURIComponent(code)}`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Gagal mencari barcode')
+
+      if (data.duplicate) {
+        setApiError(`Barcode sudah terdaftar pada produk ${data.product?.name || 'lain'}.`)
+        setLookupMessage(null)
+        return false
+      }
+
+      if (data.found && data.product?.name) {
+        setValue('name', data.product.name, { shouldDirty: true, shouldValidate: true })
+        if (data.product.imageUrl) setImageUrl(data.product.imageUrl)
+        setLookupMessage('Data produk ditemukan otomatis. Silakan cek kembali sebelum menyimpan.')
+      } else {
+        setLookupMessage('Barcode berhasil diisi. Data produk belum ditemukan, silakan isi manual.')
+      }
+
+      setScanOpen(false)
+      return true
+    } catch {
+      setLookupMessage('Barcode berhasil diisi. Lookup produk gagal, silakan isi manual.')
+      setScanOpen(false)
+      return true
+    }
+  }
 
   const onSubmit = async (data: ProductFormData) => {
     setApiError(null)
@@ -175,14 +212,22 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
               <div className="space-y-1.5 md:space-y-2">
                 <Label htmlFor="barcode" className="text-[12px] md:text-sm">Barcode</Label>
-                <Input
-                  id="barcode"
-                  placeholder="Scan atau ketik barcode"
-                  className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
-                  {...register('barcode')}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="barcode"
+                    placeholder="Scan atau ketik barcode"
+                    className="h-9 rounded-lg px-3 text-[13px] md:h-10 md:rounded-xl md:px-4 md:text-sm"
+                    {...register('barcode')}
+                  />
+                  <Button type="button" variant="outline" className="h-9 shrink-0 rounded-lg px-3 md:h-10 md:rounded-xl" onClick={() => setScanOpen(true)}>
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
                 {errors.barcode && (
                   <p className="text-xs text-destructive">{errors.barcode.message}</p>
+                )}
+                {lookupMessage && (
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">{lookupMessage}</p>
                 )}
               </div>
               <div className="space-y-1.5 md:space-y-2">
@@ -323,6 +368,12 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
           </Button>
         </div>
       </form>
+
+      <BarcodeScannerModal
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onScan={handleBarcodeScan}
+      />
     </div>
   )
 }
