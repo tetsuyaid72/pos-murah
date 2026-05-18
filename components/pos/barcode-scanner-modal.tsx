@@ -35,12 +35,23 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
       setStatus('Membuka kamera...')
       try {
         if (!videoRef.current) return
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error('Browser tidak mendukung akses kamera. Gunakan Chrome/Safari terbaru dan pastikan membuka lewat HTTPS.')
+        }
+
+        setStatus('Mohon izinkan akses kamera di browser.')
+        const permissionStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' } },
+          audio: false,
+        })
+        permissionStream.getTracks().forEach((track) => track.stop())
+
         const devices = await BrowserMultiFormatReader.listVideoInputDevices()
         const backCamera = devices.find((device) => /back|rear|environment/i.test(device.label))
         const selectedDeviceId = backCamera?.deviceId || devices[0]?.deviceId
 
         if (!selectedDeviceId) {
-          throw new Error('Kamera tidak ditemukan di perangkat ini.')
+          throw new Error('Kamera tidak ditemukan di perangkat ini. Pastikan izin kamera sudah diberikan.')
         }
 
         const controls = await reader.decodeFromVideoDevice(
@@ -69,7 +80,13 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
         controlsRef.current = controls
         setStatus('Arahkan kamera ke barcode produk.')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Gagal membuka kamera.')
+        if (err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')) {
+          setError('Akses kamera ditolak. Izinkan kamera di browser untuk memakai scan barcode.')
+        } else if (err instanceof DOMException && err.name === 'NotFoundError') {
+          setError('Kamera tidak ditemukan di perangkat ini.')
+        } else {
+          setError(err instanceof Error ? err.message : 'Gagal membuka kamera.')
+        }
       } finally {
         setIsStarting(false)
       }
