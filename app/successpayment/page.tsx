@@ -18,6 +18,7 @@ const PLAN_LABELS = {
 const METHOD_LABELS = {
   bank: 'Transfer Bank',
   qris: 'QRIS',
+  midtrans: 'Pembayaran Otomatis',
 } as const
 
 export default function SuccessPaymentPage() {
@@ -44,6 +45,7 @@ function SuccessPaymentContent() {
   const methodQuery = searchParams.get('method')
   const amountQuery = Number(searchParams.get('amount') || 0)
 
+  const isMidtransPayment = methodQuery === 'midtrans'
   const planParam = (planQuery || pendingPaymentSummary?.plan || 'pro').toLowerCase() as keyof typeof PLAN_LABELS
   const methodParam = (methodQuery || pendingPaymentSummary?.method || 'bank').toLowerCase() as keyof typeof METHOD_LABELS
   const amountParam = amountQuery > 0 ? amountQuery : pendingPaymentSummary?.amount || 0
@@ -68,12 +70,12 @@ function SuccessPaymentContent() {
       return
     }
 
-    if (!isLoading && isAuthenticated && paymentStatus !== 'pending') {
+    if (!isLoading && isAuthenticated && !isMidtransPayment && paymentStatus !== 'pending') {
       router.replace('/pricing')
     }
-  }, [isAuthenticated, isLoading, paymentStatus, router])
+  }, [isAuthenticated, isLoading, isMidtransPayment, paymentStatus, router])
 
-  if (isLoading || !isAuthenticated || paymentStatus !== 'pending') {
+  if (isLoading || !isAuthenticated || (!isMidtransPayment && paymentStatus !== 'pending')) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-200 border-t-emerald-600" />
@@ -96,7 +98,7 @@ function SuccessPaymentContent() {
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/90 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
               <CheckCircle2 className="h-4 w-4" />
-              Pembayaran Berhasil Dikirim
+              {isMidtransPayment ? 'Pembayaran Diproses' : 'Pembayaran Berhasil Dikirim'}
             </div>
           </div>
 
@@ -144,7 +146,9 @@ function SuccessPaymentContent() {
             </div>
 
             <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-              Jika pembayaran belum diverifikasi setelah 1x24 jam, silakan hubungi admin.
+              {isMidtransPayment
+                ? 'Status paket akan aktif otomatis setelah pembayaran dikonfirmasi.'
+                : 'Jika pembayaran belum diverifikasi setelah 1x24 jam, silakan hubungi admin.'}
             </p>
           </div>
         </div>

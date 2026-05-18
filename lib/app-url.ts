@@ -1,4 +1,4 @@
-const PRODUCTION_APP_URL = 'http://warungmadura-pos.web.id'
+const PRODUCTION_APP_URL = 'https://warungmadura-pos.web.id'
 
 export function getAppUrl(): string {
   const configuredUrl =

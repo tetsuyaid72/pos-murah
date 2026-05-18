@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import { getAppUrl } from '@/lib/app-url'
 import type { PaidPlanType, BillingPeriod } from '@/lib/pricing'
 
 const SANDBOX_BASE_URL = 'https://app.sandbox.midtrans.com/snap/v1'
@@ -52,6 +53,7 @@ export async function createSnapTransaction(input: CreateSnapInput): Promise<Sna
   const serverKey = getServerKey()
   const auth = Buffer.from(`${serverKey}:`).toString('base64')
 
+  const appUrl = getAppUrl()
   const payload = {
     transaction_details: {
       order_id: input.orderId,
@@ -68,6 +70,11 @@ export async function createSnapTransaction(input: CreateSnapInput): Promise<Sna
     customer_details: {
       first_name: input.customer.firstName,
       email: input.customer.email,
+    },
+    callbacks: {
+      finish: `${appUrl}/successpayment?plan=${input.plan.toLowerCase()}&method=midtrans&amount=${input.grossAmount}`,
+      pending: `${appUrl}/pricing?payment=pending`,
+      error: `${appUrl}/pricing?payment=error`,
     },
     credit_card: {
       secure: true,

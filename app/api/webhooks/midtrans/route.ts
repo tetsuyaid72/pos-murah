@@ -6,6 +6,13 @@ import { verifyMidtransSignature, type MidtransNotificationPayload } from '@/lib
 import { activateMembership, markPaymentFromGateway } from '@/lib/payments/payment-service'
 import { isFinalPaymentStatus, mapMidtransStatus, type PaymentStatus } from '@/lib/payments/status'
 
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    message: 'Midtrans webhook ready',
+  })
+}
+
 export async function POST(request: Request) {
   try {
     const payload = await request.json() as MidtransNotificationPayload
