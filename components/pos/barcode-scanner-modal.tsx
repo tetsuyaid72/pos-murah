@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BrowserMultiFormatReader } from '@zxing/browser'
-import { Barcode, Camera, Loader2, X } from 'lucide-react'
+import { Barcode, Camera, Loader2, X, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { formatRupiah } from '@/lib/format'
+import type { Product } from '@/types'
 
 interface BarcodeScannerModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onScan: (code: string) => Promise<boolean> | boolean
+  onScan: (code: string) => Promise<boolean | Product> | boolean | Product
 }
 
 export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScannerModalProps) {
@@ -20,6 +22,7 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
   const [status, setStatus] = useState('Arahkan kamera ke barcode produk.')
   const [error, setError] = useState<string | null>(null)
   const [notFoundCode, setNotFoundCode] = useState<string | null>(null)
+  const [scannedProduct, setScannedProduct] = useState<Product | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   const [cameraRequested, setCameraRequested] = useState(false)
 
@@ -57,6 +60,7 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
       setIsStarting(true)
       setError(null)
       setNotFoundCode(null)
+      setScannedProduct(null)
       setStatus('Membuka kamera...')
       try {
         if (!videoRef.current) return
@@ -91,15 +95,18 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
             lastScanRef.current = { code, time: now }
             setStatus(`Barcode terbaca: ${code}`)
             navigator.vibrate?.(80)
-            const found = await onScan(code)
+            const scanResult = await onScan(code)
+            const found = Boolean(scanResult)
             if (!found) {
               playBeep('not-found')
               setNotFoundCode(code)
+              setScannedProduct(null)
               setStatus('Produk belum terdaftar.')
             } else {
               playBeep('success')
               setNotFoundCode(null)
-              setStatus('Produk ditambahkan. Silakan scan berikutnya.')
+              setScannedProduct(typeof scanResult === 'object' ? scanResult : null)
+              setStatus(typeof scanResult === 'object' ? 'Produk berhasil discan.' : 'Produk ditambahkan. Silakan scan berikutnya.')
             }
           }
         )
@@ -190,15 +197,46 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
             {error || status}
           </div>
 
+          {scannedProduct && (
+            <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3 text-sm text-emerald-50">
+              <div className="flex gap-3">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-emerald-100">
+                  {scannedProduct.imageUrl ? (
+                    <img src={scannedProduct.imageUrl} alt={scannedProduct.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <Barcode className="h-6 w-6" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-emerald-200">Produk berhasil ditambahkan</p>
+                  <p className="mt-1 line-clamp-2 font-bold text-white">{scannedProduct.name}</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-emerald-100/80">
+                    <span>Harga: {formatRupiah(scannedProduct.sellingPrice)}</span>
+                    <span>Stok: {scannedProduct.stock} {scannedProduct.unit}</span>
+                    <span className="col-span-2">Barcode: {scannedProduct.barcode || '-'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {notFoundCode && (
-            <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
-              <p className="font-semibold">Produk dengan barcode ini belum terdaftar.</p>
-              <p className="mt-1 text-xs opacity-80">Barcode: {notFoundCode}</p>
-              <Link href={`/products/new?barcode=${encodeURIComponent(notFoundCode)}`}>
-                <Button className="mt-3 h-9 rounded-xl bg-amber-300 text-slate-950 hover:bg-amber-200">
-                  Tambah Produk
-                </Button>
-              </Link>
+            <div className="rounded-2xl border border-rose-300/40 bg-rose-500/15 p-3 text-sm text-rose-50 shadow-[0_0_30px_rgba(244,63,94,0.12)]">
+              <div className="flex gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-400/20 text-rose-100">
+                  <XCircle className="h-7 w-7" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold">Produk tidak terdaftar</p>
+                  <p className="mt-1 text-xs text-rose-100/80">Barcode ini belum ada di inventori.</p>
+                  <p className="mt-1 truncate text-xs text-rose-100/80">Barcode: {notFoundCode}</p>
+                  <Link href={`/products/new?barcode=${encodeURIComponent(notFoundCode)}`}>
+                    <Button className="mt-3 h-9 rounded-xl bg-rose-100 text-rose-950 hover:bg-white">
+                      Tambah Produk
+                    </Button>
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
 

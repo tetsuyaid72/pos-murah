@@ -56,7 +56,7 @@ export default function POSPage() {
     }
     addItem(product)
     toast(`${product.name} ditambahkan ke keranjang.`, 'success')
-    return true
+    return product
   }, [addItem, toast])
 
   const handleBarcodeScan = useCallback(
