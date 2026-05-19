@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { eq, like, or, count, desc, and, gte, lte, sql } from 'drizzle-orm'
+import { eq, like, or, count, desc, and, gte, lte } from 'drizzle-orm'
 import { getSession } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { activityLogs, users, stores } from '@/lib/db/schema'

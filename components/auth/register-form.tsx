@@ -26,6 +26,7 @@ export function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const oauthError = searchParams.get('error')
+  const nextPath = getSafeNextPath(searchParams.get('next'))
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -45,7 +46,7 @@ export function RegisterForm() {
         return
       }
 
-      router.push('/dashboard')
+      router.push(nextPath)
       router.refresh()
     } catch {
       setError('Tidak dapat terhubung ke server. Coba lagi.')
@@ -104,10 +105,15 @@ export function RegisterForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
         Sudah punya akun?{' '}
-        <Link href="/sign-in" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
+        <Link href={`/sign-in${nextPath !== '/dashboard' ? `?next=${encodeURIComponent(nextPath)}` : ''}`} className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
           Masuk
         </Link>
       </p>
     </motion.div>
   )
+}
+
+function getSafeNextPath(next: string | null): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/dashboard'
+  return next
 }

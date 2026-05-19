@@ -135,7 +135,7 @@ export function UsageIndicator() {
 
   const { usage, warnings, plan, isTrialActive } = data
   const planLabel = isTrialActive
-    ? 'Quick Trial'
+    ? 'Masa Trial'
     : plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
   const upgradeHref = paymentStatus === 'pending' ? '/successpayment' : '/pricing'
   const upgradeLabel =

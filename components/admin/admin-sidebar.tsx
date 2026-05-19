@@ -13,7 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ShieldCheck,
-  LogOut,
   Moon,
   Sun,
   ArrowLeft,
@@ -89,7 +88,7 @@ function AdminSidebarContent({
   onCollapse?: () => void
   onNavigate?: () => void
 }) {
-  const { theme, setTheme } = useUIStore()
+  const { setTheme } = useUIStore()
   const { resolvedTheme, setTheme: applyTheme } = useTheme()
 
   const isDark = resolvedTheme === 'dark'

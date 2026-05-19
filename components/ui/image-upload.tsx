@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useRef, useCallback } from 'react'
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -114,9 +115,12 @@ export function ImageUpload({ value, onChange, className, compact = false }: Ima
       <div className={cn('space-y-2', className)}>
         <div className="relative inline-block">
           <div className={cn('relative overflow-hidden rounded-lg border bg-muted', compact ? 'h-24 w-24 md:h-32 md:w-32' : 'h-32 w-32')}>
-            <img
+            <Image
               src={value}
               alt="Product image"
+              width={128}
+              height={128}
+              unoptimized
               className="h-full w-full object-cover"
             />
           </div>

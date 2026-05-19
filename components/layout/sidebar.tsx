@@ -431,7 +431,7 @@ function getDisplayPlan(membership: AuthMembership | null): PlanDisplay {
   if (membership.isTrial) {
     const trialEnd = membership.trialEndAt ? new Date(membership.trialEndAt) : null
     if (trialEnd && trialEnd <= new Date()) return PLAN_DISPLAY.TRIAL_EXPIRED
-    return PLAN_DISPLAY.QUICK_TRIAL
+    return PLAN_DISPLAY.TRIAL
   }
 
   const key = String(membership.plan || 'FREE').toUpperCase()
@@ -439,9 +439,9 @@ function getDisplayPlan(membership: AuthMembership | null): PlanDisplay {
 }
 
 const PLAN_DISPLAY: Record<string, PlanDisplay> = {
-  QUICK_TRIAL: {
-    key: 'QUICK_TRIAL',
-    label: 'Quick Trial',
+  TRIAL: {
+    key: 'TRIAL',
+    label: 'Masa Trial 7 Hari',
     badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
   },
   TRIAL_EXPIRED: {

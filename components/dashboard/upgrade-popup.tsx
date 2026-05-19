@@ -4,13 +4,87 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { Dialog, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Check, Zap, ShieldCheck } from 'lucide-react'
+import { Check, Lock, Zap, ShieldCheck } from 'lucide-react'
+import { useAuthStore } from '@/stores/auth-store'
 import { useSubscriptionStore } from '@/stores/subscription-store'
 import { PLANS, formatPrice, getDisplayPricing } from '@/lib/pricing'
 
 /** Popup will not reappear for this many days after it is shown to a subscribed user. */
 const POPUP_COOLDOWN_DAYS = 7
 const POPUP_STORAGE_KEY = 'pos-upgrade-popup-last-shown'
+
+export function TrialExpiredUpgradePopup() {
+  const { membership } = useAuthStore()
+  const [open, setOpen] = useState(false)
+
+  const isTrialExpired = Boolean(
+    membership?.isTrial &&
+    membership.trialEndAt &&
+    new Date(membership.trialEndAt) <= new Date()
+  )
+
+  useEffect(() => {
+    if (!isTrialExpired) return
+    const timer = window.setTimeout(() => setOpen(true), 500)
+    return () => window.clearTimeout(timer)
+  }, [isTrialExpired])
+
+  if (!isTrialExpired) return null
+
+  const proPricing = getDisplayPricing('PRO', 'monthly', false)
+  const businessPricing = getDisplayPricing('BUSINESS', 'lifetime', false)
+
+  return (
+    <Dialog open={open} onClose={() => setOpen(false)}>
+      <DialogHeader>
+        <DialogTitle>
+          <span className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-amber-500" />
+            Masa Trial Berakhir
+          </span>
+        </DialogTitle>
+        <DialogClose onClose={() => setOpen(false)} />
+      </DialogHeader>
+
+      <p className="mb-5 text-sm leading-6 text-muted-foreground">
+        Trial 7 hari sudah selesai. Pilih paket aktif untuk membuka kembali kasir, produk, transaksi, pelanggan, dan laporan.
+      </p>
+
+      <div className="mb-6 grid gap-3 sm:grid-cols-2">
+        <Link href="/payment?plan=pro&auto=midtrans" onClick={() => setOpen(false)}>
+          <Button variant="premium" size="lg" className="h-auto w-full flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left">
+            <span className="flex items-center gap-2 text-sm font-bold">
+              <Zap className="h-4 w-4" />
+              Upgrade Pro
+            </span>
+            <span className="text-xs font-medium opacity-90">
+              {formatPrice(proPricing.finalPrice)}{proPricing.periodLabel}
+            </span>
+          </Button>
+        </Link>
+        <Link href="/payment?plan=bisnis&auto=midtrans" onClick={() => setOpen(false)}>
+          <Button variant="outline" size="lg" className="h-auto w-full flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left">
+            <span className="flex items-center gap-2 text-sm font-bold">
+              <ShieldCheck className="h-4 w-4" />
+              Pilih Bisnis
+            </span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {formatPrice(businessPricing.finalPrice)} sekali bayar
+            </span>
+          </Button>
+        </Link>
+      </div>
+
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-800 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300">
+        Pro cocok untuk lanjut bulanan. Bisnis cocok jika ingin bayar sekali dan akses selamanya.
+      </div>
+
+      <Button variant="ghost" size="lg" className="mt-4 w-full text-muted-foreground" onClick={() => setOpen(false)}>
+        Nanti Saja
+      </Button>
+    </Dialog>
+  )
+}
 
 export function UpgradePopup() {
   const [open, setOpen] = useState(false)

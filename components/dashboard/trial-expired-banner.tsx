@@ -15,7 +15,7 @@ export function TrialExpiredBanner() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-bold text-amber-900 dark:text-amber-200">
-            Quick Trial Anda telah berakhir
+            Masa Trial Anda telah berakhir
           </p>
           <p className="mt-1 text-xs leading-5 text-amber-800/80 dark:text-amber-300/80">
             Dashboard tetap bisa dilihat, tetapi transaksi dan aksi utama dikunci sampai Anda upgrade paket.

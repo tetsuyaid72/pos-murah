@@ -25,6 +25,7 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const oauthError = searchParams.get('error')
+  const nextPath = getSafeNextPath(searchParams.get('next'))
 
   useEffect(() => {
     const timeout = window.setTimeout(() => setMounted(true), 0)
@@ -49,7 +50,7 @@ export function LoginForm() {
         return
       }
 
-      router.push('/dashboard')
+      router.push(nextPath)
       router.refresh()
     } catch {
       setError('Tidak dapat terhubung ke server. Coba lagi.')
@@ -104,10 +105,15 @@ export function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Belum punya akun?{' '}
-        <Link href="/register" className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
+        <Link href={`/register${nextPath !== '/dashboard' ? `?next=${encodeURIComponent(nextPath)}` : ''}`} className="font-semibold text-emerald-600 transition-colors hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
           Daftar
         </Link>
       </p>
     </motion.div>
   )
+}
+
+function getSafeNextPath(next: string | null): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/dashboard'
+  return next
 }

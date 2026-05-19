@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { payments } from '@/lib/db/schema'
 import { verifyMidtransSignature, type MidtransNotificationPayload } from '@/lib/payments/midtrans'
-import { activateMembership, markPaymentFromGateway } from '@/lib/payments/payment-service'
+import { activateMembership, activateTrialMembership, markPaymentFromGateway } from '@/lib/payments/payment-service'
 import { isFinalPaymentStatus, mapMidtransStatus, type PaymentStatus } from '@/lib/payments/status'
 
 export async function GET() {
@@ -51,11 +51,16 @@ export async function POST(request: Request) {
     })
 
     if (nextStatus === 'PAID') {
-      await activateMembership({
-        storeId: payment.storeId,
-        plan: payment.plan,
-        billingPeriod: payment.billingPeriod,
-      })
+      const metadata = payment.metadata as { checkoutType?: string } | null
+      if (metadata?.checkoutType === 'TRIAL') {
+        await activateTrialMembership(payment.storeId)
+      } else {
+        await activateMembership({
+          storeId: payment.storeId,
+          plan: payment.plan,
+          billingPeriod: payment.billingPeriod,
+        })
+      }
     }
 
     return NextResponse.json({ received: true, status: nextStatus })

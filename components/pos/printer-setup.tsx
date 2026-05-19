@@ -5,7 +5,6 @@ import {
   Bluetooth,
   BluetoothConnected,
   BluetoothOff,
-  Printer,
   Unplug,
   TestTube2,
   Loader2,
@@ -19,7 +18,6 @@ import { useSettingsStore } from '@/stores/settings-store'
 import {
   getPrinter,
   isBluetoothSupported,
-  type PrinterDevice,
 } from '@/lib/printer/bluetooth'
 import { buildTestReceipt } from '@/lib/printer/receipt-builder'
 import type { PaperSize } from '@/lib/printer/escpos'
@@ -32,7 +30,6 @@ interface PrinterSetupProps {
 export function PrinterSetup({ open, onClose }: PrinterSetupProps) {
   const {
     printerPaperSize,
-    printerDeviceId,
     printerDeviceName,
     autoPrint,
     storeName,

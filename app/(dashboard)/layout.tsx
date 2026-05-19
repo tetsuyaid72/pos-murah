@@ -3,6 +3,7 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { MobileNav } from '@/components/layout/mobile-nav'
+import { TrialExpiredUpgradePopup } from '@/components/dashboard/upgrade-popup'
 import { OfflineSyncStatus } from '@/components/offline/offline-sync-status'
 import { ToastProvider } from '@/components/ui/toast'
 import { AuthProvider } from '@/components/auth-provider'
@@ -51,6 +52,7 @@ export default function DashboardLayout({
             </main>
           </div>
 
+          <TrialExpiredUpgradePopup />
           <OfflineSyncStatus />
 
           {/* Mobile bottom navigation */}

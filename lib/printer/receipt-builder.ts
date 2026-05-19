@@ -6,7 +6,7 @@
  */
 
 import { EscPosEncoder, type PaperSize } from './escpos'
-import { formatRupiah, formatDateTime } from '@/lib/format'
+import { formatRupiah } from '@/lib/format'
 import type { Transaction } from '@/types'
 
 /** Configuration for receipt generation */

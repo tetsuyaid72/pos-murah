@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         eq(products.barcode, code),
         eq(products.isActive, true)
       ),
-      columns: { id: true, name: true, barcode: true },
+      columns: { id: true, name: true, barcode: true, imageUrl: true },
     })
 
     if (existing) {

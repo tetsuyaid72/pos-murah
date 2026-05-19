@@ -17,7 +17,6 @@ import {
   products,
   customers,
   transactions,
-  transactionItems,
   debtRecords,
 } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'

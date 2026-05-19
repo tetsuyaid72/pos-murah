@@ -11,6 +11,7 @@ import type { PlanType } from '@/lib/features'
 
 export type BillingPeriod = 'monthly' | 'lifetime'
 export type PaidPlanType = Exclude<PlanType, 'FREE'>
+export type CheckoutPlanType = PaidPlanType | 'TRIAL'
 export type NewUserPromoInput = {
   user?: { createdAt?: string | Date | null } | null
   membership?: { isTrial?: boolean | null } | null
@@ -59,10 +60,12 @@ export interface PlanInfo {
 
 export const NEW_USER_DISCOUNT_PERCENT = 0
 export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
+export const TRIAL_PRICE = 19_000
+export const TRIAL_DAYS = 7
 
 export const PLAN_PRICE_META: Record<PaidPlanType, PlanPriceMeta> = {
   PRO: {
-    originalPrice: 99_000,
+    originalPrice: 149_000,
     finalPrice: 49_000,
     periodLabel: '/bulan',
     accessLabel: 'langganan bulanan',

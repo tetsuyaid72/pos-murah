@@ -12,7 +12,7 @@
 import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
-import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, normalizePlanType, type PlanType, type LimitKey } from '@/lib/features'
+import { PLAN_LIMITS, TRIAL_LIMITS, normalizePlanType, type PlanType, type LimitKey } from '@/lib/features'
 
 interface PlanCheckResult {
   allowed: boolean
@@ -62,9 +62,9 @@ function getEffectiveLimit(
   limitKey: LimitKey
 ): number {
   if (checkTrialActive(membership)) {
-    if (limitKey === 'max_products') return QUICK_TRIAL_LIMITS.max_products
-    if (limitKey === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
-    if (limitKey === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
+    if (limitKey === 'max_products') return TRIAL_LIMITS.max_products
+    if (limitKey === 'max_transactions_monthly') return TRIAL_LIMITS.max_transactions_monthly
+    if (limitKey === 'max_customers') return TRIAL_LIMITS.max_customers
   }
 
   if (checkTrialExpired(membership) || checkSubscriptionExpired(membership)) return 0
@@ -266,7 +266,7 @@ export async function checkFeatureAccess(
   if (checkTrialExpired(membership)) {
     return {
       allowed: false,
-      message: 'Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan menggunakan fitur POS.',
+      message: 'Masa Trial Anda telah berakhir. Upgrade paket untuk melanjutkan menggunakan fitur POS.',
       plan: normalizePlanType(membership.plan),
     }
   }
@@ -345,7 +345,7 @@ export async function checkStrictFeatureAccess(
   if (checkTrialExpired(membership)) {
     return {
       allowed: false,
-      message: 'Quick Trial Anda telah berakhir.',
+      message: 'Masa Trial Anda telah berakhir.',
       plan: normalizePlanType(membership.plan),
     }
   }

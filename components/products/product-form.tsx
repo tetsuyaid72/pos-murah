@@ -33,6 +33,14 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>
 
+type LookupProduct = {
+  name: string
+  barcode?: string | null
+  imageUrl?: string | null
+  source: 'store' | 'open_food_facts'
+  duplicate: boolean
+}
+
 interface ProductFormProps {
   product?: Product // If provided, we're editing
   initialBarcode?: string
@@ -45,6 +53,7 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
   const [apiError, setApiError] = useState<string | null>(null)
   const [scanOpen, setScanOpen] = useState(false)
   const [lookupMessage, setLookupMessage] = useState<string | null>(null)
+  const [lookupProduct, setLookupProduct] = useState<LookupProduct | null>(null)
 
   const isEditing = !!product
 
@@ -82,6 +91,7 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
 
   const handleBarcodeScan = async (code: string) => {
     setApiError(null)
+    setLookupProduct(null)
     setLookupMessage('Mencari data produk...')
     setValue('barcode', code, { shouldDirty: true, shouldValidate: true })
 
@@ -92,6 +102,13 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
 
       if (data.duplicate) {
         setApiError(`Barcode sudah terdaftar pada produk ${data.product?.name || 'lain'}.`)
+        setLookupProduct({
+          name: data.product?.name || 'Produk terdaftar',
+          barcode: data.product?.barcode || code,
+          imageUrl: data.product?.imageUrl || null,
+          source: 'store',
+          duplicate: true,
+        })
         setLookupMessage(null)
         return false
       }
@@ -99,6 +116,13 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
       if (data.found && data.product?.name) {
         setValue('name', data.product.name, { shouldDirty: true, shouldValidate: true })
         if (data.product.imageUrl) setImageUrl(data.product.imageUrl)
+        setLookupProduct({
+          name: data.product.name,
+          barcode: data.product.barcode || code,
+          imageUrl: data.product.imageUrl || null,
+          source: data.source === 'open_food_facts' ? 'open_food_facts' : 'store',
+          duplicate: false,
+        })
         setLookupMessage('Data produk ditemukan otomatis. Silakan cek kembali sebelum menyimpan.')
       } else {
         setLookupMessage('Barcode berhasil diisi. Data produk belum ditemukan, silakan isi manual.')
@@ -174,6 +198,30 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
       {apiError && (
         <div className="mb-3 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-[12px] text-destructive md:mb-4 md:px-4 md:py-3 md:text-sm">
           {apiError}
+        </div>
+      )}
+
+      {lookupProduct && (
+        <div className={lookupProduct.duplicate ? 'mb-3 rounded-2xl border border-amber-300/50 bg-amber-50 p-3 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100 md:mb-4' : 'mb-3 rounded-2xl border border-emerald-300/50 bg-emerald-50 p-3 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100 md:mb-4'}>
+          <div className="flex gap-3">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/80 text-muted-foreground shadow-sm dark:bg-slate-900/70">
+              {lookupProduct.imageUrl ? (
+                <img src={lookupProduct.imageUrl} alt={lookupProduct.name} className="h-full w-full object-cover" />
+              ) : (
+                <Camera className="h-6 w-6" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-bold uppercase tracking-wide opacity-70">
+                {lookupProduct.duplicate ? 'Produk sudah terdaftar' : 'Produk ditemukan'}
+              </p>
+              <p className="mt-1 line-clamp-2 text-sm font-bold md:text-base">{lookupProduct.name}</p>
+              <p className="mt-1 text-xs opacity-75">Barcode: {lookupProduct.barcode || '-'}</p>
+              <p className="mt-1 text-xs opacity-75">
+                Sumber: {lookupProduct.source === 'store' ? 'Produk toko' : 'Open Food Facts'}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

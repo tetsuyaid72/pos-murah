@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { getAppUrl } from '@/lib/app-url'
-import type { PaidPlanType, BillingPeriod } from '@/lib/pricing'
+import type { CheckoutPlanType } from '@/lib/pricing'
 
 const SANDBOX_BASE_URL = 'https://app.sandbox.midtrans.com/snap/v1'
 const PRODUCTION_BASE_URL = 'https://app.midtrans.com/snap/v1'
@@ -13,8 +13,8 @@ export interface MidtransCustomerDetails {
 export interface CreateSnapInput {
   orderId: string
   grossAmount: number
-  plan: PaidPlanType
-  billingPeriod: BillingPeriod
+  plan: CheckoutPlanType
+  billingPeriod?: 'monthly' | 'lifetime'
   customer: MidtransCustomerDetails
 }
 
@@ -54,6 +54,10 @@ export async function createSnapTransaction(input: CreateSnapInput): Promise<Sna
   const auth = Buffer.from(`${serverKey}:`).toString('base64')
 
   const appUrl = getAppUrl()
+  const itemName = input.plan === 'TRIAL'
+    ? 'Warung Madura POS Masa Trial 7 Hari'
+    : `Warung Madura POS ${input.plan} ${input.billingPeriod}`
+
   const payload = {
     transaction_details: {
       order_id: input.orderId,
@@ -64,7 +68,7 @@ export async function createSnapTransaction(input: CreateSnapInput): Promise<Sna
         id: input.plan,
         price: input.grossAmount,
         quantity: 1,
-        name: `Warung Madura POS ${input.plan} ${input.billingPeriod}`,
+        name: itemName,
       },
     ],
     customer_details: {

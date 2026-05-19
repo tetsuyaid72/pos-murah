@@ -113,7 +113,7 @@ function normalizePaymentMethod(method: Transaction['paymentMethod']): string {
     case 'cash': return 'CASH'
     case 'qris': return 'QRIS'
     case 'debt': return 'HUTANG'
-    default: return method.toUpperCase()
+    default: return method
   }
 }
 

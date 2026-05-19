@@ -1,9 +1,12 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { PublicHeader } from '@/components/public-header'
+import { useAuthStore, type AuthMembership } from '@/stores/auth-store'
 import {
   Card,
   CardContent,
@@ -15,12 +18,27 @@ import {
 
 const plans = [
   {
+    name: 'Masa Trial',
+    price: '19K',
+    period: '',
+    description: 'Rasakan kemudahan mengelola warung selama 7 hari sebelum memilih paket utama.',
+    features: [
+      'Akses fitur utama POS',
+      'Kelola produk dan pelanggan',
+      'Catat transaksi warung',
+      'Lihat laporan dasar',
+      'Pembayaran otomatis Midtrans',
+    ],
+    cta: 'Mulai Trial',
+    href: '/payment?plan=trial&auto=midtrans',
+  },
+  {
     name: 'Pro',
     price: 'Rp49K',
-    originalPrice: 'Rp99K',
-    discount: 'Hemat 51%',
+    originalPrice: 'Rp149K',
+    discount: 'Hemat 67%',
     period: '/bulan',
-    description: 'Untuk warung aktif yang ingin biaya ringan bulanan.',
+    description: 'Paket paling pas untuk warung aktif dengan biaya ringan bulanan.',
     features: [
       '200 produk',
       '500 transaksi per hari',
@@ -31,6 +49,8 @@ const plans = [
     ],
     cta: 'Pilih Pro',
     href: '/payment?plan=pro&auto=midtrans',
+    highlighted: true,
+    badge: 'Best Value',
   },
   {
     name: 'Bisnis',
@@ -49,11 +69,23 @@ const plans = [
     ],
     cta: 'Pilih Bisnis',
     href: '/payment?plan=bisnis&auto=midtrans',
-    highlighted: true,
+    badge: 'Promo Lifetime',
   },
 ]
 
+function hasUsedTrial(membership: AuthMembership | null): boolean {
+  if (!membership?.trialStartAt || !membership.trialEndAt) return false
+  return (
+    membership.isTrial ||
+    Boolean(membership.subscriptionStartAt) ||
+    new Date(membership.trialEndAt) > new Date(membership.trialStartAt)
+  )
+}
+
 export default function PricingPage() {
+  const { membership, isAuthenticated } = useAuthStore()
+  const isTrialUnavailable = isAuthenticated && hasUsedTrial(membership)
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#F8FAFC] px-4 text-slate-950 dark:bg-slate-950 dark:text-slate-50 sm:px-6 lg:px-8">
       <div className="pointer-events-none absolute inset-0">
@@ -76,20 +108,25 @@ export default function PricingPage() {
             Pilih Pro untuk langganan bulanan ringan, atau Bisnis Lifetime promo launching untuk bayar sekali dan akses selamanya.
           </p>
 
-          <div className="mt-7 grid w-full gap-4 sm:max-w-sm md:max-w-3xl md:grid-cols-2">
-            {plans.map((plan) => (
+          <div className="mt-7 grid w-full gap-4 sm:max-w-sm md:max-w-5xl md:grid-cols-3">
+            {plans.map((plan) => {
+              const isDisabled = plan.name === 'Masa Trial' && isTrialUnavailable
+
+              return (
               <Card
                 key={plan.name}
                 className={
                   plan.highlighted
                     ? 'relative flex h-full flex-col rounded-[22px] border-2 border-emerald-500 bg-white/95 text-left shadow-[0_18px_48px_rgba(16,185,129,0.14)] backdrop-blur dark:bg-slate-900/80 dark:shadow-none'
-                    : 'flex h-full flex-col rounded-[22px] border-slate-200/80 bg-white/85 text-left shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none'
+                    : isDisabled
+                      ? 'flex h-full flex-col rounded-[22px] border-slate-200/80 bg-white/60 text-left opacity-70 shadow-[0_12px_34px_rgba(15,23,42,0.04)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-none'
+                      : 'flex h-full flex-col rounded-[22px] border-slate-200/80 bg-white/85 text-left shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/80 dark:shadow-none'
                 }
               >
                 {plan.highlighted && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 sm:-top-4">
                     <Badge className="bg-emerald-600 px-3 py-1 text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)]">
-                      Promo Lifetime Launching
+                      {plan.badge || 'Best Value'}
                     </Badge>
                   </div>
                 )}
@@ -97,7 +134,7 @@ export default function PricingPage() {
                 <CardHeader className="p-4 pb-2 sm:p-5 sm:pb-2">
                   <CardTitle className="text-lg font-black text-slate-950 dark:text-slate-50">{plan.name}</CardTitle>
                   <CardDescription className="min-h-9 text-xs leading-5 text-slate-500 dark:text-slate-400 sm:text-sm">
-                    {plan.description}
+                    {isDisabled ? 'Masa trial sudah pernah digunakan di akun ini. Pilih Pro atau Bisnis untuk melanjutkan.' : plan.description}
                   </CardDescription>
                 </CardHeader>
 
@@ -128,21 +165,32 @@ export default function PricingPage() {
                 </CardContent>
 
                 <CardFooter className="mt-auto p-4 pt-0 sm:p-5 sm:pt-0">
-                  <Link href={plan.href} className="w-full">
+                  {isDisabled ? (
                     <Button
-                      variant={plan.highlighted ? 'default' : 'outline'}
-                      className={
-                        plan.highlighted
-                          ? 'h-10 w-full rounded-xl bg-emerald-600 font-bold text-white shadow-[0_12px_26px_rgba(16,185,129,0.20)] hover:bg-emerald-700'
-                          : 'h-10 w-full rounded-xl border-slate-200 bg-white/80 font-bold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-emerald-500/40 dark:hover:bg-slate-800'
-                      }
+                      variant="outline"
+                      disabled
+                      className="h-10 w-full rounded-xl border-slate-200 bg-slate-100 font-bold text-slate-500 disabled:cursor-not-allowed disabled:opacity-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
                     >
-                      {plan.cta}
+                      Sudah Digunakan
                     </Button>
-                  </Link>
+                  ) : (
+                    <Link href={plan.href} className="w-full">
+                      <Button
+                        variant={plan.highlighted ? 'default' : 'outline'}
+                        className={
+                          plan.highlighted
+                            ? 'h-10 w-full rounded-xl bg-emerald-600 font-bold text-white shadow-[0_12px_26px_rgba(16,185,129,0.20)] hover:bg-emerald-700'
+                            : 'h-10 w-full rounded-xl border-slate-200 bg-white/80 font-bold text-slate-800 hover:border-emerald-200 hover:bg-emerald-50/70 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-emerald-500/40 dark:hover:bg-slate-800'
+                        }
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  )}
                 </CardFooter>
               </Card>
-            ))}
+              )
+            })}
           </div>
         </section>
 

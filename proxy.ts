@@ -47,7 +47,8 @@ export async function proxy(request: NextRequest) {
     if (token) {
       const session = await verifyToken(token)
       if (session) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+        const next = getSafeNextPath(request.nextUrl.searchParams.get('next'))
+        return NextResponse.redirect(new URL(next, request.url))
       }
     }
     return NextResponse.next()
@@ -83,7 +84,9 @@ export async function proxy(request: NextRequest) {
         { status: 401 }
       )
     }
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Verify token
@@ -96,7 +99,9 @@ export async function proxy(request: NextRequest) {
         { status: 401 }
       )
     }
-    return NextResponse.redirect(new URL('/login', request.url))
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`)
+    return NextResponse.redirect(loginUrl)
   }
 
   // Check admin routes â€” require SUPER_ADMIN role
@@ -114,6 +119,11 @@ export async function proxy(request: NextRequest) {
   }
 
   return NextResponse.next()
+}
+
+function getSafeNextPath(next: string | null): string {
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/dashboard'
+  return next
 }
 
 export const config = {

@@ -11,7 +11,7 @@ import { eq, and, gte, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, products, transactions, customers } from '@/lib/db/schema'
 import { requireTenant, handleTenantError } from '@/lib/db/tenant'
-import { PLAN_LIMITS, QUICK_TRIAL_LIMITS, FEATURE_DEFAULTS, normalizePlanType } from '@/lib/features'
+import { PLAN_LIMITS, TRIAL_LIMITS, FEATURE_DEFAULTS, normalizePlanType } from '@/lib/features'
 
 export async function GET() {
   try {
@@ -43,9 +43,9 @@ export async function GET() {
 
     const effectiveLimit = (key: keyof typeof PLAN_LIMITS) => {
       if (isTrialActive) {
-        if (key === 'max_products') return QUICK_TRIAL_LIMITS.max_products
-        if (key === 'max_transactions_monthly') return QUICK_TRIAL_LIMITS.max_transactions_monthly
-        if (key === 'max_customers') return QUICK_TRIAL_LIMITS.max_customers
+        if (key === 'max_products') return TRIAL_LIMITS.max_products
+        if (key === 'max_transactions_monthly') return TRIAL_LIMITS.max_transactions_monthly
+        if (key === 'max_customers') return TRIAL_LIMITS.max_customers
       }
 
       if (isTrialExpired || isSubscriptionExpired) return 0
@@ -134,7 +134,7 @@ export async function GET() {
     // Near-limit warnings (>= 80% usage)
     const warnings: string[] = []
     if (isTrialExpired) {
-      warnings.push('Quick Trial Anda telah berakhir. Upgrade paket untuk melanjutkan.')
+      warnings.push('Masa Trial Anda telah berakhir. Upgrade paket untuk melanjutkan.')
     } else if (isSubscriptionExpired) {
       warnings.push('Langganan Pro Anda telah berakhir. Perpanjang paket untuk melanjutkan.')
     } else {

@@ -5,7 +5,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Activity,
   Calendar,
   X,
   Filter,

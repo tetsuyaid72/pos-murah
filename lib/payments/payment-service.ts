@@ -1,13 +1,17 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { memberships, payments } from '@/lib/db/schema'
-import type { BillingPeriod, PaidPlanType } from '@/lib/pricing'
+import { TRIAL_DAYS, type BillingPeriod, type PaidPlanType } from '@/lib/pricing'
 import type { PaymentStatus } from '@/lib/payments/status'
 
 export interface ActivateMembershipInput {
   storeId: string
   plan: PaidPlanType
   billingPeriod: BillingPeriod
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000)
 }
 
 function addMonths(date: Date, months: number): Date {
@@ -43,6 +47,20 @@ export async function activateMembership(input: ActivateMembershipInput): Promis
     subscriptionStartAt: now,
     subscriptionEndAt,
   }).where(eq(memberships.storeId, input.storeId))
+}
+
+export async function activateTrialMembership(storeId: string): Promise<void> {
+  const now = new Date()
+
+  await db.update(memberships).set({
+    plan: 'PRO',
+    isTrial: true,
+    billingPeriod: null,
+    trialStartAt: now,
+    trialEndAt: addDays(now, TRIAL_DAYS),
+    subscriptionStartAt: null,
+    subscriptionEndAt: null,
+  }).where(eq(memberships.storeId, storeId))
 }
 
 export async function markPaymentFromGateway(input: {

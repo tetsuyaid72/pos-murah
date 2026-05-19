@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { Minus, Package, Plus, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { formatRupiah } from '@/lib/format'
@@ -31,9 +32,12 @@ export function CartItem({ item }: CartItemProps) {
         style={{ backgroundColor: `${categoryColor}15` }}
       >
         {item.imageUrl ? (
-          <img
+          <Image
             src={item.imageUrl}
             alt={item.productName}
+            width={36}
+            height={36}
+            unoptimized
             className="h-full w-full object-cover"
           />
         ) : (

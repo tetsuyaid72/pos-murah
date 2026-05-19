@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, membership, syncFromServer])
 
-  // Expired trials can still see the dashboard, payment flow, and essential settings.
+  // Expired trials can only see dashboard and payment flow until they upgrade.
   useEffect(() => {
     if (isLoading || !isAuthenticated || !membership || user?.role === 'SUPER_ADMIN') return
 
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       membership.plan === 'PRO' &&
       membership.subscriptionEndAt &&
       new Date(membership.subscriptionEndAt) <= new Date()
-    const allowedPaths = ['/dashboard', '/pricing', '/payment', '/successpayment', '/settings']
+    const allowedPaths = ['/dashboard', '/pricing', '/payment', '/successpayment']
     const isAllowedPath = allowedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
     if ((isTrialExpired || isSubscriptionExpired) && !isAllowedPath) {

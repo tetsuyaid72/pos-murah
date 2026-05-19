@@ -39,12 +39,22 @@ const plans = {
     accessLabel: 'Lifetime / sekali bayar',
     badge: 'Promo Lifetime',
   },
+  trial: {
+    name: 'Masa Trial',
+    price: '19K',
+    amount: 19000,
+    apiPlan: 'TRIAL',
+    billingPeriod: 'monthly',
+    summaryPlan: 'trial',
+    description: 'Coba semua alur penting POS selama 7 hari. Trial hanya bisa digunakan satu kali per akun.',
+    accessLabel: 'Akses 7 hari',
+    badge: '1x per akun',
+  },
 } as const
 
 function getSelectedPlan(plan: string | null) {
-  if (plan === 'business' || plan === 'bisnis') {
-    return plans.bisnis
-  }
+  if (plan === 'trial') return plans.trial
+  if (plan === 'business' || plan === 'bisnis') return plans.bisnis
 
   return plans.pro
 }
@@ -120,8 +130,11 @@ function PaymentContent() {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         if (res.status === 401) {
-          router.replace('/login')
+          router.replace(`/login?next=${encodeURIComponent(`/payment?plan=${selectedPlan.summaryPlan}&auto=midtrans`)}`)
           return
+        }
+        if (res.status === 409 && selectedPlan.apiPlan === 'TRIAL') {
+          throw new Error('Masa trial sudah pernah digunakan di akun ini. Silakan pilih paket Pro atau Bisnis untuk melanjutkan.')
         }
         throw new Error(data.error || 'Gagal membuat pembayaran Midtrans.')
       }
@@ -134,7 +147,7 @@ function PaymentContent() {
     } finally {
       setIsMidtransLoading(false)
     }
-  }, [router, selectedPlan.apiPlan, selectedPlan.billingPeriod])
+  }, [router, selectedPlan.apiPlan, selectedPlan.billingPeriod, selectedPlan.summaryPlan])
 
   useEffect(() => {
     if (!autoPayment || autoRedirectStarted.current) return
@@ -167,11 +180,13 @@ function PaymentContent() {
         throw new Error(data.error || 'Gagal menyimpan pembayaran.')
       }
 
-      submitPayment({
-        plan: selectedPlan.summaryPlan,
-        method: 'qris',
-        amount: selectedPlan.amount,
-      })
+      if (selectedPlan.summaryPlan !== 'trial') {
+        submitPayment({
+          plan: selectedPlan.summaryPlan,
+          method: 'qris',
+          amount: selectedPlan.amount,
+        })
+      }
       toast('Bukti pembayaran berhasil dikirim. Admin akan memverifikasi pembayaran Anda.', 'success')
       router.push(`/successpayment?plan=${selectedPlan.summaryPlan}&method=qris&amount=${selectedPlan.amount}`)
     } catch (error) {
@@ -190,7 +205,9 @@ function PaymentContent() {
               Mohon tunggu !!!
             </CardTitle>
             <CardDescription className="max-w-sm text-sm leading-6 text-slate-500">
-              Sedang menyiapkan halaman pembayaran untuk paket {selectedPlan.name}.
+              {selectedPlan.apiPlan === 'TRIAL'
+                ? 'Sedang menyiapkan pembayaran trial 7 hari untuk akun Anda.'
+                : `Sedang menyiapkan halaman pembayaran untuk paket ${selectedPlan.name}.`}
             </CardDescription>
             {uploadError && <p className="mt-3 text-sm text-red-600">{uploadError}</p>}
             {uploadError && (
@@ -198,11 +215,13 @@ function PaymentContent() {
                 <Button onClick={handleMidtransClick} disabled={isMidtransLoading} className="h-11 rounded-2xl bg-slate-950 font-bold text-white hover:bg-slate-800">
                   Coba Lagi
                 </Button>
-                <Link href={`/payment?plan=${selectedPlan.summaryPlan}`} className="w-full">
-                  <Button variant="outline" className="h-11 w-full rounded-2xl border-slate-200 bg-white/80 font-bold text-slate-800">
-                    Bayar Manual
-                  </Button>
-                </Link>
+                {selectedPlan.apiPlan !== 'TRIAL' && (
+                  <Link href={`/payment?plan=${selectedPlan.summaryPlan}`} className="w-full">
+                    <Button variant="outline" className="h-11 w-full rounded-2xl border-slate-200 bg-white/80 font-bold text-slate-800">
+                      Bayar Manual
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </CardHeader>
@@ -277,7 +296,9 @@ function PaymentContent() {
               </Button>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-xs font-medium leading-5 text-amber-800">
-                Pembayaran ini diverifikasi manual oleh admin. Setelah bukti pembayaran valid, paket Anda akan diaktifkan.
+                {selectedPlan.apiPlan === 'TRIAL'
+                  ? 'Trial aktif selama 7 hari setelah pembayaran berhasil dan hanya bisa digunakan satu kali per akun.'
+                  : 'Pembayaran ini diverifikasi manual oleh admin. Setelah bukti pembayaran valid, paket Anda akan diaktifkan.'}
               </div>
 
               <div className="mx-auto flex w-full max-w-[290px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:max-w-[320px] sm:p-5">

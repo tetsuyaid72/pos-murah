@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -127,13 +128,13 @@ export function HeroSection() {
             {/* Hero image */}
             <div className="relative aspect-[1330/1183] w-full">
               {/* Mobile/tablet: fade kiri-kanan + atas-bawah */}
-              <img
+              <Image
                 src="/myhero.png"
                 alt="Pemilik Warung Madura dengan apron hijau Warung Madura POS berdiri di belakang perangkat kasir modern"
                 className="absolute inset-0 z-10 h-full w-full object-contain lg:hidden"
                 width={1330}
                 height={1183}
-                loading="eager"
+                priority
                 style={{
                   maskImage: [
                     'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
@@ -148,13 +149,13 @@ export function HeroSection() {
                 }}
               />
               {/* Desktop: radial ellipse mask */}
-              <img
+              <Image
                 src="/myhero.png"
                 alt="Pemilik Warung Madura dengan apron hijau Warung Madura POS berdiri di belakang perangkat kasir modern"
                 className="absolute inset-0 z-10 hidden h-full w-full object-contain lg:block"
                 width={1330}
                 height={1183}
-                loading="eager"
+                priority
                 style={{
                   maskImage: 'radial-gradient(ellipse 88% 82% at 50% 46%, black 50%, transparent 100%)',
                   WebkitMaskImage: 'radial-gradient(ellipse 88% 82% at 50% 46%, black 50%, transparent 100%)',

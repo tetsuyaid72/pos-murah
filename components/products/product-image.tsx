@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { Package } from 'lucide-react'
 import type { Product, Category } from '@/types'
@@ -36,9 +37,12 @@ export function ProductImage({ product, size = 'md', className }: ProductImagePr
           className
         )}
       >
-        <img
+        <Image
           src={product.imageUrl!}
           alt={product.name}
+          width={sizeConfig.image}
+          height={sizeConfig.image}
+          unoptimized
           className="max-h-20 w-full object-contain transition-transform duration-200 group-hover:scale-105"
           onError={() => setImageError(true)}
         />

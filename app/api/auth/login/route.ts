@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let store = user.store
+    let store: typeof user.store | null = user.store
 
     // Production test accounts must have a tenant so dashboard APIs can resolve storeId.
     if (!store && user.role !== 'SUPER_ADMIN') {

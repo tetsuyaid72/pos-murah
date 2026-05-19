@@ -41,7 +41,7 @@ const LIMIT_MESSAGES = {
     cta: 'Upgrade paket untuk akses fitur ini',
   },
   trialExpired: {
-    title: 'Quick Trial Berakhir',
+    title: 'Masa Trial Berakhir',
     description: 'Upgrade paket untuk melanjutkan menggunakan fitur POS.',
     cta: 'Upgrade paket untuk melanjutkan',
   },

@@ -1,8 +1,8 @@
 ﻿/**
  * POST /api/auth/register
  *
- * Register a new user + create their store + initialize a 6-hour quick trial membership.
- * After registration, user is redirected to /dashboard.
+ * Register a new user + create their store + inactive FREE membership.
+ * Checkout redirects are handled by the auth form based on query params.
  *
  * Body: { name, email, password, storeName }
  */
@@ -50,9 +50,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password)
 
-    // Quick trial gives new users 6 hours to try the core POS flow.
-    const trialStartAt = new Date()
-    const trialEndAt = new Date(Date.now() + 6 * 60 * 60 * 1000)
+    const membershipCreatedAt = new Date()
 
     // Generate IDs upfront for the transaction
     const userId = generateId()
@@ -80,9 +78,9 @@ export async function POST(request: NextRequest) {
         id: membershipId,
         storeId,
         plan: 'FREE',
-        isTrial: true,
-        trialStartAt,
-        trialEndAt,
+        isTrial: false,
+        trialStartAt: membershipCreatedAt,
+        trialEndAt: membershipCreatedAt,
       })
 
       await seedDemoData(tx, storeId)
@@ -127,8 +125,8 @@ export async function POST(request: NextRequest) {
         },
         membership: {
           plan: 'FREE',
-          isTrial: true,
-          trialEndAt,
+          isTrial: false,
+          trialEndAt: membershipCreatedAt,
         },
       },
       { status: 201 }

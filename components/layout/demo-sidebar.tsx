@@ -21,7 +21,6 @@ import {
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/stores/ui-store'
 import { useSettingsStore } from '@/stores/settings-store'
-import { useAuthStore } from '@/stores/auth-store'
 import { Button } from '@/components/ui/button'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { useToast } from '@/components/ui/toast'
@@ -99,7 +98,7 @@ function DemoSidebarContent({
   onCollapse?: () => void
   onNavigate?: () => void
 }) {
-  const { theme, setTheme } = useUIStore()
+  const { setTheme } = useUIStore()
   const { resolvedTheme, setTheme: applyTheme } = useTheme()
   const { storeName, userName, userEmail, userAvatar } = useSettingsStore()
   const { toast } = useToast()

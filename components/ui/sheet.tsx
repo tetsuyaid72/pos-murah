@@ -65,7 +65,12 @@ function SheetOverlay({ className }: { className?: string }) {
   )
 }
 
-interface SheetContentProps extends React.HTMLAttributes<HTMLDivElement> {
+type SheetContentBaseProps = Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  'onAnimationStart' | 'onDrag' | 'onDragEnd' | 'onDragStart'
+>
+
+interface SheetContentProps extends SheetContentBaseProps {
   side?: SheetSide
   hideCloseButton?: boolean
 }

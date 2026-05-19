@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
   Edit2,

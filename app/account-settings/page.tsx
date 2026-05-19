@@ -96,7 +96,7 @@ export default function AccountSettingsPage() {
     membership?.isTrial && membership.trialEndAt && new Date(membership.trialEndAt) <= new Date()
   )
   const planLabel = membership?.isTrial
-    ? isTrialExpired ? 'Trial Berakhir' : 'Quick Trial'
+    ? isTrialExpired ? 'Trial Berakhir' : 'Masa Trial'
     : membership?.plan || usage?.plan || 'Free'
 
   if (isLoading) {

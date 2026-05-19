@@ -1,6 +1,6 @@
 'use client'
 
-import { Banknote, QrCode, BookOpen, Calendar, User, Hash } from 'lucide-react'
+import { Banknote, QrCode, BookOpen, Calendar } from 'lucide-react'
 import { formatRupiah, formatDateTime } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'

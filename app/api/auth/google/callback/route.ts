@@ -195,9 +195,7 @@ export async function GET(request: NextRequest) {
     const firstName = googleUser.given_name || googleUser.name.split(' ')[0]
     const storeName = `Toko ${firstName}`
 
-    // Quick trial gives new users 6 hours to try the core POS flow.
-    const trialStartAt = new Date()
-    const trialEndAt = new Date(Date.now() + 6 * 60 * 60 * 1000)
+    const membershipCreatedAt = new Date()
 
     // Create user + store + membership in a transaction
     await db.transaction(async (tx) => {
@@ -222,9 +220,9 @@ export async function GET(request: NextRequest) {
         id: membershipId,
         storeId,
         plan: 'FREE',
-        isTrial: true,
-        trialStartAt,
-        trialEndAt,
+        isTrial: false,
+        trialStartAt: membershipCreatedAt,
+        trialEndAt: membershipCreatedAt,
       })
 
       await tx.insert(activityLogs).values({
@@ -252,7 +250,6 @@ export async function GET(request: NextRequest) {
       storeId,
     })
 
-    // New users get a 6-hour quick trial and start in the dashboard.
     return NextResponse.redirect(new URL('/dashboard', appUrl))
   } catch (error) {
     console.error('Google OAuth callback error:', error)
