@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BrowserMultiFormatReader } from '@zxing/browser'
@@ -202,7 +203,7 @@ export function BarcodeScannerModal({ open, onOpenChange, onScan }: BarcodeScann
               <div className="flex gap-3">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/10 text-emerald-100">
                   {scannedProduct.imageUrl ? (
-                    <img src={scannedProduct.imageUrl} alt={scannedProduct.name} className="h-full w-full object-cover" />
+                    <Image src={scannedProduct.imageUrl} alt={scannedProduct.name} width={64} height={64} unoptimized className="h-full w-full object-cover" />
                   ) : (
                     <Barcode className="h-6 w-6" />
                   )}

@@ -46,7 +46,7 @@ export function RegisterForm() {
         return
       }
 
-      router.push(nextPath)
+      router.push(nextPath === '/dashboard' ? '/pricing' : nextPath)
       router.refresh()
     } catch {
       setError('Tidak dapat terhubung ke server. Coba lagi.')
@@ -114,6 +114,6 @@ export function RegisterForm() {
 }
 
 function getSafeNextPath(next: string | null): string {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/dashboard'
+  if (!next || !next.startsWith('/') || next.startsWith('//')) return '/pricing'
   return next
 }

@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth-store'
 import { useSettingsStore } from '@/stores/settings-store'
 import { useSubscriptionStore } from '@/stores/subscription-store'
@@ -16,7 +16,6 @@ import { getUserAvatar } from '@/lib/avatar'
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const pathname = usePathname()
   const { fetchAuth, user, store, membership, isAuthenticated, isLoading } = useAuthStore()
   const {
     setUserName,
@@ -59,26 +58,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, membership, syncFromServer])
 
-  // Expired trials can only see dashboard and payment flow until they upgrade.
+  // Users without an active trial/subscription should choose a package first.
   useEffect(() => {
     if (isLoading || !isAuthenticated || !membership || user?.role === 'SUPER_ADMIN') return
 
-    const isTrialExpired =
+    const now = new Date()
+    const isTrialActive = Boolean(
       membership.isTrial &&
       membership.trialEndAt &&
-      new Date(membership.trialEndAt) <= new Date()
-    const isSubscriptionExpired =
+      new Date(membership.trialEndAt) > now
+    )
+    const isPaidActive = Boolean(
       !membership.isTrial &&
-      membership.plan === 'PRO' &&
-      membership.subscriptionEndAt &&
-      new Date(membership.subscriptionEndAt) <= new Date()
-    const allowedPaths = ['/dashboard', '/pricing', '/payment', '/successpayment']
-    const isAllowedPath = allowedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+      membership.plan !== 'FREE' &&
+      (!membership.subscriptionEndAt || new Date(membership.subscriptionEndAt) > now)
+    )
 
-    if ((isTrialExpired || isSubscriptionExpired) && !isAllowedPath) {
-      router.replace('/dashboard')
+    if (!isTrialActive && !isPaidActive) {
+      router.replace('/pricing')
     }
-  }, [isLoading, isAuthenticated, membership, user, pathname, router])
+  }, [isLoading, isAuthenticated, membership, user, router])
 
   return <>{children}</>
 }

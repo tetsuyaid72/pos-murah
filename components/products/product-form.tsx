@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -206,7 +207,7 @@ export function ProductForm({ product, initialBarcode = '' }: ProductFormProps) 
           <div className="flex gap-3">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/80 text-muted-foreground shadow-sm dark:bg-slate-900/70">
               {lookupProduct.imageUrl ? (
-                <img src={lookupProduct.imageUrl} alt={lookupProduct.name} className="h-full w-full object-cover" />
+                <Image src={lookupProduct.imageUrl} alt={lookupProduct.name} width={64} height={64} unoptimized className="h-full w-full object-cover" />
               ) : (
                 <Camera className="h-6 w-6" />
               )}
