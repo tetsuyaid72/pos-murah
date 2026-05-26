@@ -60,7 +60,7 @@ export interface PlanInfo {
 
 export const NEW_USER_DISCOUNT_PERCENT = 0
 export const NEW_USER_PROMO_CODE = 'NEW_USER_60'
-export const TRIAL_PRICE = 19_000
+export const TRIAL_PRICE = 10_000
 export const TRIAL_DAYS = 7
 
 export const PLAN_PRICE_META: Record<PaidPlanType, PlanPriceMeta> = {

@@ -19,7 +19,7 @@ import {
 const plans = [
   {
     name: 'Masa Trial',
-    price: '19K',
+    price: '10K',
     period: '',
     description: 'Rasakan kemudahan mengelola warung selama 7 hari sebelum memilih paket utama.',
     features: [

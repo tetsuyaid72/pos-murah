@@ -41,8 +41,8 @@ const plans = {
   },
   trial: {
     name: 'Masa Trial',
-    price: '19K',
-    amount: 19000,
+    price: '10K',
+    amount: 10000,
     apiPlan: 'TRIAL',
     billingPeriod: 'monthly',
     summaryPlan: 'trial',
