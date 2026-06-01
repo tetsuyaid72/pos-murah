@@ -1,9 +1,9 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatPrice } from '@/lib/pricing'
 import { useAuthStore } from '@/stores/auth-store'
@@ -11,6 +11,7 @@ import { useSubscriptionStore } from '@/stores/subscription-store'
 
 const PLAN_LABELS = {
   free: 'Free',
+  trial: 'Trial',
   pro: 'Pro',
   business: 'Business',
 } as const
@@ -38,7 +39,7 @@ export default function SuccessPaymentPage() {
 function SuccessPaymentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isAuthenticated, isLoading, fetchAuth } = useAuthStore()
+  const { isAuthenticated, isLoading, fetchAuth, membership } = useAuthStore()
   const { paymentStatus, paymentDate, pendingPaymentSummary } = useSubscriptionStore()
 
   const planQuery = searchParams.get('plan')
@@ -59,10 +60,78 @@ function SuccessPaymentContent() {
       ? new Date(pendingPaymentSummary.submittedAt)
       : null
 
+  // For Midtrans payments: poll to sync membership activation
+  const [isSyncing, setIsSyncing] = useState(isMidtransPayment)
+  const [syncMessage, setSyncMessage] = useState(
+    isMidtransPayment ? 'Mengecek status pembayaran...' : ''
+  )
+  const syncAttemptRef = useRef(0)
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     fetchAuth()
   }, [fetchAuth])
 
+  /**
+   * For Midtrans payments, we poll /api/plan/sync to ensure the membership
+   * gets activated even if the webhook hasn't fired yet.
+   */
+  const pollSyncStatus = useCallback(async () => {
+    const MAX_ATTEMPTS = 5
+    const POLL_INTERVAL_MS = 3000
+
+    if (syncAttemptRef.current >= MAX_ATTEMPTS) {
+      setIsSyncing(false)
+      setSyncMessage('')
+      return
+    }
+
+    syncAttemptRef.current += 1
+    setSyncMessage(`Mengecek status pembayaran... (${syncAttemptRef.current}/${MAX_ATTEMPTS})`)
+
+    try {
+      const res = await fetch('/api/plan/sync', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+
+      if (data.activated || data.alreadyActive) {
+        setIsSyncing(false)
+        setSyncMessage('Paket berhasil diaktifkan!')
+        // Re-fetch auth to update membership in store
+        await fetchAuth()
+        return
+      }
+    } catch {
+      // Ignore, will retry
+    }
+
+    // Retry after delay
+    syncTimerRef.current = setTimeout(pollSyncStatus, POLL_INTERVAL_MS)
+  }, [fetchAuth])
+
+  // Start polling when Midtrans payment and authenticated
+  useEffect(() => {
+    if (!isMidtransPayment || isLoading || !isAuthenticated) return
+
+    // Check if membership is already active
+    if (membership) {
+      const now = new Date()
+      const isTrialActive = membership.isTrial && membership.trialEndAt && new Date(membership.trialEndAt) > now
+      const isPaidActive = !membership.isTrial && membership.plan !== 'FREE' && (
+        !membership.subscriptionEndAt || new Date(membership.subscriptionEndAt) > now
+      )
+      if (isTrialActive || isPaidActive) {
+        setIsSyncing(false)
+        setSyncMessage('Paket berhasil diaktifkan!')
+        return
+      }
+    }
+
+    pollSyncStatus()
+
+    return () => {
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    }
+  }, [isMidtransPayment, isLoading, isAuthenticated, membership, pollSyncStatus])
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -70,6 +139,7 @@ function SuccessPaymentContent() {
       return
     }
 
+    // For non-Midtrans payments, redirect to pricing if there's no pending payment
     if (!isLoading && isAuthenticated && !isMidtransPayment && paymentStatus !== 'pending') {
       router.replace('/pricing')
     }
@@ -100,6 +170,20 @@ function SuccessPaymentContent() {
               <CheckCircle2 className="h-4 w-4" />
               {isMidtransPayment ? 'Pembayaran Diproses' : 'Pembayaran Berhasil Dikirim'}
             </div>
+
+            {isMidtransPayment && isSyncing && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{syncMessage}</span>
+              </div>
+            )}
+
+            {isMidtransPayment && !isSyncing && syncMessage && (
+              <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{syncMessage}</span>
+              </div>
+            )}
           </div>
 
           <div className="rounded-[2rem] border border-slate-200/80 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)]">
@@ -156,4 +240,3 @@ function SuccessPaymentContent() {
     </div>
   )
 }
-

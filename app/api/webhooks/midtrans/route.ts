@@ -17,7 +17,15 @@ export async function POST(request: Request) {
   try {
     const payload = await request.json() as MidtransNotificationPayload
 
+    console.log('[Midtrans Webhook] Received notification:', {
+      order_id: payload.order_id,
+      transaction_status: payload.transaction_status,
+      fraud_status: payload.fraud_status,
+      gross_amount: payload.gross_amount,
+    })
+
     if (!verifyMidtransSignature(payload)) {
+      console.error('[Midtrans Webhook] Invalid signature for order:', payload.order_id)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
@@ -52,14 +60,27 @@ export async function POST(request: Request) {
 
     if (nextStatus === 'PAID') {
       const metadata = payment.metadata as { checkoutType?: string } | null
-      if (metadata?.checkoutType === 'TRIAL') {
-        await activateTrialMembership(payment.storeId)
-      } else {
-        await activateMembership({
-          storeId: payment.storeId,
-          plan: payment.plan,
-          billingPeriod: payment.billingPeriod,
-        })
+      console.log('[Midtrans Webhook] Payment PAID, activating membership:', {
+        storeId: payment.storeId,
+        checkoutType: metadata?.checkoutType,
+        plan: payment.plan,
+        billingPeriod: payment.billingPeriod,
+      })
+
+      try {
+        if (metadata?.checkoutType === 'TRIAL') {
+          await activateTrialMembership(payment.storeId)
+        } else {
+          await activateMembership({
+            storeId: payment.storeId,
+            plan: payment.plan,
+            billingPeriod: payment.billingPeriod,
+          })
+        }
+        console.log('[Midtrans Webhook] Membership activated successfully for store:', payment.storeId)
+      } catch (activationError) {
+        console.error('[Midtrans Webhook] Failed to activate membership:', activationError)
+        // Don't fail the webhook response - payment was already marked as PAID
       }
     }
 

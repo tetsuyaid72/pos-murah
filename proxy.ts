@@ -26,10 +26,11 @@ const PUBLIC_PATHS = [
   '/api/auth/google/callback',
 ]
 
-/** Path prefixes that are fully public (demo mode) */
+/** Path prefixes that are fully public (demo mode, webhooks, etc.) */
 const PUBLIC_PREFIXES = [
   '/demo',
   '/api/demo',
+  '/api/webhooks',
 ]
 
 /** Auth pages â€” redirect to dashboard if already logged in */
